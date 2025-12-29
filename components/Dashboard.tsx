@@ -22,14 +22,22 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
 
   // Chart가 마운트된 후에만 렌더링 (로그인 후 컴포넌트 전환 시 안정화)
   useEffect(() => {
-    // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 Chart를 표시
+    // 더 긴 지연을 두어 DOM이 완전히 렌더링된 후 Chart를 표시
     const timer = setTimeout(() => {
       setChartMounted(true);
-      // window resize 이벤트를 트리거하여 Chart가 크기를 다시 계산하도록 함
-      window.dispatchEvent(new Event('resize'));
-    }, 100);
+      // window resize 이벤트를 여러 번 트리거하여 Chart가 크기를 확실히 계산하도록 함
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 50);
+      }, 50);
+    }, 200);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      setChartMounted(false);
+    };
   }, []);
 
   // 필터링된 데이터 계산
@@ -247,9 +255,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           <div 
             ref={chartContainerRef}
             className="h-64 w-full" 
-            style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}
+            style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px' }}
           >
-            {chartMounted && phaseData.length > 0 && (
+            {chartMounted && phaseData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
                 <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -265,6 +273,10 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                 <Bar dataKey="locked" stackId="a" fill="#f1f5f9" radius={[6, 6, 0, 0]} name="대기" barSize={40} />
               </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400">
+                <p className="text-sm">데이터 로딩 중...</p>
+              </div>
             )}
           </div>
         </div>
@@ -404,8 +416,15 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
+              e.preventDefault();
+              e.stopPropagation();
               setSelectedReportProject(null);
               setReportContent('');
+            }
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
             }
           }}
         >
@@ -422,9 +441,14 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
               </div>
               <button 
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   setSelectedReportProject(null);
                   setReportContent('');
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                 }}
                 className="p-2 hover:bg-slate-800 rounded-full transition-colors"
               >
