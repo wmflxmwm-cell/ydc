@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
 import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
@@ -18,27 +18,54 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [reportContent, setReportContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartMounted, setChartMounted] = useState(false);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 256 });
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const pieChartContainerRef = useRef<HTMLDivElement>(null);
 
   // Chart가 마운트된 후에만 렌더링 (로그인 후 컴포넌트 전환 시 안정화)
-  useEffect(() => {
-    // 더 긴 지연을 두어 DOM이 완전히 렌더링된 후 Chart를 표시
+  // useLayoutEffect를 사용하여 DOM이 완전히 렌더링된 후 Chart를 표시
+  useLayoutEffect(() => {
+    // DOM이 완전히 렌더링된 후 Chart를 표시
     const timer = setTimeout(() => {
-      setChartMounted(true);
-      // window resize 이벤트를 여러 번 트리거하여 Chart가 크기를 확실히 계산하도록 함
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 50);
-      }, 50);
-    }, 200);
+      if (chartContainerRef.current) {
+        const width = chartContainerRef.current.offsetWidth;
+        const height = chartContainerRef.current.offsetHeight;
+        if (width > 0 && height > 0) {
+          setChartSize({ width, height });
+          setChartMounted(true);
+        }
+      }
+    }, 100);
     
     return () => {
       clearTimeout(timer);
-      setChartMounted(false);
     };
   }, []);
+
+  // Chart 크기 재계산을 위한 resize 이벤트 리스너
+  useEffect(() => {
+    if (!chartMounted) return;
+
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        const width = chartContainerRef.current.offsetWidth;
+        const height = chartContainerRef.current.offsetHeight;
+        if (width > 0 && height > 0) {
+          setChartSize({ width, height });
+        }
+      }
+    };
+
+    // 초기 크기 계산
+    handleResize();
+    
+    // window resize 이벤트 리스너 추가
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [chartMounted]);
 
   // 필터링된 데이터 계산
   const filteredProjects = useMemo(() => {
@@ -255,11 +282,14 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           <div 
             ref={chartContainerRef}
             className="h-64 w-full" 
-            style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px' }}
+            style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px', overflow: 'hidden' }}
           >
-            {chartMounted && phaseData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
-                <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            {chartMounted && phaseData.length > 0 && chartSize.width > 0 ? (
+              <ResponsiveContainer 
+                width={chartSize.width} 
+                height={chartSize.height}
+              >
+                <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }} width={chartSize.width} height={chartSize.height}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
@@ -291,10 +321,17 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             <div className="p-2 bg-red-50 rounded-lg text-red-500"><AlertCircle size={20} /></div>
           </div>
           {issueData.length > 0 ? (
-            <div className="h-64 w-full flex flex-col items-center" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
-              {chartMounted && (
-                <ResponsiveContainer width="100%" height="80%" minHeight={200} minWidth="100%">
-                  <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <div 
+              ref={pieChartContainerRef}
+              className="h-64 w-full flex flex-col items-center" 
+              style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px', overflow: 'hidden' }}
+            >
+              {chartMounted && pieChartContainerRef.current && (
+                <ResponsiveContainer 
+                  width={pieChartContainerRef.current.offsetWidth || '100%'} 
+                  height={Math.floor((pieChartContainerRef.current.offsetHeight || 256) * 0.8)}
+                >
+                  <PieChart width={pieChartContainerRef.current.offsetWidth || 400} height={Math.floor((pieChartContainerRef.current.offsetHeight || 256) * 0.8)} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <Pie
                     data={issueData}
                     cx="50%"
