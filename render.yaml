@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ydc-server
+    env: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+        value: https://ydc-408r.onrender.com
+
