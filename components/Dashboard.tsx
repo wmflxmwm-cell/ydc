@@ -20,9 +20,16 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [chartMounted, setChartMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
-  // Chart가 마운트된 후에만 렌더링
+  // Chart가 마운트된 후에만 렌더링 (로그인 후 컴포넌트 전환 시 안정화)
   useEffect(() => {
-    setChartMounted(true);
+    // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 Chart를 표시
+    const timer = setTimeout(() => {
+      setChartMounted(true);
+      // window resize 이벤트를 트리거하여 Chart가 크기를 다시 계산하도록 함
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // 필터링된 데이터 계산
