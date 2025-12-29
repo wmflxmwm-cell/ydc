@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard';
 import ProjectRegistration from './components/ProjectRegistration';
 import PhaseManagement from './components/PhaseManagement';
 import IssueTracker from './components/IssueTracker';
+import UserManagement from './components/UserManagement';
 import Login from './components/Login';
 
 interface UserSession {
@@ -19,7 +20,7 @@ interface UserSession {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users'>('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -172,6 +173,16 @@ const App: React.FC = () => {
             <AlertTriangle className="w-5 h-5" />
             <span className="font-medium text-sm">품질 이슈 트래커</span>
           </button>
+
+          {(user.role.includes('총괄') || user.role === 'MANAGER') && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            >
+              <UserIcon className="w-5 h-5" />
+              <span className="font-medium text-sm">사용자 관리</span>
+            </button>
+          )}
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-800 space-y-2">
@@ -202,6 +213,7 @@ const App: React.FC = () => {
               {activeTab === 'registration' && '신규 프로젝트 등록'}
               {activeTab === 'management' && 'APQP 단계별 게이트 관리'}
               {activeTab === 'issues' && '품질 결함 이슈 관리'}
+              {activeTab === 'users' && '시스템 사용자 관리'}
             </h1>
             <p className="text-slate-500 mt-1 font-medium">
               자동차 다이케스팅 부품 사전 제품 품질 계획 시스템
@@ -228,6 +240,7 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'issues' && <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />}
+          {activeTab === 'users' && <UserManagement />}
         </div>
       </main>
     </div>
