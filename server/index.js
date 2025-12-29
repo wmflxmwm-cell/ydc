@@ -76,6 +76,15 @@ app.get('/', (req, res) => {
     });
 });
 
+// 404 handler for undefined routes
+app.use((req, res) => {
+    res.status(404).json({ 
+        error: 'Not Found',
+        message: `Route ${req.method} ${req.path} not found`,
+        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/health', '/']
+    });
+});
+
 // Initialize DB and start server
 initDb().then(() => {
     app.listen(PORT, () => {
