@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
 import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
@@ -17,12 +17,12 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [selectedReportProject, setSelectedReportProject] = useState<Project | null>(null);
   const [reportContent, setReportContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [chartMounted, setChartMounted] = useState(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
-  // 모달 언마운트 시 cleanup
+  // Chart가 마운트된 후에만 렌더링
   useEffect(() => {
-    return () => {
-      // 컴포넌트 언마운트 시 상태 초기화
-    };
+    setChartMounted(true);
   }, []);
 
   // 필터링된 데이터 계산
@@ -237,8 +237,12 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             </div>
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
-          <div className="h-64 w-full" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
-            {phaseData.length > 0 && (
+          <div 
+            ref={chartContainerRef}
+            className="h-64 w-full" 
+            style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}
+          >
+            {chartMounted && phaseData.length > 0 && (
               <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
                 <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -269,8 +273,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           </div>
           {issueData.length > 0 ? (
             <div className="h-64 w-full flex flex-col items-center" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
-              <ResponsiveContainer width="100%" height="80%" minHeight={200} minWidth="100%">
-                <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              {chartMounted && (
+                <ResponsiveContainer width="100%" height="80%" minHeight={200} minWidth="100%">
+                  <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <Pie
                     data={issueData}
                     cx="50%"
@@ -286,7 +291,8 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                   </Pie>
                   <Tooltip />
                 </PieChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              )}
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
                 {issueData.map((item, i) => (
                   <div key={i} className="flex items-center gap-1.5">
