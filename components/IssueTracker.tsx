@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Issue, Project, IssueType } from '../types';
 import { Search, Plus, Filter, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
 
@@ -73,7 +74,7 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
         </div>
       </div>
 
-      {showAddForm && (
+      {showAddForm && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
             <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
@@ -143,7 +144,8 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
