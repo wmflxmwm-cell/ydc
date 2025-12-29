@@ -230,9 +230,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             </div>
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
-          <div className="h-64 w-full" style={{ minHeight: '256px', minWidth: '0' }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth={0}>
-              <BarChart data={phaseData} barGap={0}>
+          <div className="h-64 w-full" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
+              <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
@@ -259,9 +259,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             <div className="p-2 bg-red-50 rounded-lg text-red-500"><AlertCircle size={20} /></div>
           </div>
           {issueData.length > 0 ? (
-            <div className="h-64 w-full flex flex-col items-center" style={{ minHeight: '256px', minWidth: '0' }}>
-              <ResponsiveContainer width="100%" height="80%" minHeight={200} minWidth={0}>
-                <PieChart>
+            <div className="h-64 w-full flex flex-col items-center" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
+              <ResponsiveContainer width="100%" height="80%" minHeight={200} minWidth="100%">
+                <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <Pie
                     data={issueData}
                     cx="50%"
