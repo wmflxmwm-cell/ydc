@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard';
 import ProjectRegistration from './components/ProjectRegistration';
 import PhaseManagement from './components/PhaseManagement';
 import IssueTracker from './components/IssueTracker';
-import UserManagement from './components/UserManagement';
+import UserManagement from './src/components/UserManagement';
 import Login from './components/Login';
 
 interface UserSession {
