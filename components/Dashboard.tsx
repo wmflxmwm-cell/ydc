@@ -18,6 +18,13 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [reportContent, setReportContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 모달 언마운트 시 cleanup
+  useEffect(() => {
+    return () => {
+      // 컴포넌트 언마운트 시 상태 초기화
+    };
+  }, []);
+
   // 필터링된 데이터 계산
   const filteredProjects = useMemo(() => {
     let result = projects;
@@ -231,8 +238,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
           <div className="h-64 w-full" style={{ minHeight: '256px', minWidth: '100%', position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
-              <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            {phaseData.length > 0 && (
+              <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth="100%">
+                <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
@@ -245,7 +253,8 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                 <Bar dataKey="open" stackId="a" fill="#4f46e5" radius={[0, 0, 0, 0]} name="진행중" barSize={40} />
                 <Bar dataKey="locked" stackId="a" fill="#f1f5f9" radius={[6, 6, 0, 0]} name="대기" barSize={40} />
               </BarChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -378,7 +387,15 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
 
       {/* AI Report Modal */}
       {selectedReportProject && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedReportProject(null);
+              setReportContent('');
+            }
+          }}
+        >
           <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in duration-300">
             <div className="bg-slate-900 p-6 flex items-center justify-between text-white">
               <div className="flex items-center gap-4">
@@ -391,7 +408,11 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                 </div>
               </div>
               <button 
-                onClick={() => {setSelectedReportProject(null); setReportContent('');}}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedReportProject(null);
+                  setReportContent('');
+                }}
                 className="p-2 hover:bg-slate-800 rounded-full transition-colors"
               >
                 <X size={24} />
