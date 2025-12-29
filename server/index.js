@@ -10,7 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Middleware
-app.use(cors()); // Allow all origins for now, or configure for production
+app.use(cors({
+    origin: ['https://ydc-408r.onrender.com', 'http://localhost:5173', 'http://localhost:4173'],
+    credentials: true
+}));
 app.use(express.json());
 
 // Routes
