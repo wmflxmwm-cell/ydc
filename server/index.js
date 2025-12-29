@@ -36,11 +36,14 @@ app.use(cors({
             return callback(null, true);
         }
         
-        callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+        // CORS 오류 시 false 반환 (에러 throw 대신)
+        callback(null, false);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 app.use(express.json());
 
@@ -52,7 +55,16 @@ app.use('/issues', issueRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Die-casting APQP Manager API Server',
+        version: '1.0.0',
+        endpoints: ['/auth', '/projects', '/gates', '/issues', '/health']
+    });
 });
 
 // Initialize DB and start server
