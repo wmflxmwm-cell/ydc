@@ -10,9 +10,37 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Middleware
+// CORS 설정: 환경 변수로 허용된 origin을 관리하거나, 모든 Render 도메인 허용
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : [
+        'https://ydc-408r.onrender.com',
+        'https://wmflxmwm-cell-ydc.onrender.com',
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'http://localhost:3000'
+    ];
+
 app.use(cors({
-    origin: ['https://ydc-408r.onrender.com', 'http://localhost:5173', 'http://localhost:4173'],
-    credentials: true
+    origin: function (origin, callback) {
+        // origin이 없는 경우 (같은 도메인 요청 등) 허용
+        if (!origin) return callback(null, true);
+        
+        // Render 도메인 패턴 허용
+        if (origin.includes('.onrender.com')) {
+            return callback(null, true);
+        }
+        
+        // 명시적으로 허용된 origin 확인
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        
+        callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 

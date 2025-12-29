@@ -74,14 +74,22 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
     `;
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Vite 환경 변수 사용 (VITE_ 접두사 필요)
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || '';
+      if (!apiKey) {
+        setReportContent('Gemini API 키가 설정되지 않았습니다. 환경 변수 VITE_GEMINI_API_KEY를 확인하세요.');
+        setIsGenerating(false);
+        return;
+      }
+      
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
       });
       setReportContent(response.text || '리포트를 생성할 수 없습니다.');
     } catch (error) {
-      console.error(error);
+      console.error('AI 리포트 생성 오류:', error);
       setReportContent('리포트 생성 중 오류가 발생했습니다. API 키 설정을 확인하세요.');
     } finally {
       setIsGenerating(false);
@@ -222,9 +230,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             </div>
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={phaseData} barGap={0}>
+          <div className="h-64 w-full" style={{ minHeight: '256px', minWidth: '0' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={256}>
+              <BarChart data={phaseData} barGap={0} width={undefined} height={undefined}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
@@ -251,9 +259,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             <div className="p-2 bg-red-50 rounded-lg text-red-500"><AlertCircle size={20} /></div>
           </div>
           {issueData.length > 0 ? (
-            <div className="h-64 w-full flex flex-col items-center">
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
+            <div className="h-64 w-full flex flex-col items-center" style={{ minHeight: '256px', minWidth: '0' }}>
+              <ResponsiveContainer width="100%" height="80%" minHeight={200}>
+                <PieChart width={undefined} height={undefined}>
                   <Pie
                     data={issueData}
                     cx="50%"
