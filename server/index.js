@@ -55,7 +55,16 @@ app.use('/issues', issueRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+// Favicon handler (빈 응답 반환)
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();
 });
 
 // Root endpoint
