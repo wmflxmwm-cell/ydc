@@ -1,0 +1,5 @@
+{
+  "name": "Die-casting APQP Manager",
+  "description": "Enterprise-grade APQP (Advanced Product Quality Planning) system tailored for the automotive die-casting industry, featuring gate-lock logic, flow analysis tracking, and issue management.",
+  "requestFramePermissions": []
+}
