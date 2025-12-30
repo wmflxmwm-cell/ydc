@@ -57,12 +57,14 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
   }, []);
 
   // 엑셀 파일 파싱 함수
-  const parseExcelFile = (file: File): Promise<Project[]> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // 동적 import로 xlsx 라이브러리 로드
-        const XLSX = await import('xlsx');
+  const parseExcelFile = async (file: File): Promise<Project[]> => {
+    try {
+      // 동적 import로 xlsx 라이브러리 로드
+      const XLSX = await import('xlsx');
+      
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
+        
         reader.onload = (e) => {
           try {
             const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -70,94 +72,95 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
 
-          // 헤더 행 찾기 (첫 번째 행이 헤더)
-          const headers = jsonData[0]?.map((h: any) => String(h).toLowerCase().trim()) || [];
-          
-          // 헤더 매핑 (다양한 형식 지원)
-          const getColumnIndex = (possibleNames: string[]) => {
-            for (const name of possibleNames) {
-              const index = headers.findIndex(h => h.includes(name));
-              if (index !== -1) return index;
-            }
-            return -1;
-          };
-
-          const projects: Project[] = [];
-          
-          // 데이터 행 처리 (헤더 제외)
-          for (let i = 1; i < jsonData.length; i++) {
-            const row = jsonData[i];
-            if (!row || row.every(cell => !cell)) continue; // 빈 행 건너뛰기
-
-            const customerName = row[getColumnIndex(['고객사', 'customer', '고객'])] || '';
-            const carModel = row[getColumnIndex(['차종', 'carmodel', 'car', '모델'])] || '';
-            const partName = row[getColumnIndex(['부품명', 'partname', 'part', '품명'])] || '';
-            const partNumber = row[getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번'])] || '';
-            const moldCavity = parseInt(row[getColumnIndex(['캐비티', 'cavity', 'cavity수'])] || '2') || 2;
-            const material = String(row[getColumnIndex(['재질', 'material', '소재'])] || 'ALDC12').toUpperCase();
-            const sopDate = row[getColumnIndex(['sop', 'sop일자', '양산일', 'sopdate'])] || '';
-            const typeStr = String(row[getColumnIndex(['형태', 'type', '프로젝트형태', '유형'])] || '신규').toLowerCase();
-            const statusStr = String(row[getColumnIndex(['상태', 'status', '진행상태'])] || '진행중').toLowerCase();
-
-            // 필수 필드 확인
-            if (!customerName || !carModel || !partName || !partNumber || !sopDate) {
-              continue; // 필수 필드가 없으면 건너뛰기
-            }
-
-            // 프로젝트 형태 변환
-            let type = ProjectType.NEW_DEVELOPMENT;
-            if (typeStr.includes('증작') || typeStr.includes('incremental') || typeStr.includes('증량')) {
-              type = ProjectType.INCREMENTAL_MOLD;
-            }
-
-            // 상태 변환
-            let status = ProjectStatus.IN_PROGRESS;
-            if (statusStr.includes('완료') || statusStr.includes('complete') || statusStr.includes('종료')) {
-              status = ProjectStatus.COMPLETED;
-            } else if (statusStr.includes('대기') || statusStr.includes('pending') || statusStr.includes('보류')) {
-              status = ProjectStatus.PENDING;
-            }
-
-            // SOP 날짜 형식 변환 (엑셀 날짜 숫자 또는 문자열)
-            let formattedSopDate = sopDate;
-            if (typeof sopDate === 'number') {
-              // 엑셀 날짜 숫자를 변환
-              const excelEpoch = new Date(1899, 11, 30);
-              const date = new Date(excelEpoch.getTime() + sopDate * 86400000);
-              formattedSopDate = date.toISOString().split('T')[0];
-            } else if (typeof sopDate === 'string') {
-              // 문자열 날짜 형식 정리
-              formattedSopDate = sopDate.replace(/\//g, '-').split(' ')[0];
-            }
-
-            const project: Project = {
-              id: `proj-${Date.now()}-${i}`,
-              customerName: String(customerName).trim(),
-              carModel: String(carModel).trim(),
-              partName: String(partName).trim(),
-              partNumber: String(partNumber).trim(),
-              moldCavity: moldCavity,
-              sopDate: formattedSopDate,
-              material: material,
-              type: type,
-              status: status,
-              createdAt: new Date().toISOString()
+            // 헤더 행 찾기 (첫 번째 행이 헤더)
+            const headers = jsonData[0]?.map((h: any) => String(h).toLowerCase().trim()) || [];
+            
+            // 헤더 매핑 (다양한 형식 지원)
+            const getColumnIndex = (possibleNames: string[]) => {
+              for (const name of possibleNames) {
+                const index = headers.findIndex(h => h.includes(name));
+                if (index !== -1) return index;
+              }
+              return -1;
             };
 
-            projects.push(project);
-          }
+            const projects: Project[] = [];
+            
+            // 데이터 행 처리 (헤더 제외)
+            for (let i = 1; i < jsonData.length; i++) {
+              const row = jsonData[i];
+              if (!row || row.every(cell => !cell)) continue; // 빈 행 건너뛰기
 
-          resolve(projects);
-        } catch (error) {
-          reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
-        }
-      };
-      reader.onerror = () => reject(new Error('파일 읽기 실패'));
-      reader.readAsArrayBuffer(file);
-      } catch (error) {
-        reject(new Error('xlsx 라이브러리 로드 실패: ' + (error as Error).message));
-      }
-    });
+              const customerName = row[getColumnIndex(['고객사', 'customer', '고객'])] || '';
+              const carModel = row[getColumnIndex(['차종', 'carmodel', 'car', '모델'])] || '';
+              const partName = row[getColumnIndex(['부품명', 'partname', 'part', '품명'])] || '';
+              const partNumber = row[getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번'])] || '';
+              const moldCavity = parseInt(row[getColumnIndex(['캐비티', 'cavity', 'cavity수'])] || '2') || 2;
+              const material = String(row[getColumnIndex(['재질', 'material', '소재'])] || 'ALDC12').toUpperCase();
+              const sopDate = row[getColumnIndex(['sop', 'sop일자', '양산일', 'sopdate'])] || '';
+              const typeStr = String(row[getColumnIndex(['형태', 'type', '프로젝트형태', '유형'])] || '신규').toLowerCase();
+              const statusStr = String(row[getColumnIndex(['상태', 'status', '진행상태'])] || '진행중').toLowerCase();
+
+              // 필수 필드 확인
+              if (!customerName || !carModel || !partName || !partNumber || !sopDate) {
+                continue; // 필수 필드가 없으면 건너뛰기
+              }
+
+              // 프로젝트 형태 변환
+              let type = ProjectType.NEW_DEVELOPMENT;
+              if (typeStr.includes('증작') || typeStr.includes('incremental') || typeStr.includes('증량')) {
+                type = ProjectType.INCREMENTAL_MOLD;
+              }
+
+              // 상태 변환
+              let status = ProjectStatus.IN_PROGRESS;
+              if (statusStr.includes('완료') || statusStr.includes('complete') || statusStr.includes('종료')) {
+                status = ProjectStatus.COMPLETED;
+              } else if (statusStr.includes('대기') || statusStr.includes('pending') || statusStr.includes('보류')) {
+                status = ProjectStatus.PENDING;
+              }
+
+              // SOP 날짜 형식 변환 (엑셀 날짜 숫자 또는 문자열)
+              let formattedSopDate = sopDate;
+              if (typeof sopDate === 'number') {
+                // 엑셀 날짜 숫자를 변환
+                const excelEpoch = new Date(1899, 11, 30);
+                const date = new Date(excelEpoch.getTime() + sopDate * 86400000);
+                formattedSopDate = date.toISOString().split('T')[0];
+              } else if (typeof sopDate === 'string') {
+                // 문자열 날짜 형식 정리
+                formattedSopDate = sopDate.replace(/\//g, '-').split(' ')[0];
+              }
+
+              const project: Project = {
+                id: `proj-${Date.now()}-${i}`,
+                customerName: String(customerName).trim(),
+                carModel: String(carModel).trim(),
+                partName: String(partName).trim(),
+                partNumber: String(partNumber).trim(),
+                moldCavity: moldCavity,
+                sopDate: formattedSopDate,
+                material: material,
+                type: type,
+                status: status,
+                createdAt: new Date().toISOString()
+              };
+
+              projects.push(project);
+            }
+
+            resolve(projects);
+          } catch (error) {
+            reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
+          }
+        };
+        
+        reader.onerror = () => reject(new Error('파일 읽기 실패'));
+        reader.readAsArrayBuffer(file);
+      });
+    } catch (error) {
+      throw new Error('xlsx 라이브러리 로드 실패: ' + (error as Error).message);
+    }
   };
 
   // 엑셀 파일 업로드 처리
