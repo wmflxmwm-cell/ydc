@@ -154,6 +154,9 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
       };
       reader.onerror = () => reject(new Error('파일 읽기 실패'));
       reader.readAsArrayBuffer(file);
+      } catch (error) {
+        reject(new Error('xlsx 라이브러리 로드 실패: ' + (error as Error).message));
+      }
     });
   };
 
