@@ -17,8 +17,14 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
+      optimizeDeps: {
+        include: ['xlsx'],
+      },
       build: {
         cssCodeSplit: false,
+        commonjsOptions: {
+          include: [/xlsx/, /node_modules/],
+        },
         rollupOptions: {
           output: {
             assetFileNames: (assetInfo) => {

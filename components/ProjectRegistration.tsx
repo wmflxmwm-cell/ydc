@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { Save, RefreshCw, ClipboardCheck, Upload, FileSpreadsheet, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { settingsService, Customer, Material } from '../src/api/services/settingsService';
 
 interface Props {
@@ -59,14 +58,17 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
   // 엑셀 파일 파싱 함수
   const parseExcelFile = (file: File): Promise<Project[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+    return new Promise(async (resolve, reject) => {
+      try {
+        // 동적 import로 xlsx 라이브러리 로드
+        const XLSX = await import('xlsx');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target?.result as ArrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
 
           // 헤더 행 찾기 (첫 번째 행이 헤더)
           const headers = jsonData[0]?.map((h: any) => String(h).toLowerCase().trim()) || [];
