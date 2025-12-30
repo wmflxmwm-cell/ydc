@@ -110,13 +110,18 @@ const UserManagement: React.FC = () => {
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none cursor-pointer"
                                 >
-                                    <option value="">역할 선택</option>
-                                    <option value="시스템 총괄">시스템 총괄</option>
-                                    <option value="품질 관리">품질 관리</option>
-                                    <option value="생산 기술">생산 기술</option>
-                                    <option value="금형 기술">금형 기술</option>
-                                    <option value="영업 관리">영업 관리</option>
-                                    <option value="MANAGER">MANAGER</option>
+                                    <option value="">부서 선택</option>
+                                    <option value="개발팀">개발팀</option>
+                                    <option value="품질팀">품질팀</option>
+                                    <option value="로지스틱">로지스틱</option>
+                                    <option value="구매">구매</option>
+                                    <option value="생산관리">생산관리</option>
+                                    <option value="생산1팀">생산1팀</option>
+                                    <option value="생산2팀">생산2팀</option>
+                                    <option value="금형팀">금형팀</option>
+                                    <option value="본사 개발">본사 개발</option>
+                                    <option value="본사 품질">본사 품질</option>
+                                    <option value="MANAGER">MANAGER (관리자)</option>
                                 </select>
                             </div>
 
