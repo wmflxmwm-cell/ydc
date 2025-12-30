@@ -84,6 +84,7 @@ const Login: React.FC<Props> = ({ onLogin }) => {
                   <input 
                     type="password"
                     required
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 px-12 py-4 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all text-sm font-medium"
