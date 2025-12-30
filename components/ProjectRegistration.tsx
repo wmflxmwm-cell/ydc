@@ -294,9 +294,9 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${formData.type === ProjectType.NEW_DEVELOPMENT ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
         {/* 왼쪽: 수동 입력 폼 */}
-        <div className="lg:col-span-2">
+        <div className={formData.type === ProjectType.NEW_DEVELOPMENT ? 'lg:col-span-2' : 'lg:col-span-1'}>
 
       {/* 업로드 미리보기 모달 */}
       {showUploadPreview && uploadedProjects.length > 0 && (
@@ -636,7 +636,8 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
         </div>
         </div>
 
-        {/* 오른쪽: 엑셀 업로드 섹션 */}
+        {/* 오른쪽: 엑셀 업로드 섹션 (신규 개발 프로젝트만) */}
+        {formData.type === ProjectType.NEW_DEVELOPMENT && (
         <div className="lg:col-span-1">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden sticky top-8">
             <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-4 text-white">
@@ -694,6 +695,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
