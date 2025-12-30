@@ -19,8 +19,13 @@ export interface UserWithPassword extends User {
 
 export const userService = {
     getAll: async (includePassword: boolean = false): Promise<UserWithPassword[]> => {
+        const headers: any = {};
+        if (includePassword) {
+            headers['x-admin'] = 'true';
+        }
         const response = await client.get<UserWithPassword[]>(
-            includePassword ? '/auth/users?admin=true' : '/auth/users'
+            '/auth/users',
+            { headers }
         );
         return response.data;
     },
