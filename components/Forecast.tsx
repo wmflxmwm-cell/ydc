@@ -235,15 +235,61 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
       let failedCount = 0;
       const failedMatches: string[] = [];
 
-      for (const row of parsedRows) {
-        const normalize = (str: string) => str.trim().toLowerCase().replace(/\s+/g, '');
+      // 디버깅: 현재 프로젝트 목록 확인
+      console.log('Current projects:', projects.map(p => ({
+        id: p.id,
+        partName: p.partName,
+        partNumber: p.partNumber,
+        customerName: p.customerName
+      })));
+      console.log('Parsed rows to match:', parsedRows.slice(0, 5).map(r => ({
+        partName: r.partName,
+        partNumber: r.partNumber,
+        customerName: r.customerName
+      })));
+
+      for (let idx = 0; idx < parsedRows.length; idx++) {
+        const row = parsedRows[idx];
+        const normalize = (str: string) => {
+          if (!str) return '';
+          return str.trim().toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
+        };
         
-        const matchingProject = projects.find(p => {
+        // 정확한 매칭 시도
+        let matchingProject = projects.find(p => {
           const partNameMatch = normalize(p.partName) === normalize(row.partName);
           const partNumberMatch = normalize(p.partNumber) === normalize(row.partNumber);
           const customerMatch = normalize(p.customerName) === normalize(row.customerName);
           return partNameMatch && partNumberMatch && customerMatch;
         });
+
+        // 정확한 매칭 실패 시 품번만으로 매칭 시도
+        if (!matchingProject) {
+          matchingProject = projects.find(p => {
+            const partNumberMatch = normalize(p.partNumber) === normalize(row.partNumber);
+            return partNumberMatch;
+          });
+          
+          if (matchingProject && idx < 3) {
+            console.log(`Partial match found (by partNumber only):`, {
+              row: { partName: row.partName, partNumber: row.partNumber, customerName: row.customerName },
+              project: { partName: matchingProject.partName, partNumber: matchingProject.partNumber, customerName: matchingProject.customerName }
+            });
+          }
+        }
+
+        // 디버깅: 처음 몇 개 행의 매칭 시도 로그
+        if (idx < 3) {
+          console.log(`Matching attempt ${idx + 1}:`, {
+            row: { partName: row.partName, partNumber: row.partNumber, customerName: row.customerName },
+            normalized: {
+              partName: normalize(row.partName),
+              partNumber: normalize(row.partNumber),
+              customerName: normalize(row.customerName)
+            },
+            found: !!matchingProject
+          });
+        }
 
         if (matchingProject) {
           try {
@@ -278,13 +324,19 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
         await onProjectsUpdate();
       }
 
+      // 실패한 매칭 상세 정보
+      if (failedCount > 0) {
+        console.warn(`Failed matches (first 10):`, failedMatches.slice(0, 10));
+        const failedDetails = failedMatches.slice(0, 10).join('\n');
+        const message = `업데이트 완료: ${successCount}개 성공, ${failedCount}개 실패\n\n실패한 항목 (처음 10개):\n${failedDetails}${failedMatches.length > 10 ? `\n... 외 ${failedMatches.length - 10}개` : ''}\n\n브라우저 콘솔(F12)에서 상세 로그를 확인하세요.`;
+        alert(message);
+      } else if (successCount > 0) {
+        alert(`업데이트 완료: ${successCount}개 성공`);
+      }
+
       // 초기화
       setParsedRows([]);
       setPastedData('');
-      
-      if (successCount > 0) {
-        alert(`업데이트 완료: ${successCount}개 성공, ${failedCount}개 실패`);
-      }
     } catch (error) {
       alert('데이터 업데이트 중 오류가 발생했습니다: ' + (error as Error).message);
       setUploadStatus({ success: 0, failed: 0 });
