@@ -109,11 +109,11 @@ ${JSON.stringify(sampleData, null, 2)}
 매핑할 수 없는 필드는 null로 설정하세요. JSON만 응답하고 다른 설명은 포함하지 마세요.`;
 
       const genAI = new GoogleGenAI({ apiKey });
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await genAI.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: prompt,
+      });
+      const text = response.text || '';
       
       console.log('AI 분석 결과:', text);
 
@@ -175,8 +175,8 @@ ${JSON.stringify(sampleData, null, 2)}
         volumes: { [year: number]: number | null };
       } | null = null;
 
-      // 샘플 데이터 준비 (최대 10행)
-      const sampleRows = jsonData.slice(1, 11).filter(row => row && row.length > 0);
+      // 샘플 데이터 준비 (헤더 행 다음부터 최대 10행)
+      const sampleRows = jsonData.slice(headerRowIndex + 1, headerRowIndex + 11).filter(row => row && row.length > 0);
       
       if (sampleRows.length > 0) {
         console.log('AI 분석 시작...');
@@ -245,8 +245,8 @@ ${JSON.stringify(sampleData, null, 2)}
 
             const rows: ExcelRow[] = [];
             
-            // 데이터 행 처리 (두 번째 행부터)
-            for (let i = 1; i < jsonData.length; i++) {
+            // 데이터 행 처리 (헤더 행 다음부터)
+            for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
               const row = jsonData[i];
               if (!row || row.length === 0) continue;
               
