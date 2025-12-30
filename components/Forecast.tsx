@@ -800,8 +800,19 @@ ${JSON.stringify(sampleData, null, 2)}
 
       {/* Forecast 테이블 */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+        {isEditMode && (
+          <div className="p-4 bg-indigo-50 border-b border-indigo-200">
+            <p className="text-sm text-indigo-700 font-bold">
+              💡 편집 모드: 엑셀에서 데이터를 복사(Ctrl+C)한 후 표에 붙여넣기(Ctrl+V)하거나 직접 입력하세요.
+            </p>
+          </div>
+        )}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          {isEditMode ? (
+            <table 
+              className="w-full"
+              onPaste={handlePasteInEditMode}
+            >
             <thead>
               <tr className="bg-slate-900 text-white">
                 <th className="px-6 py-4 text-left text-sm font-bold sticky left-0 bg-slate-900 z-10">{t.forecast.partName}</th>
@@ -831,6 +842,24 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm text-slate-700">{project.customerName}</td>
                     <td className="px-6 py-4 text-sm text-slate-700">{project.carModel}</td>
                     {years.map(year => {
+                      if (isEditMode) {
+                        return (
+                          <td key={year} className={`px-6 py-4 text-center ${selectedYear === year ? 'bg-indigo-50' : ''}`}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={editData[project.id]?.[year] ?? getVolumeForYear(project, year)}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                updateEditData(project.id, year, value);
+                              }}
+                              className="w-28 px-3 py-2 text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                              placeholder="0"
+                            />
+                          </td>
+                        );
+                      }
                       const volume = getVolumeForYear(project, year);
                       return (
                         <td key={year} className={`px-6 py-4 text-center text-sm font-bold ${selectedYear === year ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'}`}>
@@ -846,7 +875,12 @@ ${JSON.stringify(sampleData, null, 2)}
                 <tr className="bg-slate-900 text-white font-black">
                   <td colSpan={4} className="px-6 py-4 text-sm sticky left-0 bg-slate-900 z-10">{t.forecast.total}</td>
                   {years.map(year => {
-                    const total = getTotalVolumeForYear(year);
+                    const total = isEditMode 
+                      ? filteredProjects.reduce((sum, project) => {
+                          const volume = editData[project.id]?.[year] ?? getVolumeForYear(project, year);
+                          return sum + volume;
+                        }, 0)
+                      : getTotalVolumeForYear(year);
                     return (
                       <td key={year} className={`px-6 py-4 text-center text-sm ${selectedYear === year ? 'bg-indigo-600' : ''}`}>
                         {total.toLocaleString()}
@@ -857,6 +891,7 @@ ${JSON.stringify(sampleData, null, 2)}
               )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </div>
