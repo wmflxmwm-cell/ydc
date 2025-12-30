@@ -61,9 +61,12 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
       setExistingProjects(projectsData);
       console.log('Loaded projects for dropdown:', projectsData.filter(p => p.type === ProjectType.NEW_DEVELOPMENT).length);
       
-      // 기본값 설정 (현재 선택된 값이 없을 때만)
+      // 기본값 설정 (현재 선택된 값이 없을 때만, type은 절대 변경하지 않음)
       setFormData(prev => {
-        const updated = { ...prev };
+        // type을 명시적으로 보존
+        const currentType = prev.type || ProjectType.NEW_DEVELOPMENT;
+        const updated = { ...prev, type: currentType }; // type 명시적으로 보존
+        // type은 절대 변경하지 않음
         if (customersData.length > 0 && !updated.customerName) {
           updated.customerName = customersData[0].name;
         }
