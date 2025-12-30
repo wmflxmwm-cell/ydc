@@ -442,13 +442,23 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">차종</label>
-              <input 
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                placeholder="예) EV9, 아이오닉 6..."
-                value={formData.carModel}
-                onChange={(e) => setFormData({...formData, carModel: e.target.value})}
-              />
+              {formData.type === ProjectType.INCREMENTAL_MOLD ? (
+                <input 
+                  required
+                  readOnly
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 cursor-not-allowed text-sm"
+                  placeholder="부품명을 선택하면 자동으로 입력됩니다"
+                  value={formData.carModel}
+                />
+              ) : (
+                <input 
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  placeholder="예) EV9, 아이오닉 6..."
+                  value={formData.carModel}
+                  onChange={(e) => setFormData({...formData, carModel: e.target.value})}
+                />
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">부품명 (Die-casting)</label>
