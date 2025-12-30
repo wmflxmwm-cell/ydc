@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Issue, Project, IssueType } from '../types';
 import { Search, Plus, Filter, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
+import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   issues: Issue[];
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAddIssue }) => {
+  const t = getTranslations();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newIssue, setNewIssue] = useState<Partial<Issue>>({
@@ -56,20 +58,20 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <input 
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm"
-            placeholder="부품명 또는 이슈 내용으로 검색..."
+            placeholder={t.issueTracker.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex gap-3">
           <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">
-            <Filter size={16} /> 필터링
+            <Filter size={16} /> {t.issueTracker.filterAll}
           </button>
           <button 
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-all"
           >
-            <Plus size={16} /> 신규 이슈 등록
+            <Plus size={16} /> {t.issueTracker.addIssue}
           </button>
         </div>
       </div>
@@ -78,45 +80,46 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
             <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
-              <h3 className="text-xl font-bold">품질 부적합 이슈 로그 작성</h3>
+              <h3 className="text-xl font-bold">{t.issueTracker.title}</h3>
               <button onClick={() => setShowAddForm(false)} className="opacity-60 hover:opacity-100">✕</button>
             </div>
             <form onSubmit={handleAddIssue} className="p-8 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">대상 프로젝트</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t.issueTracker.project}</label>
                   <select 
                     required
                     className="w-full border p-3 rounded-xl text-sm"
                     value={newIssue.projectId}
                     onChange={(e) => setNewIssue({...newIssue, projectId: e.target.value})}
                   >
-                    <option value="" disabled>프로젝트 선택</option>
+                    <option value="" disabled>{t.issueTracker.selectProject}</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{p.partName}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">발생 단계</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t.issueTracker.phase}</label>
                   <select 
                     className="w-full border p-3 rounded-xl text-sm"
                     value={newIssue.phase}
                     onChange={(e) => setNewIssue({...newIssue, phase: parseInt(e.target.value)})}
                   >
-                    {[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{p}단계</option>)}
+                    {[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{p}{t.phaseManagement.phase}</option>)}
                   </select>
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">결함 유형</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t.issueTracker.type}</label>
                   <select 
                     className="w-full border p-3 rounded-xl text-sm"
                     value={newIssue.issueType}
                     onChange={(e) => setNewIssue({...newIssue, issueType: e.target.value as IssueType})}
                   >
+                    <option value="" disabled>{t.issueTracker.selectType}</option>
                     {Object.values(IssueType).map(type => <option key={type} value={type}>{type}</option>)}
                   </select>
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">상세 내용</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t.issueTracker.description}</label>
                   <textarea 
                     required
                     rows={3}
@@ -127,7 +130,7 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
                   />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">시정 조치 계획</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t.issueTracker.actionPlan}</label>
                   <textarea 
                     required
                     rows={2}
@@ -139,8 +142,8 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
                 </div>
               </div>
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">이슈 등록</button>
-                <button type="button" onClick={() => setShowAddForm(false)} className="px-6 py-3 border rounded-xl font-bold">취소</button>
+                <button type="submit" className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">{t.issueTracker.save}</button>
+                <button type="button" onClick={() => setShowAddForm(false)} className="px-6 py-3 border rounded-xl font-bold">{t.issueTracker.cancel}</button>
               </div>
             </form>
           </div>
@@ -152,10 +155,10 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">상태</th>
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">{t.issueTracker.status || '상태'}</th>
               <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">부품명 및 단계</th>
               <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">이슈 상세</th>
-              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">조치 계획</th>
+              <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">{t.issueTracker.actionPlan}</th>
               <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">관리</th>
             </tr>
           </thead>
@@ -172,13 +175,13 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
                         <AlertCircle className="text-red-500 w-5 h-5 animate-pulse" />
                       )}
                       <span className={`text-[10px] font-black uppercase tracking-wider ${issue.isResolved ? 'text-green-600' : 'text-red-600'}`}>
-                        {issue.isResolved ? '조치완료' : '진행중'}
+                        {issue.isResolved ? t.issueTracker.resolved : t.issueTracker.open}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-6">
                     <p className="text-sm font-bold text-slate-800">{project?.partName || '알 수 없는 부품'}</p>
-                    <p className="text-[10px] text-indigo-500 font-black uppercase">{issue.phase}단계</p>
+                    <p className="text-[10px] text-indigo-500 font-black uppercase">{issue.phase}{t.phaseManagement.phase}</p>
                   </td>
                   <td className="px-6 py-6">
                     <p className="text-xs font-black text-slate-400 uppercase mb-1">{issue.issueType}</p>
@@ -210,7 +213,7 @@ const IssueTracker: React.FC<Props> = ({ issues, projects, onToggleResolve, onAd
         {filteredIssues.length === 0 && (
           <div className="p-12 text-center">
             <AlertCircle className="mx-auto w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">검색 결과에 일치하는 품질 이슈가 없습니다.</p>
+            <p className="text-slate-400 font-medium">{t.issueTracker.noIssues}</p>
           </div>
         )}
       </div>

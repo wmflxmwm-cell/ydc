@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Project, Gate, GateStatus, ProjectType, Issue } from '../types';
 import { CheckCircle2, Lock, Unlock, FileText, FlaskConical, Wrench, Search, ChevronRight, Check, ClipboardList, Thermometer, Settings, Info } from 'lucide-react';
+import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   projects: Project[];
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const PhaseManagement: React.FC<Props> = ({ projects, gates, issues, onUpdateGate, selectedProjectId, setSelectedProjectId }) => {
+  const t = getTranslations();
   const [activePhase, setActivePhase] = useState<number>(1);
 
   const selectedProject = useMemo(() => 
@@ -162,13 +164,13 @@ const PhaseManagement: React.FC<Props> = ({ projects, gates, issues, onUpdateGat
       {/* Project Selector */}
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-6">
         <div className="flex-1">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">활성 프로젝트 선택</label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">{t.phaseManagement.selectProject}</label>
           <select 
             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-slate-50 font-bold"
             value={selectedProjectId || ''}
             onChange={(e) => setSelectedProjectId(e.target.value)}
           >
-            <option value="" disabled>관리할 프로젝트를 선택하세요...</option>
+            <option value="" disabled>{t.phaseManagement.selectProject}</option>
             {projects.map(p => (
               <option key={p.id} value={p.id}>[{p.type}] {p.partName} ({p.carModel}) - {p.customerName}</option>
             ))}
@@ -198,7 +200,7 @@ const PhaseManagement: React.FC<Props> = ({ projects, gates, issues, onUpdateGat
 
       {!selectedProjectId ? (
         <div className="h-64 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400">
-          <p className="font-medium">위 드롭다운에서 프로젝트를 선택하면 APQP 진행 상태가 표시됩니다.</p>
+          <p className="font-medium">{t.phaseManagement.noProjectSelected}</p>
         </div>
       ) : (
         <div className="grid grid-cols-12 gap-8">

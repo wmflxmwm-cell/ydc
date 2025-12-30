@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Building2, Package, Plus, Trash2, Save, Cog } from 'lucide-react';
 import { settingsService, Customer, Material, PostProcessing } from '../src/api/services/settingsService';
+import { getTranslations } from '../src/utils/translations';
 
 const SettingsManagement: React.FC = () => {
+    const t = getTranslations();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
     const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
@@ -150,8 +152,8 @@ const SettingsManagement: React.FC = () => {
                     <Settings className="text-indigo-600" size={24} />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900">시스템 설정 관리</h2>
-                    <p className="text-sm text-slate-500 mt-1">프로젝트 등록 시 사용할 고객사명, 재질, 후공정 목록을 관리합니다.</p>
+                    <h2 className="text-2xl font-black text-slate-900">{t.settingsManagement.title}</h2>
+                    <p className="text-sm text-slate-500 mt-1">{t.settingsManagement.subtitle}</p>
                 </div>
             </div>
 
@@ -160,7 +162,7 @@ const SettingsManagement: React.FC = () => {
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 text-white">
                         <Building2 size={20} />
-                        <h3 className="text-lg font-bold">고객사명 목록</h3>
+                        <h3 className="text-lg font-bold">{t.settingsManagement.customers}</h3>
                     </div>
                     
                     <div className="p-6">
@@ -171,7 +173,7 @@ const SettingsManagement: React.FC = () => {
                                     type="text"
                                     value={newCustomerName}
                                     onChange={(e) => setNewCustomerName(e.target.value)}
-                                    placeholder="고객사명 입력"
+                                    placeholder={t.settingsManagement.addCustomer}
                                     className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                                     disabled={isAddingCustomer}
                                 />
@@ -183,12 +185,12 @@ const SettingsManagement: React.FC = () => {
                                     {isAddingCustomer ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            추가 중...
+                                            {t.settingsManagement.adding}
                                         </>
                                     ) : (
                                         <>
                                             <Plus size={18} />
-                                            추가
+                                            {t.settingsManagement.add}
                                         </>
                                     )}
                                 </button>
@@ -198,11 +200,11 @@ const SettingsManagement: React.FC = () => {
                         {/* 고객사 목록 */}
                         {isLoading ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p>로딩 중...</p>
+                                <p>{t.settingsManagement.loading}</p>
                             </div>
                         ) : customers.length === 0 ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p className="text-sm">등록된 고객사가 없습니다.</p>
+                                <p className="text-sm">{t.settingsManagement.noCustomers}</p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -229,7 +231,7 @@ const SettingsManagement: React.FC = () => {
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 text-white">
                         <Package size={20} />
-                        <h3 className="text-lg font-bold">재질 목록</h3>
+                        <h3 className="text-lg font-bold">{t.settingsManagement.materials}</h3>
                     </div>
                     
                     <div className="p-6">
@@ -239,7 +241,7 @@ const SettingsManagement: React.FC = () => {
                                 type="text"
                                 value={newMaterialName}
                                 onChange={(e) => setNewMaterialName(e.target.value)}
-                                placeholder="재질명 (예: ALDC 12 일반 주조용)"
+                                placeholder={t.settingsManagement.materialName}
                                 className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                                 disabled={isAddingMaterial}
                             />
@@ -248,7 +250,7 @@ const SettingsManagement: React.FC = () => {
                                     type="text"
                                     value={newMaterialCode}
                                     onChange={(e) => setNewMaterialCode(e.target.value)}
-                                    placeholder="재질 코드 (예: ALDC12)"
+                                    placeholder={t.settingsManagement.materialCode}
                                     className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm uppercase"
                                     disabled={isAddingMaterial}
                                 />
@@ -260,12 +262,12 @@ const SettingsManagement: React.FC = () => {
                                     {isAddingMaterial ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            추가 중...
+                                            {t.settingsManagement.adding}
                                         </>
                                     ) : (
                                         <>
                                             <Plus size={18} />
-                                            추가
+                                            {t.settingsManagement.add}
                                         </>
                                     )}
                                 </button>
@@ -275,11 +277,11 @@ const SettingsManagement: React.FC = () => {
                         {/* 재질 목록 */}
                         {isLoading ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p>로딩 중...</p>
+                                <p>{t.settingsManagement.loading}</p>
                             </div>
                         ) : materials.length === 0 ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p className="text-sm">등록된 재질이 없습니다.</p>
+                                <p className="text-sm">{t.settingsManagement.noMaterials}</p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">

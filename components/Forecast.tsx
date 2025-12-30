@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
 import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   projects: Project[];
@@ -16,6 +17,7 @@ interface ExcelRow {
 }
 
 const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
+  const t = getTranslations();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
@@ -248,8 +250,8 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               <TrendingUp className="text-indigo-600" size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900">아이템별 Forecast</h2>
-              <p className="text-sm text-slate-500 mt-1">프로젝트별 연도별 생산량 예측</p>
+              <h2 className="text-2xl font-black text-slate-900">{t.forecast.title}</h2>
+              <p className="text-sm text-slate-500 mt-1">{t.forecast.subtitle}</p>
             </div>
           </div>
           {/* 엑셀 업로드 버튼 */}
@@ -273,12 +275,12 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               {isUploading ? (
                 <>
                   <RefreshCw className="animate-spin" size={18} />
-                  처리 중...
+                  {t.forecast.uploading}
                 </>
               ) : (
                 <>
                   <FileSpreadsheet size={18} />
-                  엑셀 파일 등록
+                  {t.forecast.uploadExcel}
                 </>
               )}
             </label>
@@ -292,8 +294,8 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
           }`}>
             <CheckCircle2 size={20} />
             <div className="text-sm font-bold">
-              {uploadStatus.success}개 프로젝트 업데이트 완료
-              {uploadStatus.failed > 0 && `, ${uploadStatus.failed}개 실패`}
+              {t.forecast.updateSuccess.replace('{count}', uploadStatus.success.toString())}
+              {uploadStatus.failed > 0 && t.forecast.updateFailed.replace('{count}', uploadStatus.failed.toString())}
             </div>
           </div>
         )}
@@ -304,7 +306,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input
               type="text"
-              placeholder="부품명, 부품번호, 고객사명, 차종으로 검색..."
+              placeholder={t.forecast.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -331,10 +333,10 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <th className="px-6 py-4 text-left text-sm font-bold sticky left-0 bg-slate-900 z-10">부품명</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">부품번호</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">고객사명</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">차종</th>
+                <th className="px-6 py-4 text-left text-sm font-bold sticky left-0 bg-slate-900 z-10">{t.forecast.partName}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.partNumber}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.customerName}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.carModel}</th>
                 {years.map(year => (
                   <th key={year} className={`px-6 py-4 text-center text-sm font-bold ${selectedYear === year ? 'bg-indigo-600' : ''}`}>
                     {year}
@@ -347,7 +349,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
                 <tr>
                   <td colSpan={4 + years.length} className="px-6 py-12 text-center text-slate-400">
                     <Package className="mx-auto mb-3 opacity-20" size={48} />
-                    <p className="font-bold">검색 결과가 없습니다</p>
+                    <p className="font-bold">{t.forecast.noResults}</p>
                   </td>
                 </tr>
               ) : (
@@ -371,7 +373,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               {/* 합계 행 */}
               {filteredProjects.length > 0 && (
                 <tr className="bg-slate-900 text-white font-black">
-                  <td colSpan={4} className="px-6 py-4 text-sm sticky left-0 bg-slate-900 z-10">합계</td>
+                  <td colSpan={4} className="px-6 py-4 text-sm sticky left-0 bg-slate-900 z-10">{t.forecast.total}</td>
                   {years.map(year => {
                     const total = getTotalVolumeForYear(year);
                     return (
