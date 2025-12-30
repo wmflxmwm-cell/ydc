@@ -34,11 +34,13 @@ router.post('/login', async (req, res) => {
         if (!user) {
             console.log('User not found in database:', cleanId);
             // 모든 사용자 ID 목록 조회 (디버깅용)
-            const allUsers = await pool.query('SELECT id FROM users LIMIT 10');
-            console.log('Available user IDs (first 10):', allUsers.rows.map(r => r.id));
+            const allUsers = await pool.query('SELECT id, name FROM users ORDER BY id LIMIT 20');
+            console.log('Available user IDs (first 20):', allUsers.rows.map(r => ({ id: r.id, name: r.name })));
             return res.status(401).json({ 
                 message: '존재하지 않는 사용자 ID입니다.',
-                debug: 'User not found in database'
+                debug: 'User not found in database',
+                searchedId: cleanId,
+                availableUsers: allUsers.rows.map(r => r.id)
             });
         }
 
@@ -56,9 +58,12 @@ router.post('/login', async (req, res) => {
 
         if (storedPassword !== providedPassword) {
             console.log('Password mismatch for user:', cleanId);
+            console.log('Stored password (first 3 chars):', storedPassword.substring(0, 3));
+            console.log('Provided password (first 3 chars):', providedPassword.substring(0, 3));
             return res.status(401).json({ 
                 message: '비밀번호가 일치하지 않습니다.',
-                debug: 'Password mismatch'
+                debug: 'Password mismatch',
+                userId: cleanId
             });
         }
 

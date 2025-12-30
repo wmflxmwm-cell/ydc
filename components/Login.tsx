@@ -69,30 +69,52 @@ const Login: React.FC<Props> = ({ onLogin }) => {
     setError('');
     setIsLoading(true);
 
+    // 입력값 정리
+    const cleanId = (id || '').trim();
+    const cleanPassword = (password || '').trim();
+
+    if (!cleanId || !cleanPassword) {
+      setError('아이디와 비밀번호를 모두 입력해주세요.');
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Login attempt:', { id: cleanId, passwordLength: cleanPassword.length });
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, password }),
+      const response = await client.post('/auth/login', { 
+        id: cleanId, 
+        password: cleanPassword 
       });
 
-      const data = await response.json();
+      console.log('Login response:', response.data);
 
-      if (response.ok && data.user) {
+      if (response.data && response.data.user) {
         onLogin({ 
-          id: data.user.id, 
-          name: data.user.name, 
-          role: data.user.role 
+          id: response.data.user.id, 
+          name: response.data.user.name, 
+          role: response.data.user.role 
         });
       } else {
-        setError(data.message || t.errorMessage);
+        setError(t.errorMessage);
         setIsLoading(false);
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('로그인 중 오류가 발생했습니다. 서버 연결을 확인하세요.');
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      // 에러 메시지 추출
+      let errorMessage = t.errorMessage;
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
