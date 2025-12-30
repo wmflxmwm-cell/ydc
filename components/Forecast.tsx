@@ -58,40 +58,67 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             const data = new Uint8Array(e.target?.result as ArrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' }) as any[][];
 
-            // 헤더 행 찾기
+            console.log('Raw Excel data:', jsonData);
+            console.log('First row (headers):', jsonData[0]);
+
+            // 헤더 행 찾기 (첫 번째 행이 헤더)
             const headers = jsonData[0]?.map((h: any) => {
               if (h === null || h === undefined) return '';
               return String(h).toLowerCase().trim();
             }) || [];
             
+            console.log('Normalized headers:', headers);
+            
             // 헤더 매핑
             const getColumnIndex = (possibleNames: string[]) => {
               for (const name of possibleNames) {
-                const index = headers.findIndex(h => h && typeof h === 'string' && h.includes(name));
-                if (index !== -1) return index;
+                const index = headers.findIndex(h => {
+                  if (!h || typeof h !== 'string') return false;
+                  return h.includes(name.toLowerCase());
+                });
+                if (index !== -1) {
+                  console.log(`Found column "${name}" at index ${index}`);
+                  return index;
+                }
               }
               return -1;
             };
 
             const rows: ExcelRow[] = [];
             
-            // 데이터 행 처리
+            // 데이터 행 처리 (두 번째 행부터)
             for (let i = 1; i < jsonData.length; i++) {
               const row = jsonData[i];
-              if (!row || row.every(cell => cell === null || cell === undefined || cell === '')) continue;
+              if (!row || row.length === 0) continue;
+              
+              // 빈 행 체크 (모든 셀이 비어있거나 null/undefined)
+              const isEmptyRow = row.every(cell => {
+                const cellValue = cell === null || cell === undefined ? '' : String(cell).trim();
+                return cellValue === '';
+              });
+              if (isEmptyRow) continue;
 
               const partNameIndex = getColumnIndex(['부품명', 'partname', 'part', '품명', 'part name']);
               const partNumberIndex = getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no']);
               const customerNameIndex = getColumnIndex(['고객사', 'customer', '고객사명', 'customer name']);
 
-              const partName = partNameIndex !== -1 ? String(row[partNameIndex] || '').trim() : '';
-              const partNumber = partNumberIndex !== -1 ? String(row[partNumberIndex] || '').trim() : '';
-              const customerName = customerNameIndex !== -1 ? String(row[customerNameIndex] || '').trim() : '';
+              const partName = partNameIndex !== -1 && row[partNameIndex] !== undefined 
+                ? String(row[partNameIndex] || '').trim() 
+                : '';
+              const partNumber = partNumberIndex !== -1 && row[partNumberIndex] !== undefined
+                ? String(row[partNumberIndex] || '').trim()
+                : '';
+              const customerName = customerNameIndex !== -1 && row[customerNameIndex] !== undefined
+                ? String(row[customerNameIndex] || '').trim()
+                : '';
+
+              console.log(`Row ${i}: partName="${partName}", partNumber="${partNumber}", customerName="${customerName}"`);
 
               // 필수 필드 확인
               if (!partName || !partNumber || !customerName) {
+                console.warn(`Row ${i} skipped: missing required fields`);
                 continue;
               }
 
@@ -101,7 +128,8 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
                 const yearIndex = getColumnIndex([`${year}`, `${year}년`, `${year} year`, `year ${year}`]);
                 if (yearIndex !== -1 && row[yearIndex] !== null && row[yearIndex] !== undefined) {
                   const value = row[yearIndex];
-                  volumes[year] = typeof value === 'number' ? value : parseInt(String(value || '0')) || 0;
+                  const numValue = typeof value === 'number' ? value : parseFloat(String(value || '0')) || 0;
+                  volumes[year] = Math.max(0, numValue); // 음수 방지
                 }
               });
 
@@ -113,6 +141,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               });
             }
 
+            console.log('Parsed rows:', rows);
             resolve(rows);
           } catch (error) {
             reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
