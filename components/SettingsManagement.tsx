@@ -311,7 +311,7 @@ const SettingsManagement: React.FC = () => {
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 text-white">
                         <Cog size={20} />
-                        <h3 className="text-lg font-bold">후공정 목록</h3>
+                        <h3 className="text-lg font-bold">{t.settingsManagement.postProcessings}</h3>
                     </div>
                     
                     <div className="p-6">
@@ -321,7 +321,7 @@ const SettingsManagement: React.FC = () => {
                                 type="text"
                                 value={newPostProcessingName}
                                 onChange={(e) => setNewPostProcessingName(e.target.value)}
-                                placeholder="후공정명 (예: T6 열처리)"
+                                placeholder={t.settingsManagement.postProcessingName}
                                 className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                                 disabled={isAddingPostProcessing}
                             />
@@ -329,7 +329,7 @@ const SettingsManagement: React.FC = () => {
                                 type="text"
                                 value={newPostProcessingDesc}
                                 onChange={(e) => setNewPostProcessingDesc(e.target.value)}
-                                placeholder="설명 (선택사항)"
+                                placeholder={t.settingsManagement.postProcessingDescription}
                                 className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                                 disabled={isAddingPostProcessing}
                             />
@@ -341,12 +341,12 @@ const SettingsManagement: React.FC = () => {
                                 {isAddingPostProcessing ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        추가 중...
+                                        {t.settingsManagement.adding}
                                     </>
                                 ) : (
                                     <>
                                         <Plus size={18} />
-                                        추가
+                                        {t.settingsManagement.add}
                                     </>
                                 )}
                             </button>
@@ -355,11 +355,11 @@ const SettingsManagement: React.FC = () => {
                         {/* 후공정 목록 */}
                         {isLoading ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p>로딩 중...</p>
+                                <p>{t.settingsManagement.loading}</p>
                             </div>
                         ) : postProcessings.length === 0 ? (
                             <div className="text-center py-8 text-slate-400">
-                                <p className="text-sm">등록된 후공정이 없습니다.</p>
+                                <p className="text-sm">{t.settingsManagement.noPostProcessings}</p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
