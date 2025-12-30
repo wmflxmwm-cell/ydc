@@ -156,16 +156,47 @@ ${JSON.stringify(sampleData, null, 2)}
       const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' }) as any[][];
 
       console.log('Raw Excel data:', jsonData);
-      console.log('First row (headers):', jsonData[0]);
+      console.log('First few rows:', jsonData.slice(0, 5));
 
-      // 헤더 행 찾기 (첫 번째 행이 헤더)
-      const headers = jsonData[0]?.map((h: any) => {
-        if (h === null || h === undefined) return '';
-        return String(h).toLowerCase().trim();
-      }) || [];
+      // 실제 헤더 행 찾기 (첫 번째 행이 제목일 수 있음)
+      let headerRowIndex = 0;
+      let headers: string[] = [];
       
+      // 첫 5행을 확인하여 가장 많은 비어있지 않은 셀을 가진 행을 헤더로 간주
+      for (let i = 0; i < Math.min(5, jsonData.length); i++) {
+        const row = jsonData[i];
+        if (!row) continue;
+        
+        const nonEmptyCells = row.filter(cell => {
+          const value = cell === null || cell === undefined ? '' : String(cell).trim();
+          return value !== '';
+        }).length;
+        
+        // 비어있지 않은 셀이 3개 이상이고, "년도", "volume", "수량" 등의 키워드가 포함된 행을 헤더로 간주
+        const rowText = row.map(cell => String(cell || '').toLowerCase()).join(' ');
+        const hasHeaderKeywords = /품명|품번|부품|part|customer|고객|년도|year|volume|수량|202[0-9]/.test(rowText);
+        
+        if (nonEmptyCells >= 3 && (hasHeaderKeywords || i === 0)) {
+          headerRowIndex = i;
+          headers = row.map((h: any) => {
+            if (h === null || h === undefined) return '';
+            return String(h).toLowerCase().trim();
+          });
+          break;
+        }
+      }
+      
+      // 헤더를 찾지 못한 경우 첫 번째 행 사용
+      if (headers.length === 0 && jsonData[0]) {
+        headers = jsonData[0].map((h: any) => {
+          if (h === null || h === undefined) return '';
+          return String(h).toLowerCase().trim();
+        });
+      }
+      
+      console.log(`Header row index: ${headerRowIndex}`);
       console.log('Normalized headers:', headers);
-      console.log('All header values:', jsonData[0]);
+      console.log('All header values:', jsonData[headerRowIndex]);
       
       // AI를 사용한 헤더 자동 매핑 시도
       let aiMapping: {
