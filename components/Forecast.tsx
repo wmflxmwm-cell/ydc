@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
-import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2, Sparkles } from 'lucide-react';
+import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
 
@@ -25,6 +25,9 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ success: number; failed: number } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [pastedData, setPastedData] = useState('');
+  const [parsedRows, setParsedRows] = useState<ExcelRow[]>([]);
+  const [showPasteArea, setShowPasteArea] = useState(false);
 
   useEffect(() => {
     const filtered = projects.filter(project => {
@@ -48,6 +51,247 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   };
 
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
+
+  // 붙여넣은 데이터 파싱 및 AI 분석
+  const handlePasteData = async (text: string) => {
+    if (!text.trim()) return;
+
+    setIsAnalyzing(true);
+    setPastedData(text);
+
+    try {
+      // 탭과 줄바꿈으로 구분된 데이터 파싱
+      const lines = text.split('\n').filter(line => line.trim());
+      if (lines.length === 0) {
+        alert('붙여넣은 데이터가 없습니다.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // 각 줄을 탭으로 분리
+      const rows = lines.map(line => {
+        // 탭으로 분리하되, 빈 셀도 포함
+        return line.split('\t').map(cell => cell.trim());
+      });
+
+      console.log('Parsed paste data:', rows);
+      console.log('First row (headers):', rows[0]);
+
+      // 헤더 행 찾기
+      let headerRowIndex = 0;
+      let headers: string[] = [];
+      
+      for (let i = 0; i < Math.min(5, rows.length); i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+        
+        const nonEmptyCells = row.filter(cell => cell !== '').length;
+        const rowText = row.map(cell => String(cell || '').toLowerCase()).join(' ');
+        const hasHeaderKeywords = /품명|품번|부품|part|customer|고객|년도|year|volume|수량|202[0-9]/.test(rowText);
+        
+        if (nonEmptyCells >= 3 && (hasHeaderKeywords || i === 0)) {
+          headerRowIndex = i;
+          headers = row.map(h => String(h || '').toLowerCase().trim());
+          break;
+        }
+      }
+      
+      if (headers.length === 0 && rows[0]) {
+        headers = rows[0].map(h => String(h || '').toLowerCase().trim());
+      }
+
+      console.log(`Header row index: ${headerRowIndex}`);
+      console.log('Headers:', headers);
+
+      // 샘플 데이터 준비
+      const sampleRows = rows.slice(headerRowIndex + 1, headerRowIndex + 6).filter(row => row && row.length > 0);
+
+      // AI 분석
+      let aiMapping: {
+        partName: number | null;
+        partNumber: number | null;
+        customerName: number | null;
+        volumes: { [year: number]: number | null };
+      } | null = null;
+
+      if (sampleRows.length > 0) {
+        console.log('AI 분석 시작...');
+        aiMapping = await analyzeExcelWithAI(headers, sampleRows);
+        if (aiMapping) {
+          console.log('AI 매핑 결과:', aiMapping);
+        }
+      }
+
+      // 폴백 매핑 함수
+      const getColumnIndex = (possibleNames: string[]) => {
+        for (const name of possibleNames) {
+          const normalizedName = name.toLowerCase().trim();
+          const index = headers.findIndex(h => {
+            if (!h || typeof h !== 'string') return false;
+            const normalizedHeader = h.toLowerCase().trim();
+            return normalizedHeader === normalizedName || 
+                   normalizedHeader.includes(normalizedName) ||
+                   normalizedName.includes(normalizedHeader);
+          });
+          if (index !== -1) return index;
+        }
+        return -1;
+      };
+
+      const getPartNameIndex = () => {
+        if (aiMapping && aiMapping.partName !== null && aiMapping.partName !== undefined) {
+          return aiMapping.partName;
+        }
+        return getColumnIndex(['부품명', 'partname', 'part', '품명', 'part name', '품목명', 'item name', 'item', '부품']);
+      };
+
+      const getPartNumberIndex = () => {
+        if (aiMapping && aiMapping.partNumber !== null && aiMapping.partNumber !== undefined) {
+          return aiMapping.partNumber;
+        }
+        return getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no', 'partno', 'part_no', 'pn', 'p#']);
+      };
+
+      const getCustomerNameIndex = () => {
+        if (aiMapping && aiMapping.customerName !== null && aiMapping.customerName !== undefined) {
+          return aiMapping.customerName;
+        }
+        return getColumnIndex(['고객사', 'customer', '고객사명', 'customer name', 'customername', 'customer_name', '고객', 'client']);
+      };
+
+      const getYearIndex = (year: number) => {
+        if (aiMapping && aiMapping.volumes[year] !== null && aiMapping.volumes[year] !== undefined) {
+          return aiMapping.volumes[year] as number;
+        }
+        return getColumnIndex([`${year}`, `${year}년`, `${year} year`, `year ${year}`]);
+      };
+
+      // 데이터 파싱
+      const parsed: ExcelRow[] = [];
+      for (let i = headerRowIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+        
+        const isEmptyRow = row.every(cell => cell === '');
+        if (isEmptyRow) continue;
+
+        const partNameIndex = getPartNameIndex();
+        const partNumberIndex = getPartNumberIndex();
+        const customerNameIndex = getCustomerNameIndex();
+
+        const partName = partNameIndex !== -1 && row[partNameIndex] !== undefined && row[partNameIndex] !== null
+          ? String(row[partNameIndex] || '').trim() 
+          : '';
+        const partNumber = partNumberIndex !== -1 && row[partNumberIndex] !== undefined && row[partNumberIndex] !== null
+          ? String(row[partNumberIndex] || '').trim()
+          : '';
+        const customerName = customerNameIndex !== -1 && row[customerNameIndex] !== undefined && row[customerNameIndex] !== null
+          ? String(row[customerNameIndex] || '').trim()
+          : '';
+
+        if (!partName || !partNumber || !customerName) continue;
+
+        const volumes: { [year: number]: number } = {};
+        years.forEach(year => {
+          const yearIndex = getYearIndex(year);
+          if (yearIndex !== -1 && row[yearIndex] !== null && row[yearIndex] !== undefined) {
+            const value = row[yearIndex];
+            const numValue = typeof value === 'number' ? value : parseFloat(String(value || '0').replace(/,/g, '')) || 0;
+            volumes[year] = Math.max(0, numValue);
+          }
+        });
+
+        parsed.push({
+          partName,
+          partNumber,
+          customerName,
+          volumes
+        });
+      }
+
+      console.log('Parsed rows from paste:', parsed);
+      setParsedRows(parsed);
+      setShowPasteArea(false);
+    } catch (error) {
+      console.error('붙여넣기 데이터 파싱 실패:', error);
+      alert('데이터 파싱 중 오류가 발생했습니다: ' + (error as Error).message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 붙여넣은 데이터로 프로젝트 업데이트
+  const handleUpdateFromPaste = async () => {
+    if (parsedRows.length === 0) {
+      alert('업데이트할 데이터가 없습니다.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadStatus(null);
+
+    try {
+      let successCount = 0;
+      let failedCount = 0;
+      const failedMatches: string[] = [];
+
+      for (const row of parsedRows) {
+        const normalize = (str: string) => str.trim().toLowerCase().replace(/\s+/g, '');
+        
+        const matchingProject = projects.find(p => {
+          const partNameMatch = normalize(p.partName) === normalize(row.partName);
+          const partNumberMatch = normalize(p.partNumber) === normalize(row.partNumber);
+          const customerMatch = normalize(p.customerName) === normalize(row.customerName);
+          return partNameMatch && partNumberMatch && customerMatch;
+        });
+
+        if (matchingProject) {
+          try {
+            const updateData: Partial<Project> = {};
+            years.forEach(year => {
+              if (row.volumes[year] !== undefined && row.volumes[year] !== null) {
+                const volumeKey = `volume${year}` as keyof Project;
+                updateData[volumeKey] = row.volumes[year];
+              }
+            });
+
+            if (Object.keys(updateData).length > 0) {
+              await projectService.updateVolumes(matchingProject.id, updateData);
+              successCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (error) {
+            console.error(`Failed to update project ${matchingProject.id}:`, error);
+            failedCount++;
+            failedMatches.push(`${row.partName} (${row.partNumber})`);
+          }
+        } else {
+          failedCount++;
+          failedMatches.push(`${row.partName} (${row.partNumber}) - 매칭되는 프로젝트 없음`);
+        }
+      }
+
+      setUploadStatus({ success: successCount, failed: failedCount });
+      
+      if (onProjectsUpdate) {
+        await onProjectsUpdate();
+      }
+
+      // 초기화
+      setParsedRows([]);
+      setPastedData('');
+      
+      if (successCount > 0) {
+        alert(`업데이트 완료: ${successCount}개 성공, ${failedCount}개 실패`);
+      }
+    } catch (error) {
+      alert('데이터 업데이트 중 오류가 발생했습니다: ' + (error as Error).message);
+      setUploadStatus({ success: 0, failed: 0 });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // AI를 사용한 헤더 자동 매핑 함수
   const analyzeExcelWithAI = async (headers: string[], sampleRows: any[][]): Promise<{
@@ -497,6 +741,128 @@ ${JSON.stringify(sampleData, null, 2)}
             </label>
           </div>
         </div>
+
+        {/* 붙여넣기 영역 */}
+        {showPasteArea && (
+          <div className="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-indigo-300">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-slate-900 mb-2">엑셀 데이터 붙여넣기</h3>
+              <p className="text-sm text-slate-600">
+                엑셀에서 데이터를 복사(Ctrl+C)한 후 아래 영역에 붙여넣기(Ctrl+V)하세요.
+                <br />
+                AI가 자동으로 헤더를 인식하고 데이터를 분석합니다.
+              </p>
+            </div>
+            <textarea
+              value={pastedData}
+              onChange={(e) => setPastedData(e.target.value)}
+              onPaste={(e) => {
+                const text = e.clipboardData.getData('text');
+                setTimeout(() => handlePasteData(text), 100);
+              }}
+              placeholder="엑셀에서 데이터를 복사한 후 여기에 붙여넣으세요 (Ctrl+V)"
+              className="w-full h-48 px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+            />
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={() => handlePasteData(pastedData)}
+                disabled={!pastedData.trim() || isAnalyzing}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                  !pastedData.trim() || isAnalyzing
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Sparkles className="animate-pulse" size={18} />
+                    AI 분석 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} />
+                    AI 분석 시작
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setPastedData('');
+                  setParsedRows([]);
+                  setShowPasteArea(false);
+                }}
+                className="px-4 py-2 rounded-xl font-bold text-sm bg-slate-200 text-slate-700 hover:bg-slate-300"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 파싱된 데이터 미리보기 */}
+        {parsedRows.length > 0 && (
+          <div className="mb-6 p-6 bg-white rounded-2xl border border-slate-200 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">
+                분석 완료: {parsedRows.length}개 행 발견
+              </h3>
+              <button
+                onClick={handleUpdateFromPaste}
+                disabled={isUploading}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                  isUploading
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {isUploading ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={18} />
+                    업데이트 중...
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    업데이트 적용
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-100 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-bold">품명</th>
+                    <th className="px-4 py-2 text-left font-bold">품번</th>
+                    <th className="px-4 py-2 text-left font-bold">고객사</th>
+                    {years.map(year => (
+                      <th key={year} className="px-4 py-2 text-center font-bold">{year}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedRows.slice(0, 20).map((row, idx) => (
+                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="px-4 py-2">{row.partName}</td>
+                      <td className="px-4 py-2 font-mono">{row.partNumber}</td>
+                      <td className="px-4 py-2">{row.customerName}</td>
+                      {years.map(year => (
+                        <td key={year} className="px-4 py-2 text-center">
+                          {row.volumes[year] || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {parsedRows.length > 20 && (
+                <p className="mt-2 text-sm text-slate-500 text-center">
+                  ... 외 {parsedRows.length - 20}개 행 (최대 20개만 미리보기)
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 업로드 상태 메시지 */}
         {uploadStatus && (
