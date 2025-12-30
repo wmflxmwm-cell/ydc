@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { Save, RefreshCw, ClipboardCheck, Upload, FileSpreadsheet, X } from 'lucide-react';
 import { settingsService, Customer, Material } from '../src/api/services/settingsService';
+import { projectService } from '../src/api/services/projectService';
 
 interface Props {
   onAddProject: (project: Project) => void;
@@ -44,16 +45,19 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
   // 드롭다운 목록
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [existingProjects, setExistingProjects] = useState<Project[]>([]);
 
   // 설정 데이터 로드 함수
   const loadSettings = async () => {
     try {
-      const [customersData, materialsData] = await Promise.all([
+      const [customersData, materialsData, projectsData] = await Promise.all([
         settingsService.getCustomers(),
-        settingsService.getMaterials()
+        settingsService.getMaterials(),
+        projectService.getAll()
       ]);
       setCustomers(customersData);
       setMaterials(materialsData);
+      setExistingProjects(projectsData);
       
       // 기본값 설정 (현재 선택된 값이 없을 때만)
       setFormData(prev => {
@@ -448,13 +452,41 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">부품명 (Die-casting)</label>
-              <input 
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                placeholder="예) 실린더 블록, 하우징 케이스..."
-                value={formData.partName}
-                onChange={(e) => setFormData({...formData, partName: e.target.value})}
-              />
+              {formData.type === ProjectType.INCREMENTAL_MOLD ? (
+                <select
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm appearance-none bg-white"
+                  value={formData.partName}
+                  onChange={(e) => {
+                    const selectedProject = existingProjects.find(p => p.partName === e.target.value);
+                    setFormData({
+                      ...formData,
+                      partName: e.target.value,
+                      partNumber: selectedProject?.partNumber || formData.partNumber,
+                      customerName: selectedProject?.customerName || formData.customerName,
+                      carModel: selectedProject?.carModel || formData.carModel,
+                      material: selectedProject?.material || formData.material
+                    });
+                  }}
+                >
+                  <option value="">부품명 선택</option>
+                  {existingProjects
+                    .filter(p => p.type === ProjectType.NEW_DEVELOPMENT)
+                    .map((project) => (
+                      <option key={project.id} value={project.partName}>
+                        {project.partName} ({project.partNumber}) - {project.customerName}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <input 
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  placeholder="예) 실린더 블록, 하우징 케이스..."
+                  value={formData.partName}
+                  onChange={(e) => setFormData({...formData, partName: e.target.value})}
+                />
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">부품 번호 (P/N)</label>
