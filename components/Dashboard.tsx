@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
 import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   projects: Project[];
@@ -16,6 +17,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [selectedReportProject, setSelectedReportProject] = useState<Project | null>(null);
   const [reportContent, setReportContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const t = getTranslations();
 
   // 필터링된 데이터 계산
   const filteredProjects = useMemo(() => {

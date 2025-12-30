@@ -13,6 +13,7 @@ import UserManagement from './src/components/UserManagement';
 import SettingsManagement from './components/SettingsManagement';
 import Forecast from './components/Forecast';
 import Login from './components/Login';
+import { getLanguage, getTranslations } from './src/utils/translations';
 
 interface UserSession {
   id: string;
@@ -27,6 +28,9 @@ const App: React.FC = () => {
   const [gates, setGates] = useState<Gate[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [language, setLanguage] = useState<'ko' | 'vi'>(getLanguage);
+  
+  const t = getTranslations(language);
 
   // 로컬 스토리지에서 세션 복구 시도
   useEffect(() => {
@@ -34,7 +38,22 @@ const App: React.FC = () => {
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
-  }, []);
+    // 언어 설정 감지
+    const handleStorageChange = () => {
+      setLanguage(getLanguage());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(() => {
+      const currentLang = getLanguage();
+      if (currentLang !== language) {
+        setLanguage(currentLang);
+      }
+    }, 100);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [language]);
 
   // 데이터 로딩
   useEffect(() => {
@@ -70,7 +89,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    if (confirm('로그아웃 하시겠습니까?')) {
+    if (confirm(t.app.logoutConfirm)) {
       setUser(null);
       localStorage.removeItem('apqp_session');
       setProjects([]);
@@ -91,7 +110,7 @@ const App: React.FC = () => {
       setGates(prev => [...prev, ...newGates]);
     } catch (error) {
       console.error('Failed to add project:', error);
-      alert('프로젝트 등록에 실패했습니다.');
+      alert(t.registration.error);
     }
   };
 
@@ -101,7 +120,7 @@ const App: React.FC = () => {
       setGates(prev => prev.map(g => g.id === result.id ? result : g));
     } catch (error) {
       console.error('Failed to update gate:', error);
-      alert('게이트 업데이트에 실패했습니다.');
+      alert(t.phaseManagement.update + ' 실패');
     }
   };
 
@@ -112,7 +131,7 @@ const App: React.FC = () => {
       setIssues(prev => [...prev, createdIssue]);
     } catch (error) {
       console.error('Failed to add issue:', error);
-      alert('이슈 등록에 실패했습니다.');
+      alert(t.issueTracker.addIssue + ' 실패');
     }
   };
 
@@ -125,7 +144,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to toggle issue resolution:', error);
-      alert('상태 변경에 실패했습니다.');
+      alert('상태 변경 실패');
     }
   };
 
@@ -142,7 +161,7 @@ const App: React.FC = () => {
             <Settings2 className="w-6 h-6 text-white" />
           </div>
           <span className="font-bold text-lg text-white tracking-tight leading-tight">
-            다이캐스팅<br /><span className="text-indigo-400 text-sm uppercase">APQP 관리 시스템</span>
+            {language === 'vi' ? 'Đúc áp lực' : '다이캐스팅'}<br /><span className="text-indigo-400 text-sm uppercase">{language === 'vi' ? 'Hệ thống quản lý APQP' : 'APQP 관리 시스템'}</span>
           </span>
         </div>
 
@@ -152,35 +171,35 @@ const App: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
           >
             <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium text-sm">종합 대시보드</span>
+            <span className="font-medium text-sm">{t.app.sidebar.dashboard}</span>
           </button>
           <button
             onClick={() => setActiveTab('registration')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'registration' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
           >
             <PlusCircle className="w-5 h-5" />
-            <span className="font-medium text-sm">프로젝트 등록</span>
+            <span className="font-medium text-sm">{t.app.sidebar.newProject}</span>
           </button>
           <button
             onClick={() => setActiveTab('management')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'management' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
           >
             <Activity className="w-5 h-5" />
-            <span className="font-medium text-sm">단계별 상세 관리</span>
+            <span className="font-medium text-sm">{t.app.sidebar.gateManagement}</span>
           </button>
           <button
             onClick={() => setActiveTab('issues')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'issues' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
           >
             <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium text-sm">품질 이슈 트래커</span>
+            <span className="font-medium text-sm">{t.app.sidebar.issueTracker}</span>
           </button>
           <button
             onClick={() => setActiveTab('forecast')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
           >
             <TrendingUp className="w-5 h-5" />
-            <span className="font-medium text-sm">아이템별 Forecast</span>
+            <span className="font-medium text-sm">{t.app.sidebar.forecast}</span>
           </button>
 
           {(user.role === 'MANAGER') && (
@@ -190,14 +209,14 @@ const App: React.FC = () => {
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
               >
                 <UserIcon className="w-5 h-5" />
-                <span className="font-medium text-sm">사용자 관리</span>
+                <span className="font-medium text-sm">{t.app.sidebar.userManagement}</span>
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
               >
                 <BookOpen className="w-5 h-5" />
-                <span className="font-medium text-sm">기본 내용</span>
+                <span className="font-medium text-sm">{t.app.sidebar.settings}</span>
               </button>
             </>
           )}
@@ -218,7 +237,7 @@ const App: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800/30 hover:bg-red-900/40 text-slate-400 hover:text-red-400 transition-all font-bold text-xs"
           >
             <LogOut size={14} />
-            시스템 로그아웃
+            {t.app.logout}
           </button>
         </div>
       </aside>
@@ -227,21 +246,21 @@ const App: React.FC = () => {
         <header className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-              {activeTab === 'dashboard' && '경영 종합 대시보드'}
-              {activeTab === 'registration' && '신규 프로젝트 등록'}
-              {activeTab === 'management' && 'APQP 단계별 게이트 관리'}
-              {activeTab === 'issues' && '품질 결함 이슈 관리'}
-              {activeTab === 'forecast' && '아이템별 Forecast'}
-              {activeTab === 'users' && '시스템 사용자 관리'}
-              {activeTab === 'settings' && '기본 내용 관리'}
+              {activeTab === 'dashboard' && t.app.dashboard}
+              {activeTab === 'registration' && t.app.registration}
+              {activeTab === 'management' && t.app.management}
+              {activeTab === 'issues' && t.app.issues}
+              {activeTab === 'forecast' && t.app.forecast}
+              {activeTab === 'users' && t.app.users}
+              {activeTab === 'settings' && t.app.settings}
             </h1>
             <p className="text-slate-500 mt-1 font-medium">
-              자동차 다이케스팅 부품 사전 제품 품질 계획 시스템
+              {t.app.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-[11px] font-black text-slate-400 bg-white px-4 py-2 rounded-full border shadow-sm flex items-center gap-2 uppercase tracking-widest">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> SYSTEM ONLINE
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> {t.app.systemOnline}
             </div>
           </div>
         </header>
