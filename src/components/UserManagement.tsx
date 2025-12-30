@@ -100,8 +100,15 @@ const UserManagement: React.FC = () => {
                                     type="password"
                                     required
                                     autoComplete="new-password"
+                                    data-form-type="other"
+                                    data-lpignore="true"
+                                    data-1p-ignore="true"
                                     value={formData.password}
-                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                    onChange={e => {
+                                      const newValue = e.target.value;
+                                      console.log('Registration password input changed:', { length: newValue.length, preview: newValue.substring(0, 3) + '...' });
+                                      setFormData({ ...formData, password: newValue });
+                                    }}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                     placeholder="••••••••"
                                 />

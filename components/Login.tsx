@@ -79,7 +79,13 @@ const Login: React.FC<Props> = ({ onLogin }) => {
       return;
     }
 
-    console.log('Login attempt:', { id: cleanId, passwordLength: cleanPassword.length });
+    console.log('Login attempt:', { 
+      id: cleanId, 
+      passwordLength: cleanPassword.length,
+      passwordPreview: cleanPassword.substring(0, 3) + '...',
+      rawPasswordLength: password?.length,
+      rawPasswordValue: password
+    });
 
     try {
       const response = await client.post('/auth/login', { 
@@ -184,11 +190,19 @@ const Login: React.FC<Props> = ({ onLogin }) => {
                   <input 
                     type="password"
                     required
-                    autoComplete="off"
+                    autoComplete="new-password"
                     data-form-type="other"
                     data-lpignore="true"
+                    data-1p-ignore="true"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      console.log('Password input changed:', { length: newValue.length, preview: newValue.substring(0, 3) + '...' });
+                      setPassword(newValue);
+                    }}
+                    onBlur={(e) => {
+                      console.log('Password field blurred:', { length: e.target.value.length, preview: e.target.value.substring(0, 3) + '...' });
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 px-12 py-4 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all text-sm font-medium"
                     placeholder={t.passwordPlaceholder}
                   />
