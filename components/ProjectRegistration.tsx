@@ -9,7 +9,7 @@ interface Props {
   onNavigateToManagement: () => void;
 }
 
-const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManagement }) => {
+const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManagement, activeTab }) => {
   const [formData, setFormData] = useState<Partial<Project>>({
     customerName: '',
     carModel: '',
@@ -31,30 +31,70 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
 
-  // 설정 데이터 로드
+  // 설정 데이터 로드 함수
+  const loadSettings = async () => {
+    try {
+      const [customersData, materialsData] = await Promise.all([
+        settingsService.getCustomers(),
+        settingsService.getMaterials()
+      ]);
+      setCustomers(customersData);
+      setMaterials(materialsData);
+      
+      // 기본값 설정 (현재 선택된 값이 없을 때만)
+      setFormData(prev => {
+        const updated = { ...prev };
+        if (customersData.length > 0 && !updated.customerName) {
+          updated.customerName = customersData[0].name;
+        }
+        if (materialsData.length > 0 && !updated.material) {
+          updated.material = materialsData[0].code;
+        }
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  // 초기 로드 및 실시간 업데이트
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const [customersData, materialsData] = await Promise.all([
-          settingsService.getCustomers(),
-          settingsService.getMaterials()
-        ]);
-        setCustomers(customersData);
-        setMaterials(materialsData);
-        
-        // 기본값 설정
-        if (customersData.length > 0 && !formData.customerName) {
-          setFormData({ ...formData, customerName: customersData[0].name });
-        }
-        if (materialsData.length > 0 && !formData.material) {
-          setFormData({ ...formData, material: materialsData[0].code });
-        }
-      } catch (error) {
-        console.error('Failed to load settings:', error);
+    // 초기 로드
+    loadSettings();
+
+    // 윈도우 포커스 시 데이터 다시 불러오기
+    const handleFocus = () => {
+      loadSettings();
+    };
+
+    // 페이지 가시성 변경 시 데이터 다시 불러오기
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadSettings();
       }
     };
-    loadSettings();
+
+    // 주기적으로 데이터 갱신 (10초마다 - 더 빠른 업데이트)
+    const intervalId = setInterval(() => {
+      loadSettings();
+    }, 10000);
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(intervalId);
+    };
   }, []);
+
+  // 탭이 활성화될 때마다 데이터 다시 불러오기
+  useEffect(() => {
+    if (activeTab === 'registration') {
+      loadSettings();
+    }
+  }, [activeTab]);
 
   // 엑셀 파일 파싱 함수
   const parseExcelFile = async (file: File): Promise<Project[]> => {

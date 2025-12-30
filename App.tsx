@@ -243,7 +243,11 @@ const App: React.FC = () => {
             <Dashboard projects={projects} gates={gates} issues={issues} />
           </div>
           <div style={{ display: activeTab === 'registration' ? 'block' : 'none' }}>
-            <ProjectRegistration onAddProject={addProject} onNavigateToManagement={() => setActiveTab('management')} />
+            <ProjectRegistration 
+              activeTab={activeTab}
+              onAddProject={addProject} 
+              onNavigateToManagement={() => setActiveTab('management')} 
+            />
           </div>
           <div style={{ display: activeTab === 'management' ? 'block' : 'none' }}>
             <PhaseManagement
