@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lock, User, Settings2, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
+import client from '../src/api/client';
 
 type Language = 'ko' | 'vi';
 
