@@ -72,19 +72,26 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             }) || [];
             
             console.log('Normalized headers:', headers);
+            console.log('All header values:', jsonData[0]);
             
-            // 헤더 매핑
+            // 헤더 매핑 (더 유연한 매칭)
             const getColumnIndex = (possibleNames: string[]) => {
               for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().trim();
                 const index = headers.findIndex(h => {
                   if (!h || typeof h !== 'string') return false;
-                  return h.includes(name.toLowerCase());
+                  const normalizedHeader = h.toLowerCase().trim();
+                  // 정확히 일치하거나 포함 관계 확인
+                  return normalizedHeader === normalizedName || 
+                         normalizedHeader.includes(normalizedName) ||
+                         normalizedName.includes(normalizedHeader);
                 });
                 if (index !== -1) {
-                  console.log(`Found column "${name}" at index ${index}`);
+                  console.log(`Found column "${name}" at index ${index} (header: "${headers[index]}")`);
                   return index;
                 }
               }
+              console.warn(`Column not found for: ${possibleNames.join(', ')}`);
               return -1;
             };
 
@@ -102,20 +109,56 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               });
               if (isEmptyRow) continue;
 
-              const partNameIndex = getColumnIndex(['부품명', 'partname', 'part', '품명', 'part name']);
-              const partNumberIndex = getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no']);
-              const customerNameIndex = getColumnIndex(['고객사', 'customer', '고객사명', 'customer name']);
+              // 더 많은 헤더 이름 패턴 시도
+              const partNameIndex = getColumnIndex([
+                '부품명', 'partname', 'part', '품명', 'part name', 'partname', 
+                '품목명', 'item name', 'itemname', '품목', 'item',
+                '부품', 'component', 'component name'
+              ]);
+              const partNumberIndex = getColumnIndex([
+                '부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no', 
+                'partno', 'part_no', 'part-number', '품목번호', 'item number',
+                'itemno', 'item_no', 'item-number', 'pn', 'p#', 'part#'
+              ]);
+              const customerNameIndex = getColumnIndex([
+                '고객사', 'customer', '고객사명', 'customer name', 'customername',
+                'customer_name', 'customer-name', '고객', 'client', 'client name',
+                'clientname', 'client_name'
+              ]);
+              
+              // 첫 번째 행에서 인덱스 찾기 (한 번만)
+              if (i === 1) {
+                console.log('Column indices found:', {
+                  partName: partNameIndex,
+                  partNumber: partNumberIndex,
+                  customerName: customerNameIndex
+                });
+              }
 
-              const partName = partNameIndex !== -1 && row[partNameIndex] !== undefined 
+              const partName = partNameIndex !== -1 && row[partNameIndex] !== undefined && row[partNameIndex] !== null
                 ? String(row[partNameIndex] || '').trim() 
                 : '';
-              const partNumber = partNumberIndex !== -1 && row[partNumberIndex] !== undefined
+              const partNumber = partNumberIndex !== -1 && row[partNumberIndex] !== undefined && row[partNumberIndex] !== null
                 ? String(row[partNumberIndex] || '').trim()
                 : '';
-              const customerName = customerNameIndex !== -1 && row[customerNameIndex] !== undefined
+              const customerName = customerNameIndex !== -1 && row[customerNameIndex] !== undefined && row[customerNameIndex] !== null
                 ? String(row[customerNameIndex] || '').trim()
                 : '';
 
+              // 첫 번째 데이터 행에서 상세 로그
+              if (i === 1) {
+                console.log(`Row ${i} (first data row):`, {
+                  rawRow: row,
+                  partNameIndex,
+                  partNumberIndex,
+                  customerNameIndex,
+                  partNameValue: row[partNameIndex],
+                  partNumberValue: row[partNumberIndex],
+                  customerNameValue: row[customerNameIndex],
+                  extracted: { partName, partNumber, customerName }
+                });
+              }
+              
               console.log(`Row ${i}: partName="${partName}", partNumber="${partNumber}", customerName="${customerName}"`);
 
               // 필수 필드 확인
