@@ -479,8 +479,8 @@ ${JSON.stringify(sampleData, null, 2)}
     }
   };
 
-  // 엑셀 파일 파싱 함수 (AI 기반)
-  const parseExcelFile = async (file: File): Promise<ExcelRow[]> => {
+  // 엑셀 파일 파싱 함수 제거됨 - 붙여넣기 기능만 사용
+  // const parseExcelFile = async (file: File): Promise<ExcelRow[]> => {
     try {
       const XLSX = await import('xlsx');
       
