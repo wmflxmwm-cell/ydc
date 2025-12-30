@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen } from 'lucide-react';
 import { Project, Gate, Issue, ProjectStatus, GateStatus } from './types';
 import { projectService } from './src/api/services/projectService';
 import { gateService } from './src/api/services/gateService';
@@ -176,13 +176,22 @@ const App: React.FC = () => {
           </button>
 
           {(user.role.includes('총괄') || user.role === 'MANAGER') && (
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
-            >
-              <UserIcon className="w-5 h-5" />
-              <span className="font-medium text-sm">사용자 관리</span>
-            </button>
+            <>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <UserIcon className="w-5 h-5" />
+                <span className="font-medium text-sm">사용자 관리</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="font-medium text-sm">기본 내용</span>
+              </button>
+            </>
           )}
         </nav>
 
@@ -215,7 +224,7 @@ const App: React.FC = () => {
               {activeTab === 'management' && 'APQP 단계별 게이트 관리'}
               {activeTab === 'issues' && '품질 결함 이슈 관리'}
               {activeTab === 'users' && '시스템 사용자 관리'}
-              {activeTab === 'settings' && '시스템 설정 관리'}
+              {activeTab === 'settings' && '기본 내용 관리'}
             </h1>
             <p className="text-slate-500 mt-1 font-medium">
               자동차 다이케스팅 부품 사전 제품 품질 계획 시스템
