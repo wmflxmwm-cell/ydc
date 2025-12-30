@@ -178,8 +178,8 @@ router.post('/register', async (req, res) => {
 
 router.get('/users', async (req, res) => {
     try {
-        // Check if requester is admin (from query param or header)
-        const isAdmin = req.query.admin === 'true' || req.headers['x-admin'] === 'true';
+        // Check if requester is admin (from header)
+        const isAdmin = req.headers['x-admin'] === 'true';
         
         if (isAdmin) {
             // Admin can see passwords
