@@ -16,55 +16,6 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
   const [selectedReportProject, setSelectedReportProject] = useState<Project | null>(null);
   const [reportContent, setReportContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [chartMounted, setChartMounted] = useState(false);
-  const [chartSize, setChartSize] = useState({ width: 0, height: 256 });
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const pieChartContainerRef = useRef<HTMLDivElement>(null);
-
-  // Chart가 마운트된 후에만 렌더링 (로그인 후 컴포넌트 전환 시 안정화)
-  // useLayoutEffect를 사용하여 DOM이 완전히 렌더링된 후 Chart를 표시
-  useLayoutEffect(() => {
-    // DOM이 완전히 렌더링된 후 Chart를 표시
-    const timer = setTimeout(() => {
-      if (chartContainerRef.current) {
-        const width = chartContainerRef.current.offsetWidth;
-        const height = chartContainerRef.current.offsetHeight;
-        if (width > 0 && height > 0) {
-          setChartSize({ width, height });
-          setChartMounted(true);
-        }
-      }
-    }, 100);
-    
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
-
-  // Chart 크기 재계산을 위한 resize 이벤트 리스너
-  useEffect(() => {
-    if (!chartMounted) return;
-
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        const width = chartContainerRef.current.offsetWidth;
-        const height = chartContainerRef.current.offsetHeight;
-        if (width > 0 && height > 0) {
-          setChartSize({ width, height });
-        }
-      }
-    };
-
-    // 초기 크기 계산
-    handleResize();
-    
-    // window resize 이벤트 리스너 추가
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [chartMounted]);
 
   // 필터링된 데이터 계산
   const filteredProjects = useMemo(() => {
@@ -278,33 +229,64 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             </div>
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
-          <div 
-            ref={chartContainerRef}
-            className="h-64 w-full" 
-            style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px', overflow: 'hidden' }}
-          >
-            {chartMounted && phaseData.length > 0 && chartSize.width > 0 ? (
-              <ResponsiveContainer 
-                width={chartSize.width} 
-                height={chartSize.height}
-              >
-                <BarChart data={phaseData} barGap={0} margin={{ top: 5, right: 5, left: 5, bottom: 5 }} width={chartSize.width} height={chartSize.height}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700 }} />
-                <Bar dataKey="approved" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} name="승인완료" barSize={40} />
-                <Bar dataKey="open" stackId="a" fill="#4f46e5" radius={[0, 0, 0, 0]} name="진행중" barSize={40} />
-                <Bar dataKey="locked" stackId="a" fill="#f1f5f9" radius={[6, 6, 0, 0]} name="대기" barSize={40} />
-              </BarChart>
-              </ResponsiveContainer>
+          <div className="h-64 w-full" style={{ minHeight: '256px' }}>
+            {phaseData.length > 0 ? (
+              <div className="h-full flex flex-col justify-end gap-2">
+                {phaseData.map((phase, index) => {
+                  const total = phase.approved + phase.open + phase.locked;
+                  return (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="w-16 text-xs font-bold text-slate-600">{phase.name}</div>
+                      <div className="flex-1 h-10 bg-slate-100 rounded-lg overflow-hidden flex items-stretch">
+                        {phase.approved > 0 && (
+                          <div 
+                            className="bg-emerald-500 flex items-center justify-center text-white text-xs font-bold"
+                            style={{ width: `${(phase.approved / total) * 100}%` }}
+                            title={`승인완료: ${phase.approved}`}
+                          >
+                            {phase.approved > 0 && phase.approved}
+                          </div>
+                        )}
+                        {phase.open > 0 && (
+                          <div 
+                            className="bg-indigo-600 flex items-center justify-center text-white text-xs font-bold"
+                            style={{ width: `${(phase.open / total) * 100}%` }}
+                            title={`진행중: ${phase.open}`}
+                          >
+                            {phase.open > 0 && phase.open}
+                          </div>
+                        )}
+                        {phase.locked > 0 && (
+                          <div 
+                            className="bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold"
+                            style={{ width: `${(phase.locked / total) * 100}%` }}
+                            title={`대기: ${phase.locked}`}
+                          >
+                            {phase.locked > 0 && phase.locked}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex items-center gap-4 mt-2 text-xs font-bold text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-emerald-500"></div>
+                    <span>승인완료</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-indigo-600"></div>
+                    <span>진행중</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-slate-200"></div>
+                    <span>대기</span>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-400">
-                <p className="text-sm">데이터 로딩 중...</p>
+              <div className="h-full flex items-center justify-center text-slate-400">
+                <p className="text-sm">데이터 없음</p>
               </div>
             )}
           </div>
@@ -320,35 +302,29 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
             <div className="p-2 bg-red-50 rounded-lg text-red-500"><AlertCircle size={20} /></div>
           </div>
           {issueData.length > 0 ? (
-            <div 
-              ref={pieChartContainerRef}
-              className="h-64 w-full flex flex-col items-center" 
-              style={{ minHeight: '256px', minWidth: '100%', position: 'relative', width: '100%', height: '256px', overflow: 'hidden' }}
-            >
-              {chartMounted && pieChartContainerRef.current && (
-                <ResponsiveContainer 
-                  width={pieChartContainerRef.current.offsetWidth || '100%'} 
-                  height={Math.floor((pieChartContainerRef.current.offsetHeight || 256) * 0.8)}
-                >
-                  <PieChart width={pieChartContainerRef.current.offsetWidth || 400} height={Math.floor((pieChartContainerRef.current.offsetHeight || 256) * 0.8)} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <Pie
-                    data={issueData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={8}
-                    dataKey="value"
-                  >
-                    {issueData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-                </ResponsiveContainer>
-              )}
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
+            <div className="h-64 w-full flex flex-col items-center justify-center" style={{ minHeight: '256px' }}>
+              <div className="flex flex-wrap justify-center gap-6 mb-4">
+                {issueData.map((item, i) => {
+                  const total = issueData.reduce((sum, d) => sum + d.value, 0);
+                  const percentage = (item.value / total) * 100;
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                      <div 
+                        className="w-24 h-24 rounded-full flex items-center justify-center text-white font-black text-lg relative"
+                        style={{ 
+                          background: `conic-gradient(${COLORS[i % COLORS.length]} 0% ${percentage}%, #f1f5f9 ${percentage}% 100%)`
+                        }}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
+                          <span className="text-slate-900 text-sm font-black">{item.value}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-slate-600">{item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                 {issueData.map((item, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
