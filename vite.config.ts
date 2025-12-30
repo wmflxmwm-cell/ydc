@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         cssCodeSplit: false,
+        chunkSizeWarningLimit: 1000, // 청크 크기 경고 임계값을 1MB로 증가
         commonjsOptions: {
           include: [/xlsx/, /node_modules/],
         },
@@ -32,6 +33,12 @@ export default defineConfig(({ mode }) => {
                 return 'assets/[name][extname]';
               }
               return 'assets/[name]-[hash][extname]';
+            },
+            manualChunks: {
+              // 큰 라이브러리들을 별도 청크로 분리
+              'react-vendor': ['react', 'react-dom'],
+              'ui-vendor': ['lucide-react'],
+              'utils-vendor': ['axios'],
             },
           },
         },
