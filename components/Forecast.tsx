@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
-import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check } from 'lucide-react';
+import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
 
@@ -798,56 +798,19 @@ ${JSON.stringify(sampleData, null, 2)}
               <p className="text-sm text-slate-500 mt-1">{t.forecast.subtitle}</p>
             </div>
           </div>
-          {/* 엑셀 업로드 및 붙여넣기 버튼 */}
+          {/* 엑셀 붙여넣기 버튼 */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowPasteArea(!showPasteArea)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
                 showPasteArea
-                  ? 'bg-indigo-700 text-white'
+                  ? 'bg-indigo-600 text-white shadow-lg'
                   : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
               }`}
             >
               <Clipboard size={18} />
               {showPasteArea ? '붙여넣기 닫기' : '엑셀 붙여넣기'}
             </button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="forecast-excel-upload"
-              disabled={isUploading}
-            />
-            <label
-              htmlFor="forecast-excel-upload"
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${
-                isUploading
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
-              }`}
-            >
-              {isUploading || isAnalyzing ? (
-                <>
-                  {isAnalyzing ? (
-                    <>
-                      <Sparkles className="animate-pulse" size={18} />
-                      AI 분석 중...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="animate-spin" size={18} />
-                      {t.forecast.uploading}
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet size={18} />
-                  {t.forecast.uploadExcel}
-                </>
-              )}
-            </label>
           </div>
         </div>
 
