@@ -34,21 +34,7 @@ const initDb = async () => {
         status VARCHAR(50) NOT NULL,
         type VARCHAR(50) NOT NULL,
         material VARCHAR(50) NOT NULL,
-        created_at DATE NOT NULL DEFAULT CURRENT_DATE,
-        fot_date DATE,
-        fai_date DATE,
-        p1_date DATE,
-        p2_date DATE,
-        run_at_rate_date DATE,
-        ppap_date DATE,
-        customer_sop_date DATE,
-        volume_2026 INTEGER,
-        volume_2027 INTEGER,
-        volume_2028 INTEGER,
-        volume_2029 INTEGER,
-        volume_2030 INTEGER,
-        volume_2031 INTEGER,
-        volume_2032 INTEGER
+        created_at DATE NOT NULL DEFAULT CURRENT_DATE
       );
     `);
 
@@ -79,104 +65,65 @@ const initDb = async () => {
       );
     `);
 
-        // Settings: Customers Table
-        await client.query(`
-      CREATE TABLE IF NOT EXISTS settings_customers (
-        id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(100) NOT NULL UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-        // Settings: Materials Table
-        await client.query(`
-      CREATE TABLE IF NOT EXISTS settings_materials (
-        id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        code VARCHAR(50) NOT NULL UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-        // Settings: Post-processings Table
-        await client.query(`
-      CREATE TABLE IF NOT EXISTS settings_postprocessings (
-        id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(100) NOT NULL UNIQUE,
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-        // Seed initial settings data - 업데이트된 고객사 목록
-        const customerCheck = await client.query('SELECT * FROM settings_customers');
-        const expectedCustomers = [
-            'YURA', 'Yura Corporation', 'MHE', 'Myunghwa', 'Dongbo', 'Kyungshin',
-            'Continental', 'Tyco', 'Hyundai Kefico', 'SCHAEFFLER', 'OTO', 'FLC_Partron',
-            'SK ON', 'LG Innotek', 'Daeyoung', 'Jukwang', 'Harman', 'Youngjin Mobility', 'Yu sung Electronics'
+        // Add new columns if they don't exist (for existing databases)
+        const alterQueries = [
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fot_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fai_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS p1_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS p2_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS run_at_rate_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ppap_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_date DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2026 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2027 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2028 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2029 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2030 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2031 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS volume_2032 INTEGER',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS development_phase VARCHAR(50)',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS feasibility_review_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS feasibility_review_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS mold_order_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS mold_order_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS mold_delivery_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS mold_delivery_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS istr_submission_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS istr_submission_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ydc_vn_ppap_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ydc_vn_ppap_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ppap_kr_submission_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ppap_kr_submission_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ppap_customer_approval_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ppap_customer_approval_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ydc_vn_sop_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS ydc_vn_sop_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_actual DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_plan DATE',
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_actual DATE'
         ];
-        
-        // 기존 고객사가 없거나, 예상 목록과 다르면 업데이트
-        if (customerCheck.rows.length === 0) {
-            // 새로 추가
-            for (let i = 0; i < expectedCustomers.length; i++) {
-                await client.query(
-                    'INSERT INTO settings_customers (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
-                    [`customer-${i + 1}`, expectedCustomers[i]]
-                );
-            }
-            console.log('Initial customers seeded');
-        } else {
-            // 기존 고객사가 있으면 누락된 것만 추가
-            const existingNames = customerCheck.rows.map(row => row.name);
-            for (let i = 0; i < expectedCustomers.length; i++) {
-                if (!existingNames.includes(expectedCustomers[i])) {
-                    await client.query(
-                        'INSERT INTO settings_customers (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
-                        [`customer-${Date.now()}-${i}`, expectedCustomers[i]]
-                    );
+
+        for (const query of alterQueries) {
+            try {
+                await client.query(query);
+            } catch (err) {
+                // Ignore errors for columns that already exist
+                if (!err.message.includes('already exists') && !err.message.includes('duplicate')) {
+                    console.warn('Alter table warning:', err.message);
                 }
             }
-        }
-
-        const materialCheck = await client.query('SELECT * FROM settings_materials');
-        if (materialCheck.rows.length === 0) {
-            await client.query(`
-                INSERT INTO settings_materials (id, name, code) VALUES
-                ('material-1', 'ALDC 12 (일반 주조용)', 'ALDC12'),
-                ('material-2', 'ALDC 10 (내식성 우수)', 'ALDC10'),
-                ('material-3', 'High-Vac용 특수 합금', 'ALSi10MnMg'),
-                ('material-4', '마그네슘 합금 AZ91D', 'MG-AZ91D')
-            `);
-        }
-
-        const postprocessingCheck = await client.query('SELECT * FROM settings_postprocessings');
-        if (postprocessingCheck.rows.length === 0) {
-            await client.query(`
-                INSERT INTO settings_postprocessings (id, name, description) VALUES
-                ('post-1', 'T6 열처리', '인공시효 열처리'),
-                ('post-2', 'T5 열처리', '자연시효 열처리'),
-                ('post-3', '표면처리 (알로다이징)', '부식 방지 표면 처리'),
-                ('post-4', '도장', '프라이머 및 도료 도장'),
-                ('post-5', '기계가공', '밀링, 선반 등 기계 가공')
-            `);
         }
 
         // Seed initial admin user if not exists
         const userRes = await client.query('SELECT * FROM users WHERE id = $1', ['admin']);
         if (userRes.rows.length === 0) {
-            // Password should be hashed in production, but for now plain text as per request context simplicity
-            // Or we can implement simple hashing later.
             await client.query(`
         INSERT INTO users (id, name, password, role)
         VALUES ('admin', '관리자', 'admin123', 'MANAGER')
       `);
             console.log('Admin user created');
-        } else {
-            // 기존 admin 사용자의 역할을 MANAGER로 업데이트
-            await client.query(`
-        UPDATE users SET role = 'MANAGER' WHERE id = 'admin' AND role != 'MANAGER'
-      `);
         }
 
         await client.query('COMMIT');
