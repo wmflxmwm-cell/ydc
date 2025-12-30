@@ -99,17 +99,17 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
 
   // 통계 데이터 계산
   const stats = [
-    { label: '대상 프로젝트', value: filteredProjects.length, icon: Box, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { label: '활성 품질 이슈', value: filteredIssues.filter(i => !i.isResolved).length, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-100' },
+    { label: t.dashboard.stats.totalProjects, value: filteredProjects.length, icon: Box, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { label: t.dashboard.stats.totalIssues, value: filteredIssues.filter(i => !i.isResolved).length, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-100' },
     { 
-      label: '평균 달성률', 
+      label: t.dashboard.stats.completed, 
       value: filteredProjects.length > 0 ? `${Math.round((filteredGates.filter(g => g.status === GateStatus.APPROVED).length / (filteredProjects.length * 5)) * 100)}%` : '0%', 
       icon: Target, 
       color: 'text-emerald-600', 
       bg: 'bg-emerald-100' 
     },
     { 
-      label: 'SOP 임박 (30일)', 
+      label: t.dashboard.stats.inProgress, 
       value: filteredProjects.filter(p => {
         const sopDate = new Date(p.sopDate);
         const today = new Date();
@@ -168,7 +168,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
               : 'text-slate-500 hover:bg-slate-50'
             }`}
           >
-            전체 현황
+            {t.dashboard.filterAll}
           </button>
           <button
             onClick={() => setFilterType(ProjectType.NEW_DEVELOPMENT)}
@@ -178,7 +178,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
               : 'text-slate-500 hover:bg-slate-50'
             }`}
           >
-            신규 개발
+            {t.dashboard.filterNewDevelopment}
           </button>
           <button
             onClick={() => setFilterType(ProjectType.INCREMENTAL_MOLD)}
@@ -188,7 +188,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
               : 'text-slate-500 hover:bg-slate-50'
             }`}
           >
-            증작 개발
+            {t.dashboard.filterIncrementalMold}
           </button>
         </div>
 
@@ -196,7 +196,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text"
-            placeholder="품목명/번호 검색..."
+            placeholder={t.dashboard.searchPlaceholder}
             value={projectSearch}
             onChange={(e) => setProjectSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
@@ -225,9 +225,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-lg font-bold text-slate-800 tracking-tight">
-                {filterType === 'ALL' ? '전체' : filterType} 누적 단계별 현황
+                {filterType === 'ALL' ? t.dashboard.filterAll : filterType} {t.dashboard.charts.phaseProgress}
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-1">APQP 게이트별 승인/진행/대기 수량 분석</p>
+              <p className="text-xs text-slate-500 font-medium mt-1">{t.dashboard.charts.phaseProgressSub}</p>
             </div>
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Layers size={20} /></div>
           </div>
