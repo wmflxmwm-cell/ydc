@@ -178,10 +178,53 @@ router.post('/register', async (req, res) => {
 
 router.get('/users', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, role FROM users ORDER BY name');
-        res.json(result.rows);
+        // Check if requester is admin (from query param or header)
+        const isAdmin = req.query.admin === 'true' || req.headers['x-admin'] === 'true';
+        
+        if (isAdmin) {
+            // Admin can see passwords
+            const result = await pool.query('SELECT id, name, role, password FROM users ORDER BY name');
+            res.json(result.rows);
+        } else {
+            // Regular users cannot see passwords
+            const result = await pool.query('SELECT id, name, role FROM users ORDER BY name');
+            res.json(result.rows);
+        }
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete user
+router.delete('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Check if user exists
+        const checkResult = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Prevent deleting admin user
+        if (checkResult.rows[0].role === 'MANAGER' && checkResult.rows[0].id === 'admin') {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Cannot delete admin user' });
+        }
+
+        // Delete user
+        await client.query('DELETE FROM users WHERE id = $1', [id]);
+        
+        await client.query('COMMIT');
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
     }
 });
 

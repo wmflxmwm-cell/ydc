@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Trash2, CheckCircle2 } from 'lucide-react';
-import { userService, User } from '../api/services/userService';
+import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { userService, UserWithPassword } from '../api/services/userService';
 import { getTranslations } from '../utils/translations';
 
 const UserManagement: React.FC = () => {
     const t = getTranslations();
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<UserWithPassword[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
 
     // Form state
     const [formData, setFormData] = useState({
@@ -18,19 +20,47 @@ const UserManagement: React.FC = () => {
     });
 
     useEffect(() => {
+        // Check if current user is admin
+        const savedUser = localStorage.getItem('apqp_session');
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            setIsAdmin(user.role === 'MANAGER' || user.role?.includes('총괄'));
+        }
         fetchUsers();
     }, []);
 
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            const data = await userService.getAll();
+            const data = await userService.getAll(isAdmin);
             setUsers(data);
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm(`사용자 "${id}"를 삭제하시겠습니까?`)) {
+            return;
+        }
+        try {
+            await userService.delete(id);
+            await fetchUsers();
+            alert('사용자가 삭제되었습니다.');
+        } catch (error: any) {
+            console.error('Failed to delete user:', error);
+            const errorMessage = error.response?.data?.error || error.message || '사용자 삭제에 실패했습니다.';
+            alert(`사용자 삭제 실패: ${errorMessage}`);
+        }
+    };
+
+    const togglePasswordVisibility = (userId: string) => {
+        setShowPasswords(prev => ({
+            ...prev,
+            [userId]: !prev[userId]
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -178,17 +208,19 @@ const UserManagement: React.FC = () => {
                                         <th className="px-6 py-3">{t.userManagement.name}</th>
                                         <th className="px-6 py-3">{t.userManagement.userId}</th>
                                         <th className="px-6 py-3">{t.userManagement.role}</th>
+                                        {isAdmin && <th className="px-6 py-3">비밀번호</th>}
                                         <th className="px-6 py-3">{t.userManagement.status}</th>
+                                        <th className="px-6 py-3">작업</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-slate-500">{t.userManagement.loading}</td>
+                                            <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-slate-500">{t.userManagement.loading}</td>
                                         </tr>
                                     ) : users.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-slate-500">{t.userManagement.noUsers}</td>
+                                            <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-slate-500">{t.userManagement.noUsers}</td>
                                         </tr>
                                     ) : (
                                         users.map((user) => (
@@ -200,9 +232,39 @@ const UserManagement: React.FC = () => {
                                                         {user.role}
                                                     </span>
                                                 </td>
+                                                {isAdmin && (
+                                                    <td className="px-6 py-3">
+                                                        {user.password ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono text-xs text-slate-700">
+                                                                    {showPasswords[user.id] ? user.password : '••••••••'}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => togglePasswordVisibility(user.id)}
+                                                                    className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                                                    title={showPasswords[user.id] ? '비밀번호 숨기기' : '비밀번호 보기'}
+                                                                >
+                                                                    {showPasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400">-</span>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <td className="px-6 py-3 text-green-600 flex items-center gap-1">
                                                     <CheckCircle2 size={14} />
                                                     <span className="text-xs font-bold">{t.userManagement.active}</span>
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                                                        title="사용자 삭제"
+                                                        disabled={user.role === 'MANAGER' && user.id === 'admin'}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))

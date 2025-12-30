@@ -148,6 +148,22 @@ const App: React.FC = () => {
     }
   };
 
+  const deleteProject = async (id: string) => {
+    if (!confirm('이 프로젝트를 삭제하시겠습니까? 관련된 모든 게이트와 이슈도 함께 삭제됩니다.')) {
+      return;
+    }
+    try {
+      await projectService.delete(id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+      setGates(prev => prev.filter(g => g.projectId !== id));
+      setIssues(prev => prev.filter(i => i.projectId !== id));
+      alert('프로젝트가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('프로젝트 삭제에 실패했습니다.');
+    }
+  };
+
   // 로그인되지 않은 경우 로그인 화면 표시
   if (!user) {
     return <Login onLogin={handleLogin} />;
@@ -268,7 +284,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
           {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 - React 19 removeChild 오류 해결 */}
           <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
-            <Dashboard projects={projects} gates={gates} issues={issues} />
+            <Dashboard projects={projects} gates={gates} issues={issues} user={user} onDeleteProject={deleteProject} />
           </div>
           <div style={{ display: activeTab === 'registration' ? 'block' : 'none' }}>
             <ProjectRegistration 

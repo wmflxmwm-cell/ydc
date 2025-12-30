@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
-import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight, Trash2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { getTranslations } from '../src/utils/translations';
 
@@ -9,9 +9,11 @@ interface Props {
   projects: Project[];
   gates: Gate[];
   issues: Issue[];
+  user?: { id: string; name: string; role: string };
+  onDeleteProject?: (id: string) => void;
 }
 
-const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
+const Dashboard: React.FC<Props> = ({ projects, gates, issues, user, onDeleteProject }) => {
   const [filterType, setFilterType] = useState<'ALL' | ProjectType>('ALL');
   const [projectSearch, setProjectSearch] = useState('');
   const [selectedReportProject, setSelectedReportProject] = useState<Project | null>(null);
@@ -373,6 +375,9 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">P4</th>
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">P5</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">경영 보고</th>
+                {(user?.role === 'MANAGER' || user?.role?.includes('총괄')) && (
+                  <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">삭제</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -416,6 +421,17 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
                         리포트 생성
                       </button>
                     </td>
+                    {(user?.role === 'MANAGER' || user?.role?.includes('총괄')) && (
+                      <td className="px-4 py-5 text-center">
+                        <button
+                          onClick={() => onDeleteProject && onDeleteProject(project.id)}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                          title="프로젝트 삭제"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

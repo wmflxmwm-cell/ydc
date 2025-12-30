@@ -248,4 +248,37 @@ router.patch('/:id/volumes', async (req, res) => {
     }
 });
 
+// Delete project
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Check if project exists
+        const checkResult = await client.query('SELECT * FROM projects WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        // Delete related gates (CASCADE should handle this, but explicit delete for safety)
+        await client.query('DELETE FROM gates WHERE project_id = $1', [id]);
+        
+        // Delete related issues (CASCADE should handle this, but explicit delete for safety)
+        await client.query('DELETE FROM issues WHERE project_id = $1', [id]);
+        
+        // Delete project
+        await client.query('DELETE FROM projects WHERE id = $1', [id]);
+        
+        await client.query('COMMIT');
+        res.json({ message: 'Project deleted successfully' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 module.exports = router;
