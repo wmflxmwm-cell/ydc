@@ -83,42 +83,56 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
       let headerRowIndex = 0;
       let headers: string[] = [];
       let bestScore = -1;
+      let foundYearRow = false;
       
       // 연도 패턴 (2026-2032)
       const yearPattern = /(202[6-9]|203[0-2])/;
       
+      // 먼저 연도가 포함된 행 찾기
       for (let i = 0; i < Math.min(10, rows.length); i++) {
         const row = rows[i];
         if (!row || row.length === 0) continue;
         
         const nonEmptyCells = row.filter(cell => cell !== '').length;
-        if (nonEmptyCells < 3) continue; // 최소 3개 이상의 셀이 있어야 함
+        if (nonEmptyCells < 3) continue;
         
         const rowText = row.map(cell => String(cell || '').toLowerCase()).join(' ');
-        
-        // 점수 계산: 연도가 있으면 높은 점수, 헤더 키워드가 있으면 추가 점수
-        let score = 0;
         const hasYear = yearPattern.test(rowText);
         const hasHeaderKeywords = /품명|품번|부품|part|customer|고객|년도|year|volume|수량/.test(rowText);
         
         if (hasYear) {
-          score += 100; // 연도가 있으면 매우 높은 우선순위
-        }
-        if (hasHeaderKeywords) {
-          score += 50; // 헤더 키워드가 있으면 추가 점수
-        }
-        score += nonEmptyCells; // 셀 개수도 점수에 반영
-        
-        // 연도가 포함된 행을 우선적으로 선택
-        if (hasYear && score > bestScore) {
-          bestScore = score;
+          // 연도가 포함된 행을 찾으면 즉시 선택
           headerRowIndex = i;
           headers = row.map(h => String(h || '').toLowerCase().trim());
-        } else if (!hasYear && score > bestScore && i === 0) {
-          // 연도가 없지만 첫 번째 행이고 다른 조건을 만족하면
-          bestScore = score;
-          headerRowIndex = i;
-          headers = row.map(h => String(h || '').toLowerCase().trim());
+          foundYearRow = true;
+          console.log(`Found header row with years at index ${i}`);
+          break;
+        }
+      }
+      
+      // 연도가 포함된 행을 찾지 못한 경우, 헤더 키워드로 찾기
+      if (!foundYearRow) {
+        for (let i = 0; i < Math.min(10, rows.length); i++) {
+          const row = rows[i];
+          if (!row || row.length === 0) continue;
+          
+          const nonEmptyCells = row.filter(cell => cell !== '').length;
+          if (nonEmptyCells < 3) continue;
+          
+          const rowText = row.map(cell => String(cell || '').toLowerCase()).join(' ');
+          const hasHeaderKeywords = /품명|품번|부품|part|customer|고객|년도|year|volume|수량/.test(rowText);
+          
+          let score = 0;
+          if (hasHeaderKeywords) {
+            score += 50;
+          }
+          score += nonEmptyCells;
+          
+          if (score > bestScore) {
+            bestScore = score;
+            headerRowIndex = i;
+            headers = row.map(h => String(h || '').toLowerCase().trim());
+          }
         }
       }
       
