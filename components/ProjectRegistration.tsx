@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { Save, RefreshCw, ClipboardCheck, Upload, FileSpreadsheet, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { settingsService, Customer, Material } from '../src/api/services/settingsService';
 
 interface Props {
   onAddProject: (project: Project) => void;
@@ -26,6 +27,35 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedProjects, setUploadedProjects] = useState<Project[]>([]);
   const [showUploadPreview, setShowUploadPreview] = useState(false);
+  
+  // 드롭다운 목록
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+
+  // 설정 데이터 로드
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const [customersData, materialsData] = await Promise.all([
+          settingsService.getCustomers(),
+          settingsService.getMaterials()
+        ]);
+        setCustomers(customersData);
+        setMaterials(materialsData);
+        
+        // 기본값 설정
+        if (customersData.length > 0 && !formData.customerName) {
+          setFormData({ ...formData, customerName: customersData[0].name });
+        }
+        if (materialsData.length > 0 && !formData.material) {
+          setFormData({ ...formData, material: materialsData[0].code });
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // 엑셀 파일 파싱 함수
   const parseExcelFile = (file: File): Promise<Project[]> => {
@@ -392,13 +422,19 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">고객사명</label>
-              <input 
+              <select
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                placeholder="예) 현대자동차, 기아, 테슬라 등"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm appearance-none bg-white"
                 value={formData.customerName}
                 onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-              />
+              >
+                <option value="">고객사 선택</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.name}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">차종</label>
@@ -444,14 +480,17 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">재질 선정</label>
               <select 
+                required
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm appearance-none bg-white"
                 value={formData.material}
                 onChange={(e) => setFormData({...formData, material: e.target.value})}
               >
-                <option value="ALDC12">ALDC 12 (일반 주조용)</option>
-                <option value="ALDC10">ALDC 10 (내식성 우수)</option>
-                <option value="ALSi10MnMg">High-Vac용 특수 합금</option>
-                <option value="MG-AZ91D">마그네슘 합금 AZ91D</option>
+                <option value="">재질 선택</option>
+                {materials.map((material) => (
+                  <option key={material.id} value={material.code}>
+                    {material.name} ({material.code})
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-2 md:col-span-2">

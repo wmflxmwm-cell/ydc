@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const gateRoutes = require('./routes/gates');
 const issueRoutes = require('./routes/issues');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -52,6 +53,7 @@ app.use('/auth', authRoutes);
 app.use('/projects', projectRoutes);
 app.use('/gates', gateRoutes);
 app.use('/issues', issueRoutes);
+app.use('/settings', settingsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -72,7 +74,7 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Die-casting APQP Manager API Server',
         version: '1.0.0',
-        endpoints: ['/auth', '/projects', '/gates', '/issues', '/health']
+        endpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/health']
     });
 });
 
@@ -81,7 +83,7 @@ app.use((req, res) => {
     res.status(404).json({ 
         error: 'Not Found',
         message: `Route ${req.method} ${req.path} not found`,
-        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/health', '/']
+        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/health', '/']
     });
 });
 

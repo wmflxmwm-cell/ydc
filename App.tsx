@@ -10,6 +10,7 @@ import ProjectRegistration from './components/ProjectRegistration';
 import PhaseManagement from './components/PhaseManagement';
 import IssueTracker from './components/IssueTracker';
 import UserManagement from './components/UserManagement';
+import SettingsManagement from './components/SettingsManagement';
 import Login from './components/Login';
 
 interface UserSession {
@@ -20,7 +21,7 @@ interface UserSession {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings'>('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -214,6 +215,7 @@ const App: React.FC = () => {
               {activeTab === 'management' && 'APQP 단계별 게이트 관리'}
               {activeTab === 'issues' && '품질 결함 이슈 관리'}
               {activeTab === 'users' && '시스템 사용자 관리'}
+              {activeTab === 'settings' && '시스템 설정 관리'}
             </h1>
             <p className="text-slate-500 mt-1 font-medium">
               자동차 다이케스팅 부품 사전 제품 품질 계획 시스템
@@ -249,6 +251,9 @@ const App: React.FC = () => {
           </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
+          </div>
+          <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+            <SettingsManagement />
           </div>
         </div>
       </main>

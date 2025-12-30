@@ -65,6 +65,49 @@ const initDb = async () => {
       );
     `);
 
+        // Settings: Customers Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS settings_customers (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+        // Settings: Materials Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS settings_materials (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        code VARCHAR(50) NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+        // Seed initial settings data
+        const customerCheck = await client.query('SELECT * FROM settings_customers');
+        if (customerCheck.rows.length === 0) {
+            await client.query(`
+                INSERT INTO settings_customers (id, name) VALUES
+                ('customer-1', '현대자동차'),
+                ('customer-2', '기아'),
+                ('customer-3', '현대모비스'),
+                ('customer-4', 'BMW'),
+                ('customer-5', '테슬라')
+            `);
+        }
+
+        const materialCheck = await client.query('SELECT * FROM settings_materials');
+        if (materialCheck.rows.length === 0) {
+            await client.query(`
+                INSERT INTO settings_materials (id, name, code) VALUES
+                ('material-1', 'ALDC 12 (일반 주조용)', 'ALDC12'),
+                ('material-2', 'ALDC 10 (내식성 우수)', 'ALDC10'),
+                ('material-3', 'High-Vac용 특수 합금', 'ALSi10MnMg'),
+                ('material-4', '마그네슘 합금 AZ91D', 'MG-AZ91D')
+            `);
+        }
+
         // Seed initial admin user if not exists
         const userRes = await client.query('SELECT * FROM users WHERE id = $1', ['admin']);
         if (userRes.rows.length === 0) {
