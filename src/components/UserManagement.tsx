@@ -74,7 +74,7 @@ const UserManagement: React.FC = () => {
             await fetchUsers();
             
             // 등록된 사용자가 목록에 있는지 확인
-            const updatedUsers = await userService.getAll();
+            const updatedUsers = await userService.getAll(isAdmin);
             const registeredUser = updatedUsers.find(u => u.id === formData.id);
             
             if (registeredUser) {
