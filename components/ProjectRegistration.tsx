@@ -4,6 +4,7 @@ import { Project, ProjectStatus, ProjectType } from '../types';
 import { Save, RefreshCw, ClipboardCheck, Upload, FileSpreadsheet, X } from 'lucide-react';
 import { settingsService, Customer, Material } from '../src/api/services/settingsService';
 import { projectService } from '../src/api/services/projectService';
+import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   onAddProject: (project: Project) => void;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManagement, activeTab }) => {
+  const t = getTranslations();
   const [formData, setFormData] = useState<Partial<Project>>({
     customerName: '',
     carModel: '',
@@ -440,15 +442,15 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
         <div className="bg-slate-900 px-8 py-6 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ClipboardCheck className="text-indigo-400" />
-            <h2 className="text-xl font-bold tracking-tight">프로젝트 기술 사양서 입력</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t.registration.title}</h2>
           </div>
-          <p className="text-xs text-slate-400 font-mono">양식: APQP-F01-KO</p>
+          <p className="text-xs text-slate-400 font-mono">{t.registration.formNumber}</p>
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700">프로젝트 형태</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.projectType}</label>
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -461,7 +463,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                     : 'border-slate-100 bg-slate-50 text-slate-400'
                   }`}
                 >
-                  신규 개발 프로젝트
+                  {t.registration.newDevelopment}
                 </button>
                 <button
                   type="button"
@@ -474,20 +476,21 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                     : 'border-slate-100 bg-slate-50 text-slate-400'
                   }`}
                 >
-                  증작 금형 프로젝트
+                  {t.registration.incrementalMold}
                 </button>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">고객사명</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.customerName}</label>
               <select
                 required
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm appearance-none bg-white"
                 value={formData.customerName}
                 onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                disabled={formData.type === ProjectType.INCREMENTAL_MOLD}
               >
-                <option value="">고객사 선택</option>
+                <option value="">{t.registration.selectCustomer}</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.name}>
                     {customer.name}
@@ -496,13 +499,13 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">차종</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.carModel}</label>
               {formData.type === ProjectType.INCREMENTAL_MOLD ? (
                 <input 
                   required
                   readOnly
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 cursor-not-allowed text-sm"
-                  placeholder="부품명을 선택하면 자동으로 입력됩니다"
+                  placeholder={t.registration.autoFillNote}
                   value={formData.carModel}
                 />
               ) : (
@@ -516,7 +519,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">부품명 (Die-casting)</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.partName}</label>
               {formData.type === ProjectType.INCREMENTAL_MOLD ? (
                 <select
                   required
@@ -534,9 +537,9 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                     });
                   }}
                 >
-                  <option value="">부품명 선택</option>
+                  <option value="">{t.registration.selectPartName}</option>
                   {existingProjects.filter(p => p.type === ProjectType.NEW_DEVELOPMENT).length === 0 ? (
-                    <option value="" disabled>등록된 신규 개발 프로젝트가 없습니다</option>
+                    <option value="" disabled>{t.registration.noNewDevelopmentProjects}</option>
                   ) : (
                     existingProjects
                       .filter(p => p.type === ProjectType.NEW_DEVELOPMENT)
@@ -558,17 +561,18 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">부품 번호 (P/N)</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.partNumber}</label>
               <input 
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                className={`w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm ${formData.type === ProjectType.INCREMENTAL_MOLD ? 'bg-slate-100 text-slate-500' : ''}`}
                 placeholder="예) 24001-XXXX-00"
                 value={formData.partNumber}
                 onChange={(e) => setFormData({...formData, partNumber: e.target.value})}
+                readOnly={formData.type === ProjectType.INCREMENTAL_MOLD}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">금형 캐비티 수 (Cavity)</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.moldCavity}</label>
               <input 
                 required
                 type="number"
@@ -579,14 +583,15 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">재질 선정</label>
+              <label className="text-sm font-bold text-slate-700">{t.registration.material}</label>
               <select 
                 required
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm appearance-none bg-white"
                 value={formData.material}
                 onChange={(e) => setFormData({...formData, material: e.target.value})}
+                disabled={formData.type === ProjectType.INCREMENTAL_MOLD}
               >
-                <option value="">재질 선택</option>
+                <option value="">{t.registration.selectMaterial}</option>
                 {materials.map((material) => (
                   <option key={material.id} value={material.code}>
                     {material.name} ({material.code})
@@ -601,7 +606,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             <div className="pt-6 border-t border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <ClipboardCheck className="text-indigo-600" size={20} />
-                Project Volume (pcs)
+                {t.registration.volumeTitle}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -650,11 +655,11 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             <div className="pt-6 border-t border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <ClipboardCheck className="text-indigo-600" size={20} />
-                프로젝트 일정
+                {t.registration.scheduleTitle}
               </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">FOT (First Off Tool)</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.fot}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -663,7 +668,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">FAI (First Article Inspection)</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.fai}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -672,7 +677,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">P1 (Phase 1)</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.p1}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -681,7 +686,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">P2 (Phase 2)</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.p2}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -690,7 +695,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Run@Rate</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.runAtRate}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -699,7 +704,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">PPAP (Production Part Approval Process)</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.ppap}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -708,7 +713,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-bold text-slate-700">Customer SOP</label>
+                <label className="text-sm font-bold text-slate-700">{t.registration.customerSop}</label>
                 <input 
                   type="date"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -725,12 +730,12 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             <div className="pt-6 border-t border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <ClipboardCheck className="text-indigo-600" size={20} />
-                증작 금형 프로젝트 일정
+                {t.registration.incrementalScheduleTitle}
               </h3>
               
               {/* 개발 차수 */}
               <div className="mb-6">
-                <label className="text-sm font-bold text-slate-700 block mb-2">개발 차수</label>
+                <label className="text-sm font-bold text-slate-700 block mb-2">{t.registration.developmentPhase}</label>
                 <input
                   type="text"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -744,7 +749,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 타당성검토서 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">타당성검토서 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.feasibilityReviewPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -753,7 +758,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">타당성검토서 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.feasibilityReviewActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -764,7 +769,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* 금형발주 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">금형발주 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.moldOrderPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -773,7 +778,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">금형발주 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.moldOrderActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -784,7 +789,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* 금형 입고 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">금형 입고 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.moldDeliveryPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -793,7 +798,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">금형 입고 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.moldDeliveryActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -804,7 +809,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* istr 제출 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">istr 제출 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.istrSubmissionPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -813,7 +818,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">istr 제출 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.istrSubmissionActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -824,7 +829,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* ydc vn ppap */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ydc vn ppap 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ydcVnPpapPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -833,7 +838,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ydc vn ppap 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ydcVnPpapActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -844,7 +849,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* ppap kr 제출 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ppap kr 제출 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ppapKrSubmissionPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -853,7 +858,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ppap kr 제출 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ppapKrSubmissionActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -864,7 +869,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* ppap 고객 승인 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ppap 고객 승인 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ppapCustomerApprovalPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -873,7 +878,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ppap 고객 승인 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ppapCustomerApprovalActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -884,7 +889,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* ydc vn sop */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ydc vn sop 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ydcVnSopPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -893,7 +898,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ydc vn sop 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.ydcVnSopActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -904,7 +909,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* 고객 sop */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">고객 sop 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.customerSopPlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -913,7 +918,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">고객 sop 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.customerSopActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -924,7 +929,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
                 {/* 납품일정 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">납품일정 계획</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.deliverySchedulePlan}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -933,7 +938,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">납품일정 실적</label>
+                  <label className="text-sm font-bold text-slate-700">{t.registration.deliveryScheduleActual}</label>
                   <input
                     type="date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
@@ -952,14 +957,14 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-lg shadow-indigo-200 disabled:opacity-50"
             >
               {isSubmitting ? <RefreshCw className="animate-spin" /> : <Save size={20} />}
-              {isSubmitting ? '저장 중...' : '프로젝트 등록 완료'}
+              {isSubmitting ? t.registration.submitting : t.registration.submit}
             </button>
             <button 
               type="reset" 
               className="px-8 py-4 border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all"
               onClick={() => setFormData({})}
             >
-              내용 초기화
+              {t.registration.reset}
             </button>
           </div>
         </form>
@@ -974,8 +979,8 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="text-white" size={20} />
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight">엑셀 일괄 등록</h3>
-                  <p className="text-[10px] text-indigo-100 mt-0.5">여러 프로젝트 한 번에</p>
+                  <h3 className="text-sm font-bold tracking-tight">{t.registration.excelUpload}</h3>
+                  <p className="text-[10px] text-indigo-100 mt-0.5">{t.registration.excelUploadSub}</p>
                 </div>
               </div>
             </div>
@@ -1005,11 +1010,11 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                         <Upload className="text-indigo-600" size={24} />
                       </div>
                       <div>
-                        <p className="text-slate-900 font-bold text-sm">파일 업로드</p>
+                        <p className="text-slate-900 font-bold text-sm">{t.registration.uploadFile}</p>
                         <p className="text-slate-500 text-[10px] mt-0.5">.xlsx, .xls</p>
                       </div>
                       <div className="bg-slate-50 rounded-lg p-3 text-left text-[10px] text-slate-600 w-full">
-                        <p className="font-bold mb-1.5 text-xs">필수 컬럼:</p>
+                        <p className="font-bold mb-1.5 text-xs">{t.registration.requiredColumns}</p>
                         <ul className="list-disc list-inside space-y-0.5">
                           <li>고객사명</li>
                           <li>차종</li>
