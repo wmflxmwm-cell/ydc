@@ -23,7 +23,14 @@ router.get('/', async (req, res) => {
             status: row.status,
             type: row.type,
             material: row.material,
-            createdAt: row.created_at
+            createdAt: row.created_at,
+            fotDate: row.fot_date,
+            faiDate: row.fai_date,
+            p1Date: row.p1_date,
+            p2Date: row.p2_date,
+            runAtRateDate: row.run_at_rate_date,
+            ppapDate: row.ppap_date,
+            customerSopDate: row.customer_sop_date
         }));
         res.json(projects);
     } catch (err) {
@@ -39,9 +46,27 @@ router.post('/', async (req, res) => {
         const id = `proj-${generateId()}`;
 
         await client.query(
-            `INSERT INTO projects (id, customer_name, car_model, part_name, part_number, mold_cavity, sop_date, status, type, material)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, project.customerName, project.carModel, project.partName, project.partNumber, project.moldCavity, project.sopDate, project.status, project.type, project.material]
+            `INSERT INTO projects (id, customer_name, car_model, part_name, part_number, mold_cavity, sop_date, status, type, material, fot_date, fai_date, p1_date, p2_date, run_at_rate_date, ppap_date, customer_sop_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+            [
+                id, 
+                project.customerName, 
+                project.carModel, 
+                project.partName, 
+                project.partNumber, 
+                project.moldCavity, 
+                project.sopDate, 
+                project.status, 
+                project.type, 
+                project.material,
+                project.fotDate || null,
+                project.faiDate || null,
+                project.p1Date || null,
+                project.p2Date || null,
+                project.runAtRateDate || null,
+                project.ppapDate || null,
+                project.customerSopDate || null
+            ]
         );
 
         // Create initial gates

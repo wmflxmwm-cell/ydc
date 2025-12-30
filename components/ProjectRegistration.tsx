@@ -19,7 +19,14 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
     sopDate: '',
     material: 'ALDC12',
     status: ProjectStatus.IN_PROGRESS,
-    type: ProjectType.NEW_DEVELOPMENT
+    type: ProjectType.NEW_DEVELOPMENT,
+    fotDate: '',
+    faiDate: '',
+    p1Date: '',
+    p2Date: '',
+    runAtRateDate: '',
+    ppapDate: '',
+    customerSopDate: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -489,6 +496,80 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 onChange={(e) => setFormData({...formData, sopDate: e.target.value})}
               />
             </div>
+          </div>
+
+          {/* 프로젝트 일정 섹션 */}
+          <div className="pt-6 border-t border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <ClipboardCheck className="text-indigo-600" size={20} />
+              프로젝트 일정
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">FOT (First Off Tool)</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.fotDate || ''}
+                  onChange={(e) => setFormData({...formData, fotDate: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">FAI (First Article Inspection)</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.faiDate || ''}
+                  onChange={(e) => setFormData({...formData, faiDate: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">P1 (Phase 1)</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.p1Date || ''}
+                  onChange={(e) => setFormData({...formData, p1Date: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">P2 (Phase 2)</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.p2Date || ''}
+                  onChange={(e) => setFormData({...formData, p2Date: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Run@Rate</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.runAtRateDate || ''}
+                  onChange={(e) => setFormData({...formData, runAtRateDate: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">PPAP (Production Part Approval Process)</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.ppapDate || ''}
+                  onChange={(e) => setFormData({...formData, ppapDate: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-bold text-slate-700">Customer SOP</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  value={formData.customerSopDate || ''}
+                  onChange={(e) => setFormData({...formData, customerSopDate: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
           </div>
 
           <div className="pt-6 border-t border-slate-100 flex gap-4">

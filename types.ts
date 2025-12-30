@@ -56,4 +56,12 @@ export interface Project {
   type: ProjectType;
   material: string;
   createdAt: string;
+  // 일정 필드
+  fotDate?: string;
+  faiDate?: string;
+  p1Date?: string;
+  p2Date?: string;
+  runAtRateDate?: string;
+  ppapDate?: string;
+  customerSopDate?: string;
 }

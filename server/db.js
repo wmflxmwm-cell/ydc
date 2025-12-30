@@ -34,7 +34,14 @@ const initDb = async () => {
         status VARCHAR(50) NOT NULL,
         type VARCHAR(50) NOT NULL,
         material VARCHAR(50) NOT NULL,
-        created_at DATE NOT NULL DEFAULT CURRENT_DATE
+        created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+        fot_date DATE,
+        fai_date DATE,
+        p1_date DATE,
+        p2_date DATE,
+        run_at_rate_date DATE,
+        ppap_date DATE,
+        customer_sop_date DATE
       );
     `);
 
