@@ -175,7 +175,7 @@ const App: React.FC = () => {
             <span className="font-medium text-sm">품질 이슈 트래커</span>
           </button>
 
-          {(user.role.includes('총괄') || user.role === 'MANAGER') && (
+          {(user.role === 'MANAGER') && (
             <>
               <button
                 onClick={() => setActiveTab('users')}

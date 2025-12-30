@@ -14,9 +14,9 @@ const Login: React.FC<Props> = ({ onLogin }) => {
 
   // 시뮬레이션된 계정 데이터 (관리자가 발급한 형태)
   const MOCK_USERS = [
-    { id: 'admin', password: 'admin123', name: '관리자', role: '시스템 총괄' },
-    { id: 'quality', password: 'q123', name: '김품질 팀장', role: '품질 경영' },
-    { id: 'production', password: 'p123', name: '이생산 과장', role: '생산 기술' },
+    { id: 'admin', password: 'admin123', name: '관리자', role: 'MANAGER' },
+    { id: 'quality', password: 'q123', name: '김품질 팀장', role: '품질팀' },
+    { id: 'production', password: 'p123', name: '이생산 과장', role: '생산관리' },
   ];
 
   const handleLogin = (e: React.FormEvent) => {
