@@ -99,11 +99,25 @@ const initDb = async () => {
         if (customerCheck.rows.length === 0) {
             await client.query(`
                 INSERT INTO settings_customers (id, name) VALUES
-                ('customer-1', '현대자동차'),
-                ('customer-2', '기아'),
-                ('customer-3', '현대모비스'),
-                ('customer-4', 'BMW'),
-                ('customer-5', '테슬라')
+                ('customer-1', 'YURA'),
+                ('customer-2', 'Yura Corporation'),
+                ('customer-3', 'MHE'),
+                ('customer-4', 'Myunghwa'),
+                ('customer-5', 'Dongbo'),
+                ('customer-6', 'Kyungshin'),
+                ('customer-7', 'Continental'),
+                ('customer-8', 'Tyco'),
+                ('customer-9', 'Hyundai Kefico'),
+                ('customer-10', 'SCHAEFFLER'),
+                ('customer-11', 'OTO'),
+                ('customer-12', 'FLC_Partron'),
+                ('customer-13', 'SK ON'),
+                ('customer-14', 'LG Innotek'),
+                ('customer-15', 'Daeyoung'),
+                ('customer-16', 'Jukwang'),
+                ('customer-17', 'Harman'),
+                ('customer-18', 'Youngjin Mobility'),
+                ('customer-19', 'Yu sung Electronics')
             `);
         }
 
