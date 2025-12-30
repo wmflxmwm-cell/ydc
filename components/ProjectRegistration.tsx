@@ -58,6 +58,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
       setCustomers(customersData);
       setMaterials(materialsData);
       setExistingProjects(projectsData);
+      console.log('Loaded projects for dropdown:', projectsData.filter(p => p.type === ProjectType.NEW_DEVELOPMENT).length);
       
       // 기본값 설정 (현재 선택된 값이 없을 때만)
       setFormData(prev => {
@@ -113,6 +114,21 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
       loadSettings();
     }
   }, [activeTab]);
+
+  // 프로젝트 형태 변경 시 부품명 초기화 (증작 금형으로 변경 시)
+  useEffect(() => {
+    if (formData.type === ProjectType.INCREMENTAL_MOLD && formData.partName && !existingProjects.find(p => p.partName === formData.partName && p.type === ProjectType.NEW_DEVELOPMENT)) {
+      // 증작 금형으로 변경했는데 선택된 부품명이 신규 개발 프로젝트가 아니면 초기화
+      setFormData(prev => ({
+        ...prev,
+        partName: '',
+        partNumber: '',
+        carModel: '',
+        customerName: prev.customerName || '',
+        material: prev.material || 'ALDC12'
+      }));
+    }
+  }, [formData.type, existingProjects]);
 
   // 엑셀 파일 파싱 함수
   const parseExcelFile = async (file: File): Promise<Project[]> => {
@@ -480,13 +496,17 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                   }}
                 >
                   <option value="">부품명 선택</option>
-                  {existingProjects
-                    .filter(p => p.type === ProjectType.NEW_DEVELOPMENT)
-                    .map((project) => (
-                      <option key={project.id} value={project.partName}>
-                        {project.partName} ({project.partNumber}) - {project.customerName}
-                      </option>
-                    ))}
+                  {existingProjects.filter(p => p.type === ProjectType.NEW_DEVELOPMENT).length === 0 ? (
+                    <option value="" disabled>등록된 신규 개발 프로젝트가 없습니다</option>
+                  ) : (
+                    existingProjects
+                      .filter(p => p.type === ProjectType.NEW_DEVELOPMENT)
+                      .map((project) => (
+                        <option key={project.id} value={project.partName}>
+                          {project.partName} ({project.partNumber}) - {project.customerName}
+                        </option>
+                      ))
+                  )}
                 </select>
               ) : (
                 <input 
