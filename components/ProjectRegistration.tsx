@@ -239,72 +239,10 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* 엑셀 업로드 섹션 */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileSpreadsheet className="text-white" size={24} />
-              <div>
-                <h2 className="text-xl font-bold tracking-tight">엑셀 파일 일괄 등록</h2>
-                <p className="text-xs text-indigo-100 mt-1">엑셀 파일을 업로드하여 여러 프로젝트를 한 번에 등록하세요</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-8">
-          <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-indigo-400 transition-colors">
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="excel-upload"
-              disabled={isUploading}
-            />
-            <label
-              htmlFor="excel-upload"
-              className={`cursor-pointer flex flex-col items-center gap-4 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isUploading ? (
-                <>
-                  <RefreshCw className="animate-spin text-indigo-600" size={48} />
-                  <p className="text-slate-600 font-bold">파일 처리 중...</p>
-                </>
-              ) : (
-                <>
-                  <div className="bg-indigo-100 p-4 rounded-full">
-                    <Upload className="text-indigo-600" size={32} />
-                  </div>
-                  <div>
-                    <p className="text-slate-900 font-bold text-lg">엑셀 파일 업로드</p>
-                    <p className="text-slate-500 text-sm mt-1">.xlsx 또는 .xls 파일을 선택하세요</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4 text-left text-xs text-slate-600 max-w-md">
-                    <p className="font-bold mb-2">필수 컬럼:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>고객사명 (또는 Customer)</li>
-                      <li>차종 (또는 Car Model)</li>
-                      <li>부품명 (또는 Part Name)</li>
-                      <li>부품번호 (또는 Part Number)</li>
-                      <li>SOP일자 (또는 SOP Date)</li>
-                    </ul>
-                    <p className="font-bold mt-3 mb-2">선택 컬럼:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>금형캐비티수 (기본값: 2)</li>
-                      <li>재질 (기본값: ALDC12)</li>
-                      <li>프로젝트형태 (신규/증작, 기본값: 신규)</li>
-                      <li>상태 (진행중/완료/대기, 기본값: 진행중)</li>
-                    </ul>
-                  </div>
-                </>
-              )}
-            </label>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 왼쪽: 수동 입력 폼 */}
+        <div className="lg:col-span-2">
 
       {/* 업로드 미리보기 모달 */}
       {showUploadPreview && uploadedProjects.length > 0 && (
@@ -388,8 +326,8 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
         </div>
       )}
 
-      {/* 수동 입력 폼 */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+          {/* 수동 입력 폼 */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
         <div className="bg-slate-900 px-8 py-6 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ClipboardCheck className="text-indigo-400" />
@@ -531,6 +469,67 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </button>
           </div>
         </form>
+        </div>
+        </div>
+
+        {/* 오른쪽: 엑셀 업로드 섹션 */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden sticky top-8">
+            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-4 text-white">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="text-white" size={20} />
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">엑셀 일괄 등록</h3>
+                  <p className="text-[10px] text-indigo-100 mt-0.5">여러 프로젝트 한 번에</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-indigo-400 transition-colors">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="excel-upload"
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="excel-upload"
+                  className={`cursor-pointer flex flex-col items-center gap-3 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUploading ? (
+                    <>
+                      <RefreshCw className="animate-spin text-indigo-600" size={32} />
+                      <p className="text-slate-600 font-bold text-xs">처리 중...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-indigo-100 p-3 rounded-full">
+                        <Upload className="text-indigo-600" size={24} />
+                      </div>
+                      <div>
+                        <p className="text-slate-900 font-bold text-sm">파일 업로드</p>
+                        <p className="text-slate-500 text-[10px] mt-0.5">.xlsx, .xls</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3 text-left text-[10px] text-slate-600 w-full">
+                        <p className="font-bold mb-1.5 text-xs">필수 컬럼:</p>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          <li>고객사명</li>
+                          <li>차종</li>
+                          <li>부품명</li>
+                          <li>부품번호</li>
+                          <li>SOP일자</li>
+                        </ul>
+                      </div>
+                    </>
+                  )}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
