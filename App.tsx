@@ -227,9 +227,14 @@ const App: React.FC = () => {
         </header>
 
         <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {activeTab === 'dashboard' && <Dashboard projects={projects} gates={gates} issues={issues} />}
-          {activeTab === 'registration' && <ProjectRegistration onAddProject={addProject} onNavigateToManagement={() => setActiveTab('management')} />}
-          {activeTab === 'management' && (
+          {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 */}
+          <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
+            <Dashboard projects={projects} gates={gates} issues={issues} />
+          </div>
+          <div style={{ display: activeTab === 'registration' ? 'block' : 'none' }}>
+            <ProjectRegistration onAddProject={addProject} onNavigateToManagement={() => setActiveTab('management')} />
+          </div>
+          <div style={{ display: activeTab === 'management' ? 'block' : 'none' }}>
             <PhaseManagement
               projects={projects}
               gates={gates}
@@ -238,9 +243,13 @@ const App: React.FC = () => {
               selectedProjectId={selectedProjectId}
               setSelectedProjectId={setSelectedProjectId}
             />
-          )}
-          {activeTab === 'issues' && <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />}
-          {activeTab === 'users' && <UserManagement />}
+          </div>
+          <div style={{ display: activeTab === 'issues' ? 'block' : 'none' }}>
+            <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />
+          </div>
+          <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
+            <UserManagement />
+          </div>
         </div>
       </main>
     </div>
