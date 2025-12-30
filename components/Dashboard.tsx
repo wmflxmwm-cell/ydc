@@ -1,6 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
+import React, { useState, useMemo } from 'react';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
 import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
