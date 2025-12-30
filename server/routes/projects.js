@@ -55,7 +55,14 @@ router.get('/', async (req, res) => {
             p2Date: row.p2_date,
             runAtRateDate: row.run_at_rate_date,
             ppapDate: row.ppap_date,
-            customerSopDate: row.customer_sop_date
+            customerSopDate: row.customer_sop_date,
+            volume2026: row.volume_2026,
+            volume2027: row.volume_2027,
+            volume2028: row.volume_2028,
+            volume2029: row.volume_2029,
+            volume2030: row.volume_2030,
+            volume2031: row.volume_2031,
+            volume2032: row.volume_2032
         }));
         res.json(projects);
     } catch (err) {
@@ -96,8 +103,8 @@ router.post('/', async (req, res) => {
         const id = `proj-${generateId()}`;
 
         await client.query(
-            `INSERT INTO projects (id, customer_name, car_model, part_name, part_number, mold_cavity, sop_date, status, type, material, fot_date, fai_date, p1_date, p2_date, run_at_rate_date, ppap_date, customer_sop_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+            `INSERT INTO projects (id, customer_name, car_model, part_name, part_number, mold_cavity, sop_date, status, type, material, fot_date, fai_date, p1_date, p2_date, run_at_rate_date, ppap_date, customer_sop_date, volume_2026, volume_2027, volume_2028, volume_2029, volume_2030, volume_2031, volume_2032)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
             [
                 id, 
                 project.customerName, 
@@ -115,7 +122,14 @@ router.post('/', async (req, res) => {
                 project.p2Date || null,
                 project.runAtRateDate || null,
                 project.ppapDate || null,
-                project.customerSopDate || null
+                project.customerSopDate || null,
+                project.volume2026 || null,
+                project.volume2027 || null,
+                project.volume2028 || null,
+                project.volume2029 || null,
+                project.volume2030 || null,
+                project.volume2031 || null,
+                project.volume2032 || null
             ]
         );
 

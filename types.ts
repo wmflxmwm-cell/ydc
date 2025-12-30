@@ -64,4 +64,12 @@ export interface Project {
   runAtRateDate?: string;
   ppapDate?: string;
   customerSopDate?: string;
+  // 연도별 볼륨 (pcs)
+  volume2026?: number;
+  volume2027?: number;
+  volume2028?: number;
+  volume2029?: number;
+  volume2030?: number;
+  volume2031?: number;
+  volume2032?: number;
 }

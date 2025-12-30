@@ -41,7 +41,14 @@ const initDb = async () => {
         p2_date DATE,
         run_at_rate_date DATE,
         ppap_date DATE,
-        customer_sop_date DATE
+        customer_sop_date DATE,
+        volume_2026 INTEGER,
+        volume_2027 INTEGER,
+        volume_2028 INTEGER,
+        volume_2029 INTEGER,
+        volume_2030 INTEGER,
+        volume_2031 INTEGER,
+        volume_2032 INTEGER
       );
     `);
 
