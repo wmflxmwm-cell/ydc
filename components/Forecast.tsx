@@ -354,7 +354,7 @@ ${JSON.stringify(sampleData, null, 2)}
 
       const genAI = new GoogleGenAI({ apiKey });
       const response = await genAI.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
       });
       const text = response.text || '';
