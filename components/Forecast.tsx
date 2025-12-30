@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
-import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check } from 'lucide-react';
+import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check, Edit, Save, X } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
 
@@ -28,6 +28,8 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [pastedData, setPastedData] = useState('');
   const [parsedRows, setParsedRows] = useState<ExcelRow[]>([]);
   const [showPasteArea, setShowPasteArea] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editData, setEditData] = useState<{ [projectId: string]: { [year: number]: number } }>({});
 
   useEffect(() => {
     const filtered = projects.filter(project => {
@@ -480,6 +482,129 @@ ${JSON.stringify(sampleData, null, 2)}
   };
 
   // 엑셀 파일 파싱 및 업로드 기능 제거됨 - 붙여넣기 기능만 사용
+
+  // 편집 모드 저장 처리
+  const handleSaveEdit = async () => {
+    setIsUploading(true);
+    setUploadStatus(null);
+
+    try {
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (const projectId in editData) {
+        const project = filteredProjects.find(p => p.id === projectId);
+        if (!project) continue;
+
+        try {
+          const updateData: Partial<Project> = {};
+          years.forEach(year => {
+            const volume = editData[projectId][year];
+            if (volume !== undefined && volume !== null) {
+              const volumeKey = `volume${year}` as keyof Project;
+              updateData[volumeKey] = volume;
+            }
+          });
+
+          if (Object.keys(updateData).length > 0) {
+            await projectService.updateVolumes(projectId, updateData);
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to update project ${projectId}:`, error);
+          failedCount++;
+        }
+      }
+
+      setUploadStatus({ success: successCount, failed: failedCount });
+      
+      // 프로젝트 목록 새로고침
+      if (onProjectsUpdate) {
+        await onProjectsUpdate();
+      }
+
+      // 편집 모드 종료
+      setIsEditMode(false);
+      setEditData({});
+
+      if (successCount > 0 || failedCount > 0) {
+        alert(`${successCount}개 프로젝트 업데이트 완료${failedCount > 0 ? `, ${failedCount}개 실패` : ''}`);
+      }
+    } catch (error) {
+      alert('저장 중 오류가 발생했습니다: ' + (error as Error).message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 편집 데이터 업데이트
+  const updateEditData = (projectId: string, year: number, value: number) => {
+    setEditData(prev => ({
+      ...prev,
+      [projectId]: {
+        ...prev[projectId],
+        [year]: value
+      }
+    }));
+  };
+
+  // 엑셀 붙여넣기 처리 (편집 모드에서)
+  const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
+    const text = e.clipboardData.getData('text');
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) return;
+
+    // 첫 번째 줄을 헤더로 간주
+    const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
+    
+    // 헤더에서 연도 찾기
+    const yearIndices: { [year: number]: number } = {};
+    years.forEach(year => {
+      const index = headers.findIndex(h => h.includes(String(year)));
+      if (index !== -1) {
+        yearIndices[year] = index;
+      }
+    });
+
+    // 품명/품번 인덱스 찾기
+    const partNameIndex = headers.findIndex(h => 
+      h.includes('품명') || h.includes('partname') || h.includes('part name')
+    );
+    const partNumberIndex = headers.findIndex(h => 
+      h.includes('품번') || h.includes('partnumber') || h.includes('part number') || h.includes('p/n')
+    );
+
+    // 데이터 행 처리
+    for (let i = 1; i < lines.length; i++) {
+      const cells = lines[i].split('\t');
+      if (cells.length === 0) continue;
+
+      const partName = partNameIndex !== -1 ? cells[partNameIndex]?.trim() : '';
+      const partNumber = partNumberIndex !== -1 ? cells[partNumberIndex]?.trim() : '';
+
+      if (!partName && !partNumber) continue;
+
+      // 프로젝트 찾기
+      const project = filteredProjects.find(p => {
+        const nameMatch = partName && p.partName.toLowerCase().includes(partName.toLowerCase());
+        const numberMatch = partNumber && p.partNumber.toLowerCase().includes(partNumber.toLowerCase());
+        return nameMatch || numberMatch;
+      });
+
+      if (project) {
+        // 연도별 데이터 업데이트
+        Object.keys(yearIndices).forEach(yearStr => {
+          const year = parseInt(yearStr);
+          const index = yearIndices[year];
+          if (index !== -1 && cells[index]) {
+            const value = parseFloat(cells[index].replace(/,/g, '')) || 0;
+            updateEditData(project.id, year, value);
+          }
+        });
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
