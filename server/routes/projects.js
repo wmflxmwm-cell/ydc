@@ -8,6 +8,31 @@ const { v4: uuidv4 } = require('uuid'); // We might need uuid package or just us
 // Let's use a simple random string for now to avoid extra dependency if possible, or just install uuid.
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Get gates by project ID (must be before /:id route)
+router.get('/:id/gates', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM gates WHERE project_id = $1 ORDER BY phase_number ASC',
+            [id]
+        );
+        // Map snake_case DB fields to camelCase API fields
+        const gates = result.rows.map(row => ({
+            id: row.id,
+            projectId: row.project_id,
+            phaseNumber: row.phase_number,
+            status: row.status,
+            approvalDate: row.approval_date,
+            flowAnalysisResult: row.flow_analysis_result,
+            tryOutCount: row.try_out_count,
+            tryOutResult: row.try_out_result
+        }));
+        res.json(gates);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM projects ORDER BY created_at DESC');
@@ -33,6 +58,31 @@ router.get('/', async (req, res) => {
             customerSopDate: row.customer_sop_date
         }));
         res.json(projects);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get gates by project ID
+router.get('/:id/gates', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM gates WHERE project_id = $1 ORDER BY phase_number ASC',
+            [id]
+        );
+        // Map snake_case DB fields to camelCase API fields
+        const gates = result.rows.map(row => ({
+            id: row.id,
+            projectId: row.project_id,
+            phaseNumber: row.phase_number,
+            status: row.status,
+            approvalDate: row.approval_date,
+            flowAnalysisResult: row.flow_analysis_result,
+            tryOutCount: row.try_out_count,
+            tryOutResult: row.try_out_result
+        }));
+        res.json(gates);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
