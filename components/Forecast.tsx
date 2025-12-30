@@ -61,12 +61,15 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
 
             // 헤더 행 찾기
-            const headers = jsonData[0]?.map((h: any) => String(h).toLowerCase().trim()) || [];
+            const headers = jsonData[0]?.map((h: any) => {
+              if (h === null || h === undefined) return '';
+              return String(h).toLowerCase().trim();
+            }) || [];
             
             // 헤더 매핑
             const getColumnIndex = (possibleNames: string[]) => {
               for (const name of possibleNames) {
-                const index = headers.findIndex(h => h.includes(name));
+                const index = headers.findIndex(h => h && typeof h === 'string' && h.includes(name));
                 if (index !== -1) return index;
               }
               return -1;
@@ -77,11 +80,15 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             // 데이터 행 처리
             for (let i = 1; i < jsonData.length; i++) {
               const row = jsonData[i];
-              if (!row || row.every(cell => !cell)) continue;
+              if (!row || row.every(cell => cell === null || cell === undefined || cell === '')) continue;
 
-              const partName = String(row[getColumnIndex(['부품명', 'partname', 'part', '품명', 'part name'])] || '').trim();
-              const partNumber = String(row[getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no'])] || '').trim();
-              const customerName = String(row[getColumnIndex(['고객사', 'customer', '고객사명', 'customer name'])] || '').trim();
+              const partNameIndex = getColumnIndex(['부품명', 'partname', 'part', '품명', 'part name']);
+              const partNumberIndex = getColumnIndex(['부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no']);
+              const customerNameIndex = getColumnIndex(['고객사', 'customer', '고객사명', 'customer name']);
+
+              const partName = partNameIndex !== -1 ? String(row[partNameIndex] || '').trim() : '';
+              const partNumber = partNumberIndex !== -1 ? String(row[partNumberIndex] || '').trim() : '';
+              const customerName = customerNameIndex !== -1 ? String(row[customerNameIndex] || '').trim() : '';
 
               // 필수 필드 확인
               if (!partName || !partNumber || !customerName) {
@@ -92,7 +99,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               const volumes: { [year: number]: number } = {};
               years.forEach(year => {
                 const yearIndex = getColumnIndex([`${year}`, `${year}년`, `${year} year`, `year ${year}`]);
-                if (yearIndex !== -1) {
+                if (yearIndex !== -1 && row[yearIndex] !== null && row[yearIndex] !== undefined) {
                   const value = row[yearIndex];
                   volumes[year] = typeof value === 'number' ? value : parseInt(String(value || '0')) || 0;
                 }
