@@ -187,6 +187,14 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             }
 
             console.log('Parsed rows:', rows);
+            
+            // 파싱된 행이 없고 헤더는 있는 경우 경고
+            if (rows.length === 0 && headers.length > 0) {
+              console.warn('No data rows parsed. Available headers:', headers);
+              console.warn('Please check if your Excel file has the correct column names.');
+              console.warn('Expected columns: 부품명/partname, 부품번호/partnumber, 고객사/customer');
+            }
+            
             resolve(rows);
           } catch (error) {
             reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
@@ -213,6 +221,12 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
       const excelRows = await parseExcelFile(file);
       console.log('Parsed Excel rows:', excelRows);
       console.log('Current projects:', projects);
+      
+      if (excelRows.length === 0) {
+        alert('엑셀 파일에서 데이터를 읽을 수 없습니다.\n\n필수 컬럼: 부품명, 부품번호, 고객사명\n\n브라우저 콘솔(F12)에서 상세 로그를 확인하세요.');
+        setIsUploading(false);
+        return;
+      }
       
       // 프로젝트 매칭 및 업데이트
       let successCount = 0;
