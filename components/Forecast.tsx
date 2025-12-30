@@ -620,19 +620,75 @@ ${JSON.stringify(sampleData, null, 2)}
               <p className="text-sm text-slate-500 mt-1">{t.forecast.subtitle}</p>
             </div>
           </div>
-          {/* 엑셀 붙여넣기 버튼 */}
+          {/* 버튼 그룹 */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowPasteArea(!showPasteArea)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
-                showPasteArea
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-              }`}
-            >
-              <Clipboard size={18} />
-              {showPasteArea ? '붙여넣기 닫기' : '엑셀 붙여넣기'}
-            </button>
+            {!isEditMode ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditMode(true);
+                    // 현재 프로젝트 데이터를 편집 데이터로 초기화
+                    const initialData: { [projectId: string]: { [year: number]: number } } = {};
+                    filteredProjects.forEach(project => {
+                      initialData[project.id] = {};
+                      years.forEach(year => {
+                        initialData[project.id][year] = getVolumeForYear(project, year);
+                      });
+                    });
+                    setEditData(initialData);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                >
+                  <Edit size={18} />
+                  입력
+                </button>
+                <button
+                  onClick={() => setShowPasteArea(!showPasteArea)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                    showPasteArea
+                      ? 'bg-indigo-600 text-white shadow-lg'
+                      : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                  }`}
+                >
+                  <Clipboard size={18} />
+                  {showPasteArea ? '붙여넣기 닫기' : '엑셀 붙여넣기'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isUploading}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                    isUploading
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
+                  }`}
+                >
+                  {isUploading ? (
+                    <>
+                      <RefreshCw className="animate-spin" size={18} />
+                      저장 중...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      저장
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditMode(false);
+                    setEditData({});
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-slate-200 text-slate-700 hover:bg-slate-300"
+                >
+                  <X size={18} />
+                  취소
+                </button>
+              </>
+            )}
           </div>
         </div>
 
