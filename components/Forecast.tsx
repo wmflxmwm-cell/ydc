@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
-import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Calendar, Package, Search, Upload, FileSpreadsheet, RefreshCw, CheckCircle2, Sparkles } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
+import { GoogleGenAI } from "@google/genai";
 
 interface Props {
   projects: Project[];
@@ -23,6 +24,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{ success: number; failed: number } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const filtered = projects.filter(project => {
@@ -47,7 +49,95 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
 
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
 
-  // 엑셀 파일 파싱 함수
+  // AI를 사용한 헤더 자동 매핑 함수
+  const analyzeExcelWithAI = async (headers: string[], sampleRows: any[][]): Promise<{
+    partName: number;
+    partNumber: number;
+    customerName: number;
+    volumes: { [year: number]: number };
+  } | null> => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || '';
+      if (!apiKey) {
+        console.warn('Gemini API 키가 없어 AI 분석을 건너뜁니다.');
+        return null;
+      }
+
+      setIsAnalyzing(true);
+
+      // 샘플 데이터 준비 (최대 5행)
+      const sampleData = sampleRows.slice(0, 5).map((row, idx) => {
+        const rowData: { [key: string]: any } = {};
+        headers.forEach((header, colIdx) => {
+          if (row[colIdx] !== undefined && row[colIdx] !== null) {
+            rowData[header] = String(row[colIdx]);
+          }
+        });
+        return rowData;
+      });
+
+      const prompt = `당신은 엑셀 파일 분석 전문가입니다. 다음 엑셀 파일의 헤더와 샘플 데이터를 분석하여 필요한 필드를 매핑해주세요.
+
+[헤더 목록]
+${headers.map((h, i) => `${i}: "${h}"`).join('\n')}
+
+[샘플 데이터 (첫 5행)]
+${JSON.stringify(sampleData, null, 2)}
+
+[필요한 필드]
+1. partName (부품명): 품명, 부품명, part name, partname 등
+2. partNumber (부품번호): 품번, 부품번호, part number, partnumber, p/n 등
+3. customerName (고객사명): 고객사, 고객사명, customer, customer name 등
+4. volumes (년도별 수량): 2026, 2027, 2028, 2029, 2030, 2031, 2032년의 수량 데이터
+
+다음 JSON 형식으로 응답해주세요 (컬럼 인덱스는 0부터 시작):
+{
+  "partName": 헤더_인덱스_번호,
+  "partNumber": 헤더_인덱스_번호,
+  "customerName": 헤더_인덱스_번호,
+  "volumes": {
+    "2026": 헤더_인덱스_번호_또는_null,
+    "2027": 헤더_인덱스_번호_또는_null,
+    "2028": 헤더_인덱스_번호_또는_null,
+    "2029": 헤더_인덱스_번호_또는_null,
+    "2030": 헤더_인덱스_번호_또는_null,
+    "2031": 헤더_인덱스_번호_또는_null,
+    "2032": 헤더_인덱스_번호_또는_null
+  }
+}
+
+매핑할 수 없는 필드는 null로 설정하세요. JSON만 응답하고 다른 설명은 포함하지 마세요.`;
+
+      const genAI = new GoogleGenAI({ apiKey });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log('AI 분석 결과:', text);
+
+      // JSON 추출 (마크다운 코드 블록 제거)
+      let jsonText = text.trim();
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```\n?/g, '');
+      }
+
+      const mapping = JSON.parse(jsonText);
+      console.log('파싱된 매핑:', mapping);
+
+      return mapping;
+    } catch (error) {
+      console.error('AI 분석 실패:', error);
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 엑셀 파일 파싱 함수 (AI 기반)
   const parseExcelFile = async (file: File): Promise<ExcelRow[]> => {
     try {
       const XLSX = await import('xlsx');
@@ -74,14 +164,32 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
             console.log('Normalized headers:', headers);
             console.log('All header values:', jsonData[0]);
             
-            // 헤더 매핑 (더 유연한 매칭)
+            // AI를 사용한 헤더 자동 매핑 시도
+            let aiMapping: {
+              partName: number | null;
+              partNumber: number | null;
+              customerName: number | null;
+              volumes: { [year: number]: number | null };
+            } | null = null;
+
+            // 샘플 데이터 준비 (최대 10행)
+            const sampleRows = jsonData.slice(1, 11).filter(row => row && row.length > 0);
+            
+            if (sampleRows.length > 0) {
+              console.log('AI 분석 시작...');
+              aiMapping = await analyzeExcelWithAI(headers, sampleRows);
+              if (aiMapping) {
+                console.log('AI 매핑 결과:', aiMapping);
+              }
+            }
+
+            // 폴백: 기존 헤더 매핑 로직
             const getColumnIndex = (possibleNames: string[]) => {
               for (const name of possibleNames) {
                 const normalizedName = name.toLowerCase().trim();
                 const index = headers.findIndex(h => {
                   if (!h || typeof h !== 'string') return false;
                   const normalizedHeader = h.toLowerCase().trim();
-                  // 정확히 일치하거나 포함 관계 확인
                   return normalizedHeader === normalizedName || 
                          normalizedHeader.includes(normalizedName) ||
                          normalizedName.includes(normalizedHeader);
@@ -91,8 +199,45 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
                   return index;
                 }
               }
-              console.warn(`Column not found for: ${possibleNames.join(', ')}`);
               return -1;
+            };
+
+            // AI 매핑 또는 폴백 매핑 사용
+            const getPartNameIndex = () => {
+              if (aiMapping && aiMapping.partName !== null && aiMapping.partName !== undefined) {
+                return aiMapping.partName;
+              }
+              return getColumnIndex([
+                '부품명', 'partname', 'part', '품명', 'part name', 
+                '품목명', 'item name', 'itemname', '품목', 'item', '부품'
+              ]);
+            };
+
+            const getPartNumberIndex = () => {
+              if (aiMapping && aiMapping.partNumber !== null && aiMapping.partNumber !== undefined) {
+                return aiMapping.partNumber;
+              }
+              return getColumnIndex([
+                '부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no',
+                'partno', 'part_no', 'part-number', '품목번호', 'item number', 'pn', 'p#'
+              ]);
+            };
+
+            const getCustomerNameIndex = () => {
+              if (aiMapping && aiMapping.customerName !== null && aiMapping.customerName !== undefined) {
+                return aiMapping.customerName;
+              }
+              return getColumnIndex([
+                '고객사', 'customer', '고객사명', 'customer name', 'customername',
+                'customer_name', 'customer-name', '고객', 'client', 'client name'
+              ]);
+            };
+
+            const getYearIndex = (year: number) => {
+              if (aiMapping && aiMapping.volumes[year] !== null && aiMapping.volumes[year] !== undefined) {
+                return aiMapping.volumes[year] as number;
+              }
+              return getColumnIndex([`${year}`, `${year}년`, `${year} year`, `year ${year}`]);
             };
 
             const rows: ExcelRow[] = [];
@@ -102,36 +247,24 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
               const row = jsonData[i];
               if (!row || row.length === 0) continue;
               
-              // 빈 행 체크 (모든 셀이 비어있거나 null/undefined)
+              // 빈 행 체크
               const isEmptyRow = row.every(cell => {
                 const cellValue = cell === null || cell === undefined ? '' : String(cell).trim();
                 return cellValue === '';
               });
               if (isEmptyRow) continue;
 
-              // 더 많은 헤더 이름 패턴 시도
-              const partNameIndex = getColumnIndex([
-                '부품명', 'partname', 'part', '품명', 'part name', 'partname', 
-                '품목명', 'item name', 'itemname', '품목', 'item',
-                '부품', 'component', 'component name'
-              ]);
-              const partNumberIndex = getColumnIndex([
-                '부품번호', 'partnumber', 'p/n', '품번', 'part number', 'part no', 
-                'partno', 'part_no', 'part-number', '품목번호', 'item number',
-                'itemno', 'item_no', 'item-number', 'pn', 'p#', 'part#'
-              ]);
-              const customerNameIndex = getColumnIndex([
-                '고객사', 'customer', '고객사명', 'customer name', 'customername',
-                'customer_name', 'customer-name', '고객', 'client', 'client name',
-                'clientname', 'client_name'
-              ]);
+              const partNameIndex = getPartNameIndex();
+              const partNumberIndex = getPartNumberIndex();
+              const customerNameIndex = getCustomerNameIndex();
               
-              // 첫 번째 행에서 인덱스 찾기 (한 번만)
+              // 첫 번째 데이터 행에서 인덱스 로그
               if (i === 1) {
                 console.log('Column indices found:', {
                   partName: partNameIndex,
                   partNumber: partNumberIndex,
-                  customerName: customerNameIndex
+                  customerName: customerNameIndex,
+                  usingAI: !!aiMapping
                 });
               }
 
@@ -145,36 +278,22 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
                 ? String(row[customerNameIndex] || '').trim()
                 : '';
 
-              // 첫 번째 데이터 행에서 상세 로그
-              if (i === 1) {
-                console.log(`Row ${i} (first data row):`, {
-                  rawRow: row,
-                  partNameIndex,
-                  partNumberIndex,
-                  customerNameIndex,
-                  partNameValue: row[partNameIndex],
-                  partNumberValue: row[partNumberIndex],
-                  customerNameValue: row[customerNameIndex],
-                  extracted: { partName, partNumber, customerName }
-                });
-              }
-              
-              console.log(`Row ${i}: partName="${partName}", partNumber="${partNumber}", customerName="${customerName}"`);
-
               // 필수 필드 확인
               if (!partName || !partNumber || !customerName) {
-                console.warn(`Row ${i} skipped: missing required fields`);
+                if (i <= 3) { // 처음 몇 행만 로그
+                  console.log(`Row ${i}: partName="${partName}", partNumber="${partNumber}", customerName="${customerName}"`);
+                }
                 continue;
               }
 
               // 년도별 수량 추출
               const volumes: { [year: number]: number } = {};
               years.forEach(year => {
-                const yearIndex = getColumnIndex([`${year}`, `${year}년`, `${year} year`, `year ${year}`]);
+                const yearIndex = getYearIndex(year);
                 if (yearIndex !== -1 && row[yearIndex] !== null && row[yearIndex] !== undefined) {
                   const value = row[yearIndex];
                   const numValue = typeof value === 'number' ? value : parseFloat(String(value || '0')) || 0;
-                  volumes[year] = Math.max(0, numValue); // 음수 방지
+                  volumes[year] = Math.max(0, numValue);
                 }
               });
 
@@ -329,10 +448,19 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
                   : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
               }`}
             >
-              {isUploading ? (
+              {isUploading || isAnalyzing ? (
                 <>
-                  <RefreshCw className="animate-spin" size={18} />
-                  {t.forecast.uploading}
+                  {isAnalyzing ? (
+                    <>
+                      <Sparkles className="animate-pulse" size={18} />
+                      AI 분석 중...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="animate-spin" size={18} />
+                      {t.forecast.uploading}
+                    </>
+                  )}
                 </>
               ) : (
                 <>
