@@ -94,31 +94,35 @@ const initDb = async () => {
       );
     `);
 
-        // Seed initial settings data
+        // Seed initial settings data - 업데이트된 고객사 목록
         const customerCheck = await client.query('SELECT * FROM settings_customers');
+        const expectedCustomers = [
+            'YURA', 'Yura Corporation', 'MHE', 'Myunghwa', 'Dongbo', 'Kyungshin',
+            'Continental', 'Tyco', 'Hyundai Kefico', 'SCHAEFFLER', 'OTO', 'FLC_Partron',
+            'SK ON', 'LG Innotek', 'Daeyoung', 'Jukwang', 'Harman', 'Youngjin Mobility', 'Yu sung Electronics'
+        ];
+        
+        // 기존 고객사가 없거나, 예상 목록과 다르면 업데이트
         if (customerCheck.rows.length === 0) {
-            await client.query(`
-                INSERT INTO settings_customers (id, name) VALUES
-                ('customer-1', 'YURA'),
-                ('customer-2', 'Yura Corporation'),
-                ('customer-3', 'MHE'),
-                ('customer-4', 'Myunghwa'),
-                ('customer-5', 'Dongbo'),
-                ('customer-6', 'Kyungshin'),
-                ('customer-7', 'Continental'),
-                ('customer-8', 'Tyco'),
-                ('customer-9', 'Hyundai Kefico'),
-                ('customer-10', 'SCHAEFFLER'),
-                ('customer-11', 'OTO'),
-                ('customer-12', 'FLC_Partron'),
-                ('customer-13', 'SK ON'),
-                ('customer-14', 'LG Innotek'),
-                ('customer-15', 'Daeyoung'),
-                ('customer-16', 'Jukwang'),
-                ('customer-17', 'Harman'),
-                ('customer-18', 'Youngjin Mobility'),
-                ('customer-19', 'Yu sung Electronics')
-            `);
+            // 새로 추가
+            for (let i = 0; i < expectedCustomers.length; i++) {
+                await client.query(
+                    'INSERT INTO settings_customers (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
+                    [`customer-${i + 1}`, expectedCustomers[i]]
+                );
+            }
+            console.log('Initial customers seeded');
+        } else {
+            // 기존 고객사가 있으면 누락된 것만 추가
+            const existingNames = customerCheck.rows.map(row => row.name);
+            for (let i = 0; i < expectedCustomers.length; i++) {
+                if (!existingNames.includes(expectedCustomers[i])) {
+                    await client.query(
+                        'INSERT INTO settings_customers (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
+                        [`customer-${Date.now()}-${i}`, expectedCustomers[i]]
+                    );
+                }
+            }
         }
 
         const materialCheck = await client.query('SELECT * FROM settings_materials');
