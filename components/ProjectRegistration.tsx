@@ -486,16 +486,6 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 ))}
               </select>
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700">SOP (양산 개시일)</label>
-              <input 
-                required
-                type="date"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                value={formData.sopDate}
-                onChange={(e) => setFormData({...formData, sopDate: e.target.value})}
-              />
-            </div>
           </div>
 
           {/* 프로젝트 일정 섹션 */}

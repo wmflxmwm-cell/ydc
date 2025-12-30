@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
                 project.partName, 
                 project.partNumber, 
                 project.moldCavity, 
-                project.sopDate, 
+                project.sopDate || null, 
                 project.status, 
                 project.type, 
                 project.material,

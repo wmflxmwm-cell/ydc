@@ -30,7 +30,7 @@ const initDb = async () => {
         part_name VARCHAR(100) NOT NULL,
         part_number VARCHAR(100) NOT NULL,
         mold_cavity INTEGER NOT NULL,
-        sop_date DATE NOT NULL,
+        sop_date DATE,
         status VARCHAR(50) NOT NULL,
         type VARCHAR(50) NOT NULL,
         material VARCHAR(50) NOT NULL,
