@@ -149,4 +149,103 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Update project volumes only (PATCH endpoint)
+router.patch('/:id/volumes', async (req, res) => {
+    const { id } = req.params;
+    const volumes = req.body;
+
+    try {
+        // Build dynamic UPDATE query for volume fields only
+        const updateFields = [];
+        const updateValues = [];
+        let paramIndex = 1;
+
+        const volumeFields = ['volume2026', 'volume2027', 'volume2028', 'volume2029', 'volume2030', 'volume2031', 'volume2032'];
+        const dbFieldMap = {
+            volume2026: 'volume_2026',
+            volume2027: 'volume_2027',
+            volume2028: 'volume_2028',
+            volume2029: 'volume_2029',
+            volume2030: 'volume_2030',
+            volume2031: 'volume_2031',
+            volume2032: 'volume_2032'
+        };
+
+        for (const field of volumeFields) {
+            if (volumes[field] !== undefined) {
+                updateFields.push(`${dbFieldMap[field]} = $${paramIndex}`);
+                updateValues.push(volumes[field] || null);
+                paramIndex++;
+            }
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ error: 'No volume fields to update' });
+        }
+
+        updateValues.push(id);
+        const query = `UPDATE projects SET ${updateFields.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+
+        const result = await pool.query(query, updateValues);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        const row = result.rows[0];
+        const updatedProject = {
+            id: row.id,
+            customerName: row.customer_name,
+            carModel: row.car_model,
+            partName: row.part_name,
+            partNumber: row.part_number,
+            moldCavity: row.mold_cavity,
+            sopDate: row.sop_date,
+            status: row.status,
+            type: row.type,
+            material: row.material,
+            createdAt: row.created_at,
+            fotDate: row.fot_date,
+            faiDate: row.fai_date,
+            p1Date: row.p1_date,
+            p2Date: row.p2_date,
+            runAtRateDate: row.run_at_rate_date,
+            ppapDate: row.ppap_date,
+            customerSopDate: row.customer_sop_date,
+            volume2026: row.volume_2026,
+            volume2027: row.volume_2027,
+            volume2028: row.volume_2028,
+            volume2029: row.volume_2029,
+            volume2030: row.volume_2030,
+            volume2031: row.volume_2031,
+            volume2032: row.volume_2032,
+            developmentPhase: row.development_phase,
+            feasibilityReviewPlan: row.feasibility_review_plan,
+            feasibilityReviewActual: row.feasibility_review_actual,
+            moldOrderPlan: row.mold_order_plan,
+            moldOrderActual: row.mold_order_actual,
+            moldDeliveryPlan: row.mold_delivery_plan,
+            moldDeliveryActual: row.mold_delivery_actual,
+            istrSubmissionPlan: row.istr_submission_plan,
+            istrSubmissionActual: row.istr_submission_actual,
+            ydcVnPpapPlan: row.ydc_vn_ppap_plan,
+            ydcVnPpapActual: row.ydc_vn_ppap_actual,
+            ppapKrSubmissionPlan: row.ppap_kr_submission_plan,
+            ppapKrSubmissionActual: row.ppap_kr_submission_actual,
+            ppapCustomerApprovalPlan: row.ppap_customer_approval_plan,
+            ppapCustomerApprovalActual: row.ppap_customer_approval_actual,
+            ydcVnSopPlan: row.ydc_vn_sop_plan,
+            ydcVnSopActual: row.ydc_vn_sop_actual,
+            customerSopPlan: row.customer_sop_plan,
+            customerSopActual: row.customer_sop_actual,
+            deliverySchedulePlan: row.delivery_schedule_plan,
+            deliveryScheduleActual: row.delivery_schedule_actual
+        };
+
+        res.json(updatedProject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

@@ -24,5 +24,10 @@ export const projectService = {
 
     delete: async (id: string): Promise<void> => {
         await client.delete(`/projects/${id}`);
+    },
+
+    updateVolumes: async (id: string, volumes: Partial<Project>): Promise<Project> => {
+        const response = await client.patch<Project>(`/projects/${id}/volumes`, volumes);
+        return response.data;
     }
 };

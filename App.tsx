@@ -272,7 +272,7 @@ const App: React.FC = () => {
             <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />
           </div>
           <div style={{ display: activeTab === 'forecast' ? 'block' : 'none' }}>
-            <Forecast projects={projects} />
+            <Forecast projects={projects} onProjectsUpdate={fetchData} />
           </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
