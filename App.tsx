@@ -271,6 +271,9 @@ const App: React.FC = () => {
           <div style={{ display: activeTab === 'issues' ? 'block' : 'none' }}>
             <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />
           </div>
+          <div style={{ display: activeTab === 'forecast' ? 'block' : 'none' }}>
+            <Forecast projects={projects} />
+          </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
           </div>
