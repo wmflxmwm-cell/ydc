@@ -568,52 +568,54 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </div>
           </div>
 
-          {/* 연도별 볼륨 섹션 */}
-          <div className="pt-6 border-t border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <ClipboardCheck className="text-indigo-600" size={20} />
-              Project Volume (pcs)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-slate-50">
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2026 year</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2027</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2028</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2029</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2030</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2031</th>
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2032</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {[2026, 2027, 2028, 2029, 2030, 2031, 2032].map((year) => {
-                      const volumeKey = `volume${year}` as keyof typeof formData;
-                      const currentValue = formData[volumeKey] as number | undefined;
-                      return (
-                        <td key={year} className="px-4 py-3 border border-slate-200">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                            placeholder="0"
-                            value={currentValue || ''}
-                            onChange={(e) => {
-                              const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                              setFormData({ ...formData, [volumeKey]: value });
-                            }}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
+          {/* 연도별 볼륨 섹션 (신규 개발 프로젝트만 표시) */}
+          {formData.type === ProjectType.NEW_DEVELOPMENT && (
+            <div className="pt-6 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <ClipboardCheck className="text-indigo-600" size={20} />
+                Project Volume (pcs)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2026 year</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2027</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2028</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2029</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2030</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2031</th>
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border border-slate-200">2032</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {[2026, 2027, 2028, 2029, 2030, 2031, 2032].map((year) => {
+                        const volumeKey = `volume${year}` as keyof typeof formData;
+                        const currentValue = formData[volumeKey] as number | undefined;
+                        return (
+                          <td key={year} className="px-4 py-3 border border-slate-200">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                              placeholder="0"
+                              value={currentValue || ''}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                setFormData({ ...formData, [volumeKey]: value });
+                              }}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 프로젝트 일정 섹션 */}
           <div className="pt-6 border-t border-slate-200">
