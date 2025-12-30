@@ -13,6 +13,13 @@ export interface Material {
     created_at?: string;
 }
 
+export interface PostProcessing {
+    id: string;
+    name: string;
+    description?: string;
+    created_at?: string;
+}
+
 export const settingsService = {
     // 고객사 목록 조회
     getCustomers: async (): Promise<Customer[]> => {
@@ -46,6 +53,23 @@ export const settingsService = {
     // 재질 삭제
     deleteMaterial: async (id: string): Promise<void> => {
         await client.delete(`/settings/materials/${id}`);
+    },
+
+    // 후공정 목록 조회
+    getPostProcessings: async (): Promise<PostProcessing[]> => {
+        const response = await client.get<PostProcessing[]>('/settings/postprocessings');
+        return response.data;
+    },
+
+    // 후공정 추가
+    addPostProcessing: async (name: string, description?: string): Promise<PostProcessing> => {
+        const response = await client.post<PostProcessing>('/settings/postprocessings', { name, description });
+        return response.data;
+    },
+
+    // 후공정 삭제
+    deletePostProcessing: async (id: string): Promise<void> => {
+        await client.delete(`/settings/postprocessings/${id}`);
     }
 };
 

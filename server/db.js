@@ -84,6 +84,16 @@ const initDb = async () => {
       );
     `);
 
+        // Settings: Post-processings Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS settings_postprocessings (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
         // Seed initial settings data
         const customerCheck = await client.query('SELECT * FROM settings_customers');
         if (customerCheck.rows.length === 0) {
@@ -105,6 +115,18 @@ const initDb = async () => {
                 ('material-2', 'ALDC 10 (내식성 우수)', 'ALDC10'),
                 ('material-3', 'High-Vac용 특수 합금', 'ALSi10MnMg'),
                 ('material-4', '마그네슘 합금 AZ91D', 'MG-AZ91D')
+            `);
+        }
+
+        const postprocessingCheck = await client.query('SELECT * FROM settings_postprocessings');
+        if (postprocessingCheck.rows.length === 0) {
+            await client.query(`
+                INSERT INTO settings_postprocessings (id, name, description) VALUES
+                ('post-1', 'T6 열처리', '인공시효 열처리'),
+                ('post-2', 'T5 열처리', '자연시효 열처리'),
+                ('post-3', '표면처리 (알로다이징)', '부식 방지 표면 처리'),
+                ('post-4', '도장', '프라이머 및 도료 도장'),
+                ('post-5', '기계가공', '밀링, 선반 등 기계 가공')
             `);
         }
 

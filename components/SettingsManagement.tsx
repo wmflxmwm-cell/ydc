@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Building2, Package, Plus, Trash2, Save } from 'lucide-react';
-import { settingsService, Customer, Material } from '../src/api/services/settingsService';
+import { Settings, Building2, Package, Plus, Trash2, Save, Cog } from 'lucide-react';
+import { settingsService, Customer, Material, PostProcessing } from '../src/api/services/settingsService';
 
 const SettingsManagement: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
+    const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     
     // 고객사 추가 폼
@@ -15,6 +16,11 @@ const SettingsManagement: React.FC = () => {
     const [newMaterialName, setNewMaterialName] = useState('');
     const [newMaterialCode, setNewMaterialCode] = useState('');
     const [isAddingMaterial, setIsAddingMaterial] = useState(false);
+    
+    // 후공정 추가 폼
+    const [newPostProcessingName, setNewPostProcessingName] = useState('');
+    const [newPostProcessingDesc, setNewPostProcessingDesc] = useState('');
+    const [isAddingPostProcessing, setIsAddingPostProcessing] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -23,12 +29,14 @@ const SettingsManagement: React.FC = () => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [customersData, materialsData] = await Promise.all([
+            const [customersData, materialsData, postProcessingsData] = await Promise.all([
                 settingsService.getCustomers(),
-                settingsService.getMaterials()
+                settingsService.getMaterials(),
+                settingsService.getPostProcessings()
             ]);
             setCustomers(customersData);
             setMaterials(materialsData);
+            setPostProcessings(postProcessingsData);
         } catch (error) {
             console.error('Failed to fetch settings:', error);
             alert('설정 데이터를 불러오는데 실패했습니다.');
@@ -101,6 +109,40 @@ const SettingsManagement: React.FC = () => {
         }
     };
 
+    const handleAddPostProcessing = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newPostProcessingName.trim()) {
+            alert('후공정명을 입력하세요.');
+            return;
+        }
+
+        setIsAddingPostProcessing(true);
+        try {
+            const newPostProcessing = await settingsService.addPostProcessing(
+                newPostProcessingName.trim(),
+                newPostProcessingDesc.trim() || undefined
+            );
+            setPostProcessings([...postProcessings, newPostProcessing]);
+            setNewPostProcessingName('');
+            setNewPostProcessingDesc('');
+            setIsAddingPostProcessing(false);
+        } catch (error: any) {
+            alert(error.response?.data?.message || '후공정 추가에 실패했습니다.');
+            setIsAddingPostProcessing(false);
+        }
+    };
+
+    const handleDeletePostProcessing = async (id: string) => {
+        if (!confirm('이 후공정을 삭제하시겠습니까?')) return;
+
+        try {
+            await settingsService.deletePostProcessing(id);
+            setPostProcessings(postProcessings.filter(p => p.id !== id));
+        } catch (error) {
+            alert('후공정 삭제에 실패했습니다.');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -109,11 +151,11 @@ const SettingsManagement: React.FC = () => {
                 </div>
                 <div>
                     <h2 className="text-2xl font-black text-slate-900">시스템 설정 관리</h2>
-                    <p className="text-sm text-slate-500 mt-1">프로젝트 등록 시 사용할 고객사명과 재질 목록을 관리합니다.</p>
+                    <p className="text-sm text-slate-500 mt-1">프로젝트 등록 시 사용할 고객사명, 재질, 후공정 목록을 관리합니다.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 고객사 관리 */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 text-white">
@@ -253,6 +295,86 @@ const SettingsManagement: React.FC = () => {
                                         <button
                                             onClick={() => handleDeleteMaterial(material.id)}
                                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 후공정 관리 */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 text-white">
+                        <Cog size={20} />
+                        <h3 className="text-lg font-bold">후공정 목록</h3>
+                    </div>
+                    
+                    <div className="p-6">
+                        {/* 후공정 추가 폼 */}
+                        <form onSubmit={handleAddPostProcessing} className="mb-6 pb-6 border-b border-slate-200 space-y-2">
+                            <input
+                                type="text"
+                                value={newPostProcessingName}
+                                onChange={(e) => setNewPostProcessingName(e.target.value)}
+                                placeholder="후공정명 (예: T6 열처리)"
+                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                disabled={isAddingPostProcessing}
+                            />
+                            <input
+                                type="text"
+                                value={newPostProcessingDesc}
+                                onChange={(e) => setNewPostProcessingDesc(e.target.value)}
+                                placeholder="설명 (선택사항)"
+                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                disabled={isAddingPostProcessing}
+                            />
+                            <button
+                                type="submit"
+                                disabled={isAddingPostProcessing || !newPostProcessingName.trim()}
+                                className="w-full px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isAddingPostProcessing ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        추가 중...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus size={18} />
+                                        추가
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        {/* 후공정 목록 */}
+                        {isLoading ? (
+                            <div className="text-center py-8 text-slate-400">
+                                <p>로딩 중...</p>
+                            </div>
+                        ) : postProcessings.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400">
+                                <p className="text-sm">등록된 후공정이 없습니다.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                                {postProcessings.map((postProcessing) => (
+                                    <div
+                                        key={postProcessing.id}
+                                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-slate-900">{postProcessing.name}</p>
+                                            {postProcessing.description && (
+                                                <p className="text-xs text-slate-500 truncate">{postProcessing.description}</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeletePostProcessing(postProcessing.id)}
+                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ml-2"
                                         >
                                             <Trash2 size={16} />
                                         </button>
