@@ -81,12 +81,21 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
       setCustomers(customersData);
       setMaterials(materialsData);
       setExistingProjects(projectsData);
-      console.log('Loaded projects for dropdown:', projectsData.filter(p => p.type === ProjectType.NEW_DEVELOPMENT).length);
       
       // 기본값 설정 (현재 선택된 값이 없을 때만, type은 절대 변경하지 않음)
       setFormData(prev => {
         // type을 명시적으로 보존
         const currentType = prev.type || ProjectType.NEW_DEVELOPMENT;
+        // 실제로 변경이 필요한 경우에만 업데이트
+        const needsUpdate = 
+          (customersData.length > 0 && !prev.customerName) ||
+          (materialsData.length > 0 && !prev.material) ||
+          !prev.type;
+        
+        if (!needsUpdate) {
+          return prev; // 변경이 없으면 이전 상태 반환
+        }
+        
         const updated = { ...prev, type: currentType }; // type 명시적으로 보존
         // type은 절대 변경하지 않음
         if (customersData.length > 0 && !updated.customerName) {
@@ -143,7 +152,6 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
   // 프로젝트 형태 변경 시 부품명 초기화 (증작 금형으로 변경 시)
   useEffect(() => {
-    console.log('formData.type changed:', formData.type, 'ProjectType.INCREMENTAL_MOLD:', ProjectType.INCREMENTAL_MOLD, 'Match:', formData.type === ProjectType.INCREMENTAL_MOLD);
     if (formData.type === ProjectType.INCREMENTAL_MOLD && formData.partName && !existingProjects.find(p => p.partName === formData.partName && p.type === ProjectType.NEW_DEVELOPMENT)) {
       // 증작 금형으로 변경했는데 선택된 부품명이 신규 개발 프로젝트가 아니면 초기화
       setFormData(prev => ({
@@ -445,7 +453,6 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 <button
                   type="button"
                   onClick={() => {
-                    console.log('Setting type to NEW_DEVELOPMENT');
                     setFormData({...formData, type: ProjectType.NEW_DEVELOPMENT});
                   }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${
@@ -459,7 +466,6 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 <button
                   type="button"
                   onClick={() => {
-                    console.log('Setting type to INCREMENTAL_MOLD, current type:', formData.type);
                     setFormData({...formData, type: ProjectType.INCREMENTAL_MOLD});
                   }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${
