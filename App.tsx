@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard';
 import ProjectRegistration from './components/ProjectRegistration';
 import PhaseManagement from './components/PhaseManagement';
 import IssueTracker from './components/IssueTracker';
-import UserManagement from './src/components/UserManagement';
+import UserManagement from './components/UserManagement';
 import Login from './components/Login';
 
 interface UserSession {
@@ -227,7 +227,7 @@ const App: React.FC = () => {
         </header>
 
         <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 */}
+          {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 - React 19 removeChild 오류 해결 */}
           <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
             <Dashboard projects={projects} gates={gates} issues={issues} />
           </div>
