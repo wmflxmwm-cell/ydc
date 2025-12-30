@@ -137,46 +137,66 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
 
     try {
       const excelRows = await parseExcelFile(file);
+      console.log('Parsed Excel rows:', excelRows);
+      console.log('Current projects:', projects);
       
       // 프로젝트 매칭 및 업데이트
       let successCount = 0;
       let failedCount = 0;
+      const failedMatches: string[] = [];
 
       for (const row of excelRows) {
-        // 품명, 품번, 고객사명으로 프로젝트 찾기
-        const matchingProject = projects.find(
-          p => p.partName === row.partName && 
-               p.partNumber === row.partNumber && 
-               p.customerName === row.customerName
-        );
+        // 품명, 품번, 고객사명으로 프로젝트 찾기 (대소문자 무시, 공백 제거)
+        const normalize = (str: string) => str.trim().toLowerCase().replace(/\s+/g, '');
+        
+        const matchingProject = projects.find(p => {
+          const partNameMatch = normalize(p.partName) === normalize(row.partName);
+          const partNumberMatch = normalize(p.partNumber) === normalize(row.partNumber);
+          const customerMatch = normalize(p.customerName) === normalize(row.customerName);
+          return partNameMatch && partNumberMatch && customerMatch;
+        });
 
         if (matchingProject) {
           try {
             // volume 필드만 업데이트
             const updateData: Partial<Project> = {};
             years.forEach(year => {
-              if (row.volumes[year] !== undefined) {
+              if (row.volumes[year] !== undefined && row.volumes[year] !== null) {
                 const volumeKey = `volume${year}` as keyof Project;
                 updateData[volumeKey] = row.volumes[year];
               }
             });
 
-            await projectService.updateVolumes(matchingProject.id, updateData);
-            successCount++;
+            if (Object.keys(updateData).length > 0) {
+              console.log(`Updating project ${matchingProject.id} with volumes:`, updateData);
+              await projectService.updateVolumes(matchingProject.id, updateData);
+              successCount++;
+            } else {
+              console.warn(`No volume data to update for project ${matchingProject.id}`);
+              failedCount++;
+            }
           } catch (error) {
             console.error(`Failed to update project ${matchingProject.id}:`, error);
             failedCount++;
+            failedMatches.push(`${row.partName} (${row.partNumber})`);
           }
         } else {
           failedCount++;
+          failedMatches.push(`${row.partName} (${row.partNumber}) - 매칭되는 프로젝트 없음`);
+          console.warn('No matching project found for:', row);
         }
+      }
+
+      console.log(`Update complete: ${successCount} success, ${failedCount} failed`);
+      if (failedMatches.length > 0) {
+        console.log('Failed matches:', failedMatches);
       }
 
       setUploadStatus({ success: successCount, failed: failedCount });
       
       // 프로젝트 목록 새로고침
       if (onProjectsUpdate) {
-        onProjectsUpdate();
+        await onProjectsUpdate();
       }
 
       // 파일 입력 초기화
