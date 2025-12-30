@@ -639,12 +639,13 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
             </div>
           )}
 
-          {/* 프로젝트 일정 섹션 */}
-          <div className="pt-6 border-t border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <ClipboardCheck className="text-indigo-600" size={20} />
-              프로젝트 일정
-            </h3>
+          {/* 프로젝트 일정 섹션 (신규 개발 프로젝트만 표시) */}
+          {formData.type === ProjectType.NEW_DEVELOPMENT && (
+            <div className="pt-6 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <ClipboardCheck className="text-indigo-600" size={20} />
+                프로젝트 일정
+              </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">FOT (First Off Tool)</label>
@@ -711,6 +712,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               </div>
             </div>
           </div>
+          )}
 
           {/* 증작 금형 프로젝트 전용 필드 */}
           {formData.type === ProjectType.INCREMENTAL_MOLD && (
