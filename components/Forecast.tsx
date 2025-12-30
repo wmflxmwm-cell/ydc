@@ -700,8 +700,19 @@ ${JSON.stringify(sampleData, null, 2)}
               <p className="text-sm text-slate-500 mt-1">{t.forecast.subtitle}</p>
             </div>
           </div>
-          {/* 엑셀 업로드 버튼 */}
+          {/* 엑셀 업로드 및 붙여넣기 버튼 */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPasteArea(!showPasteArea)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                showPasteArea
+                  ? 'bg-indigo-700 text-white'
+                  : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+              }`}
+            >
+              <Clipboard size={18} />
+              {showPasteArea ? '붙여넣기 닫기' : '엑셀 붙여넣기'}
+            </button>
             <input
               type="file"
               accept=".xlsx,.xls"
