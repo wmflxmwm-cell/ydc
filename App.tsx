@@ -161,7 +161,7 @@ const App: React.FC = () => {
             <Settings2 className="w-6 h-6 text-white" />
           </div>
           <span className="font-bold text-lg text-white tracking-tight leading-tight">
-            {language === 'vi' ? 'Đúc áp lực' : '다이캐스팅'}<br /><span className="text-indigo-400 text-sm uppercase">{language === 'vi' ? 'Hệ thống quản lý APQP' : 'APQP 관리 시스템'}</span>
+            {t.app.titleMain}<br /><span className="text-indigo-400 text-sm uppercase">{t.app.titleSub}</span>
           </span>
         </div>
 
