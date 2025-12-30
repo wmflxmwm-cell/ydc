@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lock, User, Settings2, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
-import client from '../src/api/client';
+import { authService } from '../src/api/services/authService';
 
 type Language = 'ko' | 'vi';
 
@@ -89,18 +89,18 @@ const Login: React.FC<Props> = ({ onLogin }) => {
     });
 
     try {
-      const response = await client.post('/auth/login', { 
+      const response = await authService.login({ 
         id: cleanId, 
         password: cleanPassword 
       });
 
-      console.log('Login response:', response.data);
+      console.log('Login response:', response);
 
-      if (response.data && response.data.user) {
+      if (response && response.user) {
         onLogin({ 
-          id: response.data.user.id, 
-          name: response.data.user.name, 
-          role: response.data.user.role 
+          id: response.user.id, 
+          name: response.user.name, 
+          role: response.user.role 
         });
       } else {
         setError(t.errorMessage);
