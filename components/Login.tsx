@@ -64,29 +64,37 @@ const Login: React.FC<Props> = ({ onLogin }) => {
     localStorage.setItem('apqp_language', language);
   }, [language]);
 
-  // 시뮬레이션된 계정 데이터 (관리자가 발급한 형태)
-  const MOCK_USERS = [
-    { id: 'admin', password: 'admin123', name: '관리자', role: 'MANAGER' },
-    { id: 'quality', password: 'q123', name: '김품질 팀장', role: '품질팀' },
-    { id: 'production', password: 'p123', name: '이생산 과장', role: '생산관리' },
-  ];
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // 실제 환경에서는 API 통신이 일어나는 부분
-    setTimeout(() => {
-      const user = MOCK_USERS.find(u => u.id === id && u.password === password);
-      
-      if (user) {
-        onLogin({ id: user.id, name: user.name, role: user.role });
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.user) {
+        onLogin({ 
+          id: data.user.id, 
+          name: data.user.name, 
+          role: data.user.role 
+        });
       } else {
-        setError(t.errorMessage);
+        setError(data.message || t.errorMessage);
         setIsLoading(false);
       }
-    }, 800);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError('로그인 중 오류가 발생했습니다. 서버 연결을 확인하세요.');
+      setIsLoading(false);
+    }
   };
 
   return (

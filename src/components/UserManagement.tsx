@@ -36,12 +36,25 @@ const UserManagement: React.FC = () => {
         setIsSubmitting(true);
         try {
             await userService.register(formData);
-            alert('사용자가 등록되었습니다.');
-            setFormData({ id: '', password: '', name: '', role: '' });
-            fetchUsers();
-        } catch (error) {
+            
+            // 등록 후 실제로 DB에서 사용자가 저장되었는지 확인
+            await new Promise(resolve => setTimeout(resolve, 500)); // DB 동기화 대기
+            await fetchUsers();
+            
+            // 등록된 사용자가 목록에 있는지 확인
+            const updatedUsers = await userService.getAll();
+            const registeredUser = updatedUsers.find(u => u.id === formData.id);
+            
+            if (registeredUser) {
+                alert(`사용자 "${formData.name}" (${formData.id})가 성공적으로 등록되었습니다.`);
+                setFormData({ id: '', password: '', name: '', role: '' });
+            } else {
+                throw new Error('사용자가 등록되었지만 목록에 나타나지 않습니다. 서버를 확인하세요.');
+            }
+        } catch (error: any) {
             console.error('Failed to register user:', error);
-            alert('사용자 등록에 실패했습니다.');
+            const errorMessage = error.response?.data?.message || error.message || '사용자 등록에 실패했습니다.';
+            alert(`사용자 등록 실패: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
