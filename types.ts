@@ -72,4 +72,27 @@ export interface Project {
   volume2030?: number;
   volume2031?: number;
   volume2032?: number;
+  // 증작 금형 프로젝트 전용 필드
+  developmentPhase?: string; // 개발 차수
+  // 계획/실적 날짜 필드들
+  feasibilityReviewPlan?: string; // 타당성검토서 계획
+  feasibilityReviewActual?: string; // 타당성검토서 실적
+  moldOrderPlan?: string; // 금형발주 계획
+  moldOrderActual?: string; // 금형발주 실적
+  moldDeliveryPlan?: string; // 금형 입고 계획
+  moldDeliveryActual?: string; // 금형 입고 실적
+  istrSubmissionPlan?: string; // istr 제출 계획
+  istrSubmissionActual?: string; // istr 제출 실적
+  ydcVnPpapPlan?: string; // ydc vn ppap 계획
+  ydcVnPpapActual?: string; // ydc vn ppap 실적
+  ppapKrSubmissionPlan?: string; // ppap kr 제출 계획
+  ppapKrSubmissionActual?: string; // ppap kr 제출 실적
+  ppapCustomerApprovalPlan?: string; // ppap 고객 승인 계획
+  ppapCustomerApprovalActual?: string; // ppap 고객 승인 실적
+  ydcVnSopPlan?: string; // ydc vn sop 계획
+  ydcVnSopActual?: string; // ydc vn sop 실적
+  customerSopPlan?: string; // 고객 sop 계획
+  customerSopActual?: string; // 고객 sop 실적
+  deliverySchedulePlan?: string; // 납품일정 계획
+  deliveryScheduleActual?: string; // 납품일정 실적
 }

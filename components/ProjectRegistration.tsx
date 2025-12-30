@@ -35,7 +35,29 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
     volume2029: undefined,
     volume2030: undefined,
     volume2031: undefined,
-    volume2032: undefined
+    volume2032: undefined,
+    // 증작 금형 프로젝트 전용 필드
+    developmentPhase: '',
+    feasibilityReviewPlan: '',
+    feasibilityReviewActual: '',
+    moldOrderPlan: '',
+    moldOrderActual: '',
+    moldDeliveryPlan: '',
+    moldDeliveryActual: '',
+    istrSubmissionPlan: '',
+    istrSubmissionActual: '',
+    ydcVnPpapPlan: '',
+    ydcVnPpapActual: '',
+    ppapKrSubmissionPlan: '',
+    ppapKrSubmissionActual: '',
+    ppapCustomerApprovalPlan: '',
+    ppapCustomerApprovalActual: '',
+    ydcVnSopPlan: '',
+    ydcVnSopActual: '',
+    customerSopPlan: '',
+    customerSopActual: '',
+    deliverySchedulePlan: '',
+    deliveryScheduleActual: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -689,6 +711,231 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               </div>
             </div>
           </div>
+
+          {/* 증작 금형 프로젝트 전용 필드 */}
+          {formData.type === ProjectType.INCREMENTAL_MOLD && (
+            <div className="pt-6 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <ClipboardCheck className="text-indigo-600" size={20} />
+                증작 금형 프로젝트 일정
+              </h3>
+              
+              {/* 개발 차수 */}
+              <div className="mb-6">
+                <label className="text-sm font-bold text-slate-700 block mb-2">개발 차수</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                  placeholder="예) 1차, 2차..."
+                  value={formData.developmentPhase || ''}
+                  onChange={(e) => setFormData({...formData, developmentPhase: e.target.value})}
+                />
+              </div>
+
+              {/* 계획/실적 날짜 필드들 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 타당성검토서 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">타당성검토서 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.feasibilityReviewPlan || ''}
+                    onChange={(e) => setFormData({...formData, feasibilityReviewPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">타당성검토서 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.feasibilityReviewActual || ''}
+                    onChange={(e) => setFormData({...formData, feasibilityReviewActual: e.target.value})}
+                  />
+                </div>
+
+                {/* 금형발주 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">금형발주 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.moldOrderPlan || ''}
+                    onChange={(e) => setFormData({...formData, moldOrderPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">금형발주 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.moldOrderActual || ''}
+                    onChange={(e) => setFormData({...formData, moldOrderActual: e.target.value})}
+                  />
+                </div>
+
+                {/* 금형 입고 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">금형 입고 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.moldDeliveryPlan || ''}
+                    onChange={(e) => setFormData({...formData, moldDeliveryPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">금형 입고 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.moldDeliveryActual || ''}
+                    onChange={(e) => setFormData({...formData, moldDeliveryActual: e.target.value})}
+                  />
+                </div>
+
+                {/* istr 제출 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">istr 제출 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.istrSubmissionPlan || ''}
+                    onChange={(e) => setFormData({...formData, istrSubmissionPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">istr 제출 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.istrSubmissionActual || ''}
+                    onChange={(e) => setFormData({...formData, istrSubmissionActual: e.target.value})}
+                  />
+                </div>
+
+                {/* ydc vn ppap */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ydc vn ppap 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ydcVnPpapPlan || ''}
+                    onChange={(e) => setFormData({...formData, ydcVnPpapPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ydc vn ppap 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ydcVnPpapActual || ''}
+                    onChange={(e) => setFormData({...formData, ydcVnPpapActual: e.target.value})}
+                  />
+                </div>
+
+                {/* ppap kr 제출 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ppap kr 제출 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ppapKrSubmissionPlan || ''}
+                    onChange={(e) => setFormData({...formData, ppapKrSubmissionPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ppap kr 제출 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ppapKrSubmissionActual || ''}
+                    onChange={(e) => setFormData({...formData, ppapKrSubmissionActual: e.target.value})}
+                  />
+                </div>
+
+                {/* ppap 고객 승인 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ppap 고객 승인 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ppapCustomerApprovalPlan || ''}
+                    onChange={(e) => setFormData({...formData, ppapCustomerApprovalPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ppap 고객 승인 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ppapCustomerApprovalActual || ''}
+                    onChange={(e) => setFormData({...formData, ppapCustomerApprovalActual: e.target.value})}
+                  />
+                </div>
+
+                {/* ydc vn sop */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ydc vn sop 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ydcVnSopPlan || ''}
+                    onChange={(e) => setFormData({...formData, ydcVnSopPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ydc vn sop 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.ydcVnSopActual || ''}
+                    onChange={(e) => setFormData({...formData, ydcVnSopActual: e.target.value})}
+                  />
+                </div>
+
+                {/* 고객 sop */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">고객 sop 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.customerSopPlan || ''}
+                    onChange={(e) => setFormData({...formData, customerSopPlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">고객 sop 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.customerSopActual || ''}
+                    onChange={(e) => setFormData({...formData, customerSopActual: e.target.value})}
+                  />
+                </div>
+
+                {/* 납품일정 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">납품일정 계획</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.deliverySchedulePlan || ''}
+                    onChange={(e) => setFormData({...formData, deliverySchedulePlan: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">납품일정 실적</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    value={formData.deliveryScheduleActual || ''}
+                    onChange={(e) => setFormData({...formData, deliveryScheduleActual: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="pt-6 border-t border-slate-100 flex gap-4">
             <button 
