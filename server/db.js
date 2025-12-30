@@ -158,6 +158,11 @@ const initDb = async () => {
         VALUES ('admin', '관리자', 'admin123', 'MANAGER')
       `);
             console.log('Admin user created');
+        } else {
+            // 기존 admin 사용자의 역할을 MANAGER로 업데이트
+            await client.query(`
+        UPDATE users SET role = 'MANAGER' WHERE id = 'admin' AND role != 'MANAGER'
+      `);
         }
 
         await client.query('COMMIT');
