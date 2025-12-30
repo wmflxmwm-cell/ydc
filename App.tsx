@@ -231,6 +231,7 @@ const App: React.FC = () => {
               {activeTab === 'registration' && '신규 프로젝트 등록'}
               {activeTab === 'management' && 'APQP 단계별 게이트 관리'}
               {activeTab === 'issues' && '품질 결함 이슈 관리'}
+              {activeTab === 'forecast' && '아이템별 Forecast'}
               {activeTab === 'users' && '시스템 사용자 관리'}
               {activeTab === 'settings' && '기본 내용 관리'}
             </h1>
