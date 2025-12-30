@@ -8,6 +8,7 @@ import { projectService } from '../src/api/services/projectService';
 interface Props {
   onAddProject: (project: Project) => void;
   onNavigateToManagement: () => void;
+  activeTab: string;
 }
 
 const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManagement, activeTab }) => {
@@ -117,6 +118,7 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
 
   // 프로젝트 형태 변경 시 부품명 초기화 (증작 금형으로 변경 시)
   useEffect(() => {
+    console.log('formData.type changed:', formData.type, 'ProjectType.INCREMENTAL_MOLD:', ProjectType.INCREMENTAL_MOLD, 'Match:', formData.type === ProjectType.INCREMENTAL_MOLD);
     if (formData.type === ProjectType.INCREMENTAL_MOLD && formData.partName && !existingProjects.find(p => p.partName === formData.partName && p.type === ProjectType.NEW_DEVELOPMENT)) {
       // 증작 금형으로 변경했는데 선택된 부품명이 신규 개발 프로젝트가 아니면 초기화
       setFormData(prev => ({
@@ -417,7 +419,10 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => setFormData({...formData, type: ProjectType.NEW_DEVELOPMENT})}
+                  onClick={() => {
+                    console.log('Setting type to NEW_DEVELOPMENT');
+                    setFormData({...formData, type: ProjectType.NEW_DEVELOPMENT});
+                  }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${
                     formData.type === ProjectType.NEW_DEVELOPMENT 
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
@@ -428,7 +433,10 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({...formData, type: ProjectType.INCREMENTAL_MOLD})}
+                  onClick={() => {
+                    console.log('Setting type to INCREMENTAL_MOLD, current type:', formData.type);
+                    setFormData({...formData, type: ProjectType.INCREMENTAL_MOLD});
+                  }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${
                     formData.type === ProjectType.INCREMENTAL_MOLD 
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
