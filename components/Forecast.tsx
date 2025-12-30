@@ -142,46 +142,49 @@ ${JSON.stringify(sampleData, null, 2)}
     try {
       const XLSX = await import('xlsx');
       
-      return new Promise((resolve, reject) => {
+      // 파일을 먼저 읽기
+      const fileData = await new Promise<ArrayBuffer>((resolve, reject) => {
         const reader = new FileReader();
-        
-        reader.onload = (e) => {
-          try {
-            const data = new Uint8Array(e.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' }) as any[][];
+        reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
+        reader.onerror = () => reject(new Error('파일 읽기 실패'));
+        reader.readAsArrayBuffer(file);
+      });
 
-            console.log('Raw Excel data:', jsonData);
-            console.log('First row (headers):', jsonData[0]);
+      const data = new Uint8Array(fileData);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' }) as any[][];
 
-            // 헤더 행 찾기 (첫 번째 행이 헤더)
-            const headers = jsonData[0]?.map((h: any) => {
-              if (h === null || h === undefined) return '';
-              return String(h).toLowerCase().trim();
-            }) || [];
-            
-            console.log('Normalized headers:', headers);
-            console.log('All header values:', jsonData[0]);
-            
-            // AI를 사용한 헤더 자동 매핑 시도
-            let aiMapping: {
-              partName: number | null;
-              partNumber: number | null;
-              customerName: number | null;
-              volumes: { [year: number]: number | null };
-            } | null = null;
+      console.log('Raw Excel data:', jsonData);
+      console.log('First row (headers):', jsonData[0]);
 
-            // 샘플 데이터 준비 (최대 10행)
-            const sampleRows = jsonData.slice(1, 11).filter(row => row && row.length > 0);
-            
-            if (sampleRows.length > 0) {
-              console.log('AI 분석 시작...');
-              aiMapping = await analyzeExcelWithAI(headers, sampleRows);
-              if (aiMapping) {
-                console.log('AI 매핑 결과:', aiMapping);
-              }
-            }
+      // 헤더 행 찾기 (첫 번째 행이 헤더)
+      const headers = jsonData[0]?.map((h: any) => {
+        if (h === null || h === undefined) return '';
+        return String(h).toLowerCase().trim();
+      }) || [];
+      
+      console.log('Normalized headers:', headers);
+      console.log('All header values:', jsonData[0]);
+      
+      // AI를 사용한 헤더 자동 매핑 시도
+      let aiMapping: {
+        partName: number | null;
+        partNumber: number | null;
+        customerName: number | null;
+        volumes: { [year: number]: number | null };
+      } | null = null;
+
+      // 샘플 데이터 준비 (최대 10행)
+      const sampleRows = jsonData.slice(1, 11).filter(row => row && row.length > 0);
+      
+      if (sampleRows.length > 0) {
+        console.log('AI 분석 시작...');
+        aiMapping = await analyzeExcelWithAI(headers, sampleRows);
+        if (aiMapping) {
+          console.log('AI 매핑 결과:', aiMapping);
+        }
+      }
 
             // 폴백: 기존 헤더 매핑 로직
             const getColumnIndex = (possibleNames: string[]) => {
@@ -305,24 +308,16 @@ ${JSON.stringify(sampleData, null, 2)}
               });
             }
 
-            console.log('Parsed rows:', rows);
-            
-            // 파싱된 행이 없고 헤더는 있는 경우 경고
-            if (rows.length === 0 && headers.length > 0) {
-              console.warn('No data rows parsed. Available headers:', headers);
-              console.warn('Please check if your Excel file has the correct column names.');
-              console.warn('Expected columns: 부품명/partname, 부품번호/partnumber, 고객사/customer');
-            }
-            
-            resolve(rows);
-          } catch (error) {
-            reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
-          }
-        };
-        
-        reader.onerror = () => reject(new Error('파일 읽기 실패'));
-        reader.readAsArrayBuffer(file);
-      });
+      console.log('Parsed rows:', rows);
+      
+      // 파싱된 행이 없고 헤더는 있는 경우 경고
+      if (rows.length === 0 && headers.length > 0) {
+        console.warn('No data rows parsed. Available headers:', headers);
+        console.warn('Please check if your Excel file has the correct column names.');
+        console.warn('Expected columns: 부품명/partname, 부품번호/partnumber, 고객사/customer');
+      }
+      
+      return rows;
     } catch (error) {
       throw new Error('xlsx 라이브러리 로드 실패: ' + (error as Error).message);
     }
