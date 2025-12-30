@@ -570,7 +570,6 @@ const ProjectRegistration: React.FC<Props> = ({ onAddProject, onNavigateToManage
               </div>
             </div>
           </div>
-          </div>
 
           <div className="pt-6 border-t border-slate-100 flex gap-4">
             <button 
