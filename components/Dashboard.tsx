@@ -1,6 +1,5 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Project, Gate, Issue, GateStatus, ProjectType } from '../types';
 import { Box, Layers, Target, Clock, AlertCircle, Search, ChevronRight, CheckCircle2, Circle, FileText, X, Sparkles, Loader2, ArrowRight } from 'lucide-react';
@@ -448,8 +447,8 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
         </div>
       </div>
 
-      {/* AI Report Modal - React Portal 사용하여 body에 직접 렌더링 */}
-      {selectedReportProject && typeof document !== 'undefined' && createPortal(
+      {/* AI Report Modal */}
+      {selectedReportProject && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={(e) => {
@@ -529,8 +528,7 @@ const Dashboard: React.FC<Props> = ({ projects, gates, issues }) => {
               )}
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );
