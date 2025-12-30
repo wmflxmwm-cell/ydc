@@ -12,7 +12,7 @@ const UserManagement: React.FC = () => {
         id: '',
         password: '',
         name: '',
-        role: '품질 관리'
+        role: ''
     });
 
     useEffect(() => {
@@ -37,7 +37,7 @@ const UserManagement: React.FC = () => {
         try {
             await userService.register(formData);
             alert('사용자가 등록되었습니다.');
-            setFormData({ id: '', password: '', name: '', role: '품질 관리' });
+            setFormData({ id: '', password: '', name: '', role: '' });
             fetchUsers();
         } catch (error) {
             console.error('Failed to register user:', error);
@@ -105,15 +105,18 @@ const UserManagement: React.FC = () => {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">역할/부서</label>
                                 <select
+                                    required
                                     value={formData.role}
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none cursor-pointer"
                                 >
+                                    <option value="">역할 선택</option>
                                     <option value="시스템 총괄">시스템 총괄</option>
                                     <option value="품질 관리">품질 관리</option>
                                     <option value="생산 기술">생산 기술</option>
                                     <option value="금형 기술">금형 기술</option>
                                     <option value="영업 관리">영업 관리</option>
+                                    <option value="MANAGER">MANAGER</option>
                                 </select>
                             </div>
 
