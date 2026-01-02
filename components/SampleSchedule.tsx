@@ -604,37 +604,24 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         <div className="space-y-3">
                           <div className="flex flex-wrap gap-2">
                             {item.schedules.map((schedule, idx) => (
-                              <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[150px]">
-                                <div className="mb-2">
-                                  <span className="font-bold text-slate-900 text-xs">{getPostProcessingName(schedule.postProcessingId)}</span>
-                                  {schedule.isCompleted && (
-                                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
-                                  )}
-                                </div>
-                                <div className="space-y-2">
-                                  <div>
-                                    <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
-                                    <input
-                                      type="date"
-                                      value={schedule.plannedDate || ''}
-                                      onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
-                                      className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
-                                      disabled={schedule.isCompleted || schedule.isPlanCompleted}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-bold text-slate-600 mb-1">완료일</label>
-                                    <input
-                                      type="date"
-                                      value={schedule.completedDate || ''}
-                                      onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
-                                      className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
-                                      disabled={schedule.isCompleted}
-                                    />
-                                  </div>
-                                </div>
-                                {!schedule.isCompleted && (
-                                  <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[75px]">
+                              <div className="mb-2">
+                                <span className="font-bold text-slate-900 text-xs">{getPostProcessingName(schedule.postProcessingId)}</span>
+                                {schedule.isCompleted && (
+                                  <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
+                                  <input
+                                    type="date"
+                                    value={schedule.plannedDate || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
+                                    disabled={schedule.isCompleted || schedule.isPlanCompleted}
+                                  />
+                                  {!schedule.isCompleted && (
                                     <button
                                       onClick={async () => {
                                         if (!schedule.plannedDate) {
@@ -645,22 +632,35 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                         await handleUpdateSchedule(item.id, idx, 'isPlanCompleted', true);
                                       }}
                                       disabled={!schedule.plannedDate || schedule.isPlanCompleted}
-                                      className="flex items-center justify-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-full mt-1 flex items-center justify-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       <CheckCircle2 size={12} />
                                       계획완료
                                     </button>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료일</label>
+                                  <input
+                                    type="date"
+                                    value={schedule.completedDate || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
+                                    disabled={schedule.isCompleted}
+                                  />
+                                  {!schedule.isCompleted && (
                                     <button
                                       onClick={() => handleCompleteSchedule(item.id, idx)}
                                       disabled={!schedule.completedDate}
-                                      className="flex items-center justify-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-full mt-1 flex items-center justify-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       <CheckCircle2 size={12} />
                                       일정완료
                                     </button>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </div>
+                            </div>
                             ))}
                           </div>
                           {item.remarks && (
