@@ -55,6 +55,7 @@ app.use('/projects', projectRoutes);
 app.use('/gates', gateRoutes);
 app.use('/issues', issueRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/api/parts', partRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
