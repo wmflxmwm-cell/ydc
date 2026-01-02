@@ -59,7 +59,18 @@ router.post('/', async (req, res) => {
         });
     } catch (err) {
         console.error('Error creating sample schedule:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Error details:', {
+            message: err.message,
+            code: err.code,
+            detail: err.detail,
+            constraint: err.constraint,
+            table: err.table,
+            column: err.column
+        });
+        res.status(500).json({ 
+            error: err.message,
+            detail: err.detail || '데이터베이스 오류가 발생했습니다. 서버 로그를 확인하세요.'
+        });
     }
 });
 
