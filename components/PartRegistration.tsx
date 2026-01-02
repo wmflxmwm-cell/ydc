@@ -129,7 +129,10 @@ const PartRegistration: React.FC = () => {
   };
 
   const getPostProcessingName = (id: string) => {
-    return postProcessings.find(p => p.id === id)?.name || '';
+    const postProcessing = postProcessings.find(p => p.id === id);
+    if (!postProcessing) return '';
+    const currentLanguage = getLanguage();
+    return translatePostProcessingName(postProcessing.name, currentLanguage);
   };
 
   const getMaterialName = (id: string) => {
