@@ -297,6 +297,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: '',
         shippingMethod: '해운',
         productCostType: '유상',
+        moldSequence: '',
+        lot: '',
         schedules: [] // 폼에서는 사용하지 않지만 타입 유지를 위해 유지
       });
       setShowForm(false);
