@@ -107,7 +107,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       completedDate: '',
       inputQuantity: 0,
       completedQuantity: 0,
-      isCompleted: false
+      isCompleted: false,
+      isPlanCompleted: false
     };
 
     const updatedSchedules = [...item.schedules, newSchedule];
