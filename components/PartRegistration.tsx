@@ -324,7 +324,7 @@ const PartRegistration: React.FC = () => {
                 <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.material}</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.cavity}</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.productionTon}</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.postProcessingAdd}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.settings.postProcessings}</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.management}</th>
               </tr>
             </thead>

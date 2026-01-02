@@ -230,6 +230,28 @@ export const translations = {
       noResults: '검색 결과가 없습니다',
       updateSuccess: '{count}개 프로젝트 업데이트 완료',
       updateFailed: ', {count}개 실패'
+    },
+    // PartRegistration.tsx
+    partRegistration: {
+      title: '품목 등록',
+      subtitle: '품목 정보 등록 및 관리',
+      customer: '고객사',
+      partNumber: '품번',
+      partName: '품목',
+      material: '재질',
+      cavity: 'Cav',
+      productionTon: '생산 톤수',
+      productionTonPlaceholder: '예: 1.5',
+      postProcessingAdd: '후공정 추가',
+      postProcessingSelect: '후공정 선택...',
+      selectPlaceholder: '선택하세요',
+      register: '등록',
+      cancel: '취소',
+      save: '저장',
+      noItems: '등록된 품목이 없습니다.',
+      management: '관리',
+      registerFailed: '품목 등록에 실패했습니다.',
+      deleteConfirm: '이 품목을 삭제하시겠습니까?'
     }
   },
   vi: {
@@ -456,6 +478,28 @@ export const translations = {
       noResults: 'Không có kết quả tìm kiếm',
       updateSuccess: 'Cập nhật thành công {count} dự án',
       updateFailed: ', {count} thất bại'
+    },
+    // PartRegistration.tsx
+    partRegistration: {
+      title: 'Đăng ký sản phẩm',
+      subtitle: 'Đăng ký và quản lý thông tin sản phẩm',
+      customer: 'Khách hàng',
+      partNumber: 'Mã sản phẩm',
+      partName: 'Tên sản phẩm',
+      material: 'Chất liệu',
+      cavity: 'Cav',
+      productionTon: 'Tấn sản xuất',
+      productionTonPlaceholder: 'VD: 1.5',
+      postProcessingAdd: 'Thêm xử lý sau',
+      postProcessingSelect: 'Chọn xử lý sau...',
+      selectPlaceholder: 'Chọn',
+      register: 'Đăng ký',
+      cancel: 'Hủy',
+      save: 'Lưu',
+      noItems: 'Không có sản phẩm nào được đăng ký.',
+      management: 'Quản lý',
+      registerFailed: 'Đăng ký sản phẩm thất bại.',
+      deleteConfirm: 'Bạn có muốn xóa sản phẩm này không?'
     }
   },
   // PartRegistration.tsx
@@ -480,29 +524,6 @@ export const translations = {
     registerFailed: '품목 등록에 실패했습니다.',
     deleteConfirm: '이 품목을 삭제하시겠습니까?'
   }
-};
-
-// Vietnamese translations
-translations.vi.partRegistration = {
-  title: 'Đăng ký sản phẩm',
-  subtitle: 'Đăng ký và quản lý thông tin sản phẩm',
-  customer: 'Khách hàng',
-  partNumber: 'Mã sản phẩm',
-  partName: 'Tên sản phẩm',
-  material: 'Chất liệu',
-  cavity: 'Cav',
-  productionTon: 'Tấn sản xuất',
-  productionTonPlaceholder: 'VD: 1.5',
-  postProcessingAdd: 'Thêm xử lý sau',
-  postProcessingSelect: 'Chọn xử lý sau...',
-  selectPlaceholder: 'Chọn',
-  register: 'Đăng ký',
-  cancel: 'Hủy',
-  save: 'Lưu',
-  noItems: 'Không có sản phẩm nào được đăng ký.',
-  management: 'Quản lý',
-  registerFailed: 'Đăng ký sản phẩm thất bại.',
-  deleteConfirm: 'Bạn có muốn xóa sản phẩm này không?'
 };
 
 export const getTranslations = (lang: Language = getLanguage()) => {
