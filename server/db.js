@@ -100,6 +100,9 @@ const initDb = async () => {
 
         // Add new columns if they don't exist (for existing databases)
         const alterQueries = [
+            'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS mold_sequence VARCHAR(50)',
+            'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS lot VARCHAR(50)',
+            'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS remarks TEXT',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fot_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fai_date DATE',

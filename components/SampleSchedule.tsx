@@ -312,7 +312,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         shippingMethod: '해운',
         productCostType: '유상',
         moldSequence: '',
-        lot: '',
+        lot: '미적용',
+        remarks: '',
         schedules: [] // 폼에서는 사용하지 않지만 타입 유지를 위해 유지
       });
       setShowForm(false);
@@ -456,16 +457,28 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                              className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                            />
                          </div>
-                         <div>
-                           <label className="block text-xs font-bold text-slate-700 mb-1">로트</label>
-                           <input
-                             type="text"
-                             value={formData.lot}
-                             onChange={(e) => setFormData(prev => ({ ...prev, lot: e.target.value }))}
-                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                           />
-                         </div>
-                       </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">로트</label>
+                          <select
+                            value={formData.lot}
+                            onChange={(e) => setFormData(prev => ({ ...prev, lot: e.target.value }))}
+                            className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          >
+                            <option value="적용">적용</option>
+                            <option value="미적용">미적용</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">비고 특이사항</label>
+                        <textarea
+                          value={formData.remarks}
+                          onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+                          className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          rows={3}
+                          placeholder="비고 및 특이사항을 입력하세요"
+                        />
+                      </div>
 
                        <div className="flex gap-3 justify-end pt-3 border-t border-slate-200">
                          <button
