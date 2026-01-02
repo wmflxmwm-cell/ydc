@@ -6,7 +6,11 @@ import { getTranslations, getLanguage } from '../src/utils/translations';
 import { translatePostProcessingName } from '../src/utils/postProcessingTranslations';
 
 
-const PartRegistration: React.FC = () => {
+interface Props {
+  user: { id: string; name: string; role: string };
+}
+
+const PartRegistration: React.FC<Props> = ({ user }) => {
   const t = getTranslations();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);

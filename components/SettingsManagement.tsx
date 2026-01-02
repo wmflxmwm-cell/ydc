@@ -4,7 +4,11 @@ import { settingsService, Customer, Material, PostProcessing } from '../src/api/
 import { getTranslations, getLanguage } from '../src/utils/translations';
 import { translatePostProcessingName, translatePostProcessingDescription } from '../src/utils/postProcessingTranslations';
 
-const SettingsManagement: React.FC = () => {
+interface Props {
+    user: { id: string; name: string; role: string };
+}
+
+const SettingsManagement: React.FC<Props> = ({ user }) => {
     const t = getTranslations();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
@@ -295,12 +299,15 @@ const SettingsManagement: React.FC = () => {
                                             <p className="font-bold text-slate-900">{material.name}</p>
                                             <p className="text-xs text-slate-500 font-mono">{material.code}</p>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteMaterial(material.id)}
-                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        {user.role === '개발팀' && (
+                                            <button
+                                                onClick={() => handleDeleteMaterial(material.id)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                title="삭제"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>

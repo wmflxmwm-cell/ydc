@@ -264,6 +264,12 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
+    // 수정 모드인 경우
+    if (editingItem) {
+      await handleUpdateItem(e);
+      return;
+    }
+
     // 품목 정보에서 후공정 목록 가져오기
     const selectedPart = parts.find(p => p.id === formData.partId);
     const autoSchedules: ScheduleItem[] = selectedPart 
@@ -736,14 +742,26 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       )}
                     </td>
                     <td className="px-2 py-4 text-center w-fit">
-                      {user.role === 'MANAGER' && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
+                      <div className="flex flex-col items-center gap-2">
+                        {user.role === '개발팀' && !item.isPlanApproved && (
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="수정"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {user.role === '개발팀' && (
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="삭제"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

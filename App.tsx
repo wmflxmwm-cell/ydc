@@ -398,7 +398,7 @@ const App: React.FC = () => {
             <SampleSchedule user={user} />
           </div>
           <div style={{ display: activeTab === 'part' ? 'block' : 'none' }}>
-            <PartRegistration />
+            <PartRegistration user={user} />
           </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
