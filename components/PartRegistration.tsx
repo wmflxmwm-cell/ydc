@@ -1,25 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, X, Save, Trash2 } from 'lucide-react';
 import { settingsService, Customer, Material, PostProcessing } from '../src/api/services/settingsService';
+import { partService, Part } from '../src/api/services/partService';
 import { getTranslations } from '../src/utils/translations';
 
-interface PartItem {
-  id: string;
-  customerName: string;
-  partNumber: string;
-  partName: string;
-  material: string;
-  cavity: string;
-  productionTon: string; // 생산 톤수
-  postProcessings: string[]; // 후공정 ID 배열
-}
 
 const PartRegistration: React.FC = () => {
   const t = getTranslations();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
-  const [items, setItems] = useState<PartItem[]>([]);
+  const [items, setItems] = useState<Part[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // 등록 폼 상태
@@ -49,14 +40,16 @@ const PartRegistration: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [customersData, materialsData, postProcessingsData] = await Promise.all([
+      const [customersData, materialsData, postProcessingsData, partsData] = await Promise.all([
         settingsService.getCustomers(),
         settingsService.getMaterials(),
-        settingsService.getPostProcessings()
+        settingsService.getPostProcessings(),
+        partService.getAll()
       ]);
       setCustomers(customersData);
       setMaterials(materialsData);
       setPostProcessings(postProcessingsData);
+      setItems(partsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       alert('데이터를 불러오는데 실패했습니다.');
@@ -82,7 +75,7 @@ const PartRegistration: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.customerName || !formData.partNumber || !formData.partName || !formData.material || !formData.cavity) {
@@ -90,35 +83,47 @@ const PartRegistration: React.FC = () => {
       return;
     }
 
-    const newItem: PartItem = {
-      id: `part-${Date.now()}`,
-      customerName: formData.customerName,
-      partNumber: formData.partNumber,
-      partName: formData.partName,
-      material: formData.material,
-      cavity: formData.cavity,
-      productionTon: formData.productionTon,
-      postProcessings: [...formData.postProcessings]
-    };
+    try {
+      const newItem = await partService.create({
+        customerName: formData.customerName,
+        partNumber: formData.partNumber,
+        partName: formData.partName,
+        material: formData.material,
+        cavity: formData.cavity,
+        productionTon: formData.productionTon,
+        postProcessings: [...formData.postProcessings]
+      });
 
-    setItems(prev => [...prev, newItem]);
+      setItems(prev => [newItem, ...prev]);
 
-    // 폼 초기화
-    setFormData({
-      customerName: '',
-      partNumber: '',
-      partName: '',
-      material: '',
-      cavity: '',
-      productionTon: '',
-      postProcessings: []
-    });
-    setShowForm(false);
+      // 폼 초기화
+      setFormData({
+        customerName: '',
+        partNumber: '',
+        partName: '',
+        material: '',
+        cavity: '',
+        productionTon: '',
+        postProcessings: []
+      });
+      setShowForm(false);
+    } catch (error) {
+      console.error('Failed to create part:', error);
+      alert('품목 등록에 실패했습니다.');
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('이 품목을 삭제하시겠습니까?')) {
+  const handleDelete = async (id: string) => {
+    if (!confirm('이 품목을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await partService.delete(id);
       setItems(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to delete part:', error);
+      alert('품목 삭제에 실패했습니다.');
     }
   };
 

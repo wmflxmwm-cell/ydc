@@ -6,6 +6,7 @@ const projectRoutes = require('./routes/projects');
 const gateRoutes = require('./routes/gates');
 const issueRoutes = require('./routes/issues');
 const settingsRoutes = require('./routes/settings');
+const partRoutes = require('./routes/parts');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -83,7 +84,7 @@ app.use((req, res) => {
     res.status(404).json({ 
         error: 'Not Found',
         message: `Route ${req.method} ${req.path} not found`,
-        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/health', '/']
+        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/api/parts', '/health', '/']
     });
 });
 

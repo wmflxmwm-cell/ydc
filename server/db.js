@@ -65,6 +65,21 @@ const initDb = async () => {
       );
     `);
 
+        // Parts Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS parts (
+        id VARCHAR(50) PRIMARY KEY,
+        customer_name VARCHAR(100) NOT NULL,
+        part_number VARCHAR(100) NOT NULL,
+        part_name VARCHAR(100) NOT NULL,
+        material VARCHAR(100) NOT NULL,
+        cavity VARCHAR(50) NOT NULL,
+        production_ton VARCHAR(50),
+        post_processings TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
         // Add new columns if they don't exist (for existing databases)
         const alterQueries = [
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',
