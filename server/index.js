@@ -78,7 +78,7 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Die-casting APQP Manager API Server',
         version: '1.0.0',
-        endpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/health']
+        endpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/api/parts', '/api/sample-schedules', '/health']
     });
 });
 
@@ -87,7 +87,7 @@ app.use((req, res) => {
     res.status(404).json({ 
         error: 'Not Found',
         message: `Route ${req.method} ${req.path} not found`,
-        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/api/parts', '/health', '/']
+        availableEndpoints: ['/auth', '/projects', '/gates', '/issues', '/settings', '/api/parts', '/api/sample-schedules', '/health', '/']
     });
 });
 
