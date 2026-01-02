@@ -491,27 +491,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       </div>
                     </td>
                     <td className="px-3 py-4 text-sm">
-                      {/* 후공정 목록 - 많을 경우 3줄, 적을 경우 2줄 */}
-                      {item.schedules.length > 0 && (
-                        <div className={`grid gap-2 mb-3 ${item.schedules.length > 6 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                          {item.schedules.map((schedule, idx) => {
-                            const isCompleted = schedule.isCompleted;
-                            return (
-                              <div
-                                key={idx}
-                                className={`px-2 py-1.5 rounded text-xs font-bold ${
-                                  isCompleted
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-indigo-100 text-indigo-700'
-                                }`}
-                              >
-                                {getPostProcessingName(schedule.postProcessingId)}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
                       {/* 계획일정/완료일정 입력 영역 */}
                       {item.schedules.length > 0 && (
                         <div className="flex flex-wrap gap-2">
