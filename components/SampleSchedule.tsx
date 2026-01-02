@@ -597,48 +597,41 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                           </span>
                         </div>
                         {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할인 경우 계획 승인 버튼 표시 */}
-                        {(() => {
-                          const allPlansCompleted = item.schedules.length > 0 && item.schedules.every(s => s.isPlanCompleted);
-                          const canApprove = (user.role === 'DV_MASTER_PM' || user.role === 'MANAGER') && allPlansCompleted && !item.isPlanApproved;
-                          
-                          if (canApprove) {
-                            return (
-                              <div className="mt-2">
-                                <button
-                                  onClick={async () => {
-                                    if (confirm('일정을 승인 완료 처리하시겠습니까?')) {
-                                      try {
-                                        await sampleScheduleService.update(item.id, {
-                                          partName: item.partName,
-                                          partNumber: item.partNumber,
-                                          quantity: item.quantity,
-                                          requestDate: item.requestDate,
-                                          shippingMethod: item.shippingMethod,
-                                          productCostType: item.productCostType,
-                                          moldSequence: item.moldSequence || '',
-                                          lot: item.lot || '미적용',
-                                          remarks: item.remarks || '',
-                                          isPlanApproved: true,
-                                          schedules: item.schedules
-                                        });
-                                        setItems(prev => prev.map(i =>
-                                          i.id === item.id ? { ...i, isPlanApproved: true } : i
-                                        ));
-                                      } catch (error) {
-                                        console.error('Failed to approve plan:', error);
-                                        alert('계획 승인에 실패했습니다.');
-                                      }
-                                    }
-                                  }}
-                                  className="w-full px-2 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700"
-                                >
-                                  계획 승인
-                                </button>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
+                        {user.role === 'DV_MASTER_PM' && item.schedules.length > 0 && 
+                         item.schedules.every(s => s.isPlanCompleted) && !item.isPlanApproved && (
+                          <div className="mt-2">
+                            <button
+                              onClick={async () => {
+                                if (confirm('일정을 승인 완료 처리하시겠습니까?')) {
+                                  try {
+                                    await sampleScheduleService.update(item.id, {
+                                      partName: item.partName,
+                                      partNumber: item.partNumber,
+                                      quantity: item.quantity,
+                                      requestDate: item.requestDate,
+                                      shippingMethod: item.shippingMethod,
+                                      productCostType: item.productCostType,
+                                      moldSequence: item.moldSequence || '',
+                                      lot: item.lot || '미적용',
+                                      remarks: item.remarks || '',
+                                      isPlanApproved: true,
+                                      schedules: item.schedules
+                                    });
+                                    setItems(prev => prev.map(i =>
+                                      i.id === item.id ? { ...i, isPlanApproved: true } : i
+                                    ));
+                                  } catch (error) {
+                                    console.error('Failed to approve plan:', error);
+                                    alert('계획 승인에 실패했습니다.');
+                                  }
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700"
+                            >
+                              계획 승인
+                            </button>
+                          </div>
+                        )}
                         {item.isPlanApproved && (
                           <div className="mt-2">
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">
