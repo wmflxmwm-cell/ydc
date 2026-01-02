@@ -115,7 +115,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
@@ -135,25 +135,34 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
-    const newItem: SampleScheduleItem = {
-      id: `sample-${Date.now()}`,
-      ...formData,
-      schedules: formData.schedules.map(s => ({ ...s }))
-    };
+    try {
+      const newItem = await sampleScheduleService.create({
+        partName: formData.partName,
+        partNumber: formData.partNumber,
+        quantity: formData.quantity,
+        requestDate: formData.requestDate,
+        shippingMethod: formData.shippingMethod,
+        productCostType: formData.productCostType,
+        schedules: formData.schedules.map(s => ({ ...s }))
+      });
 
-    setItems(prev => [...prev, newItem]);
-    
-    // 폼 초기화
-    setFormData({
-      partName: '',
-      partNumber: '',
-      quantity: 0,
-      requestDate: '',
-      shippingMethod: '해운',
-      productCostType: '유상',
-      schedules: []
-    });
-    setShowForm(false);
+      setItems(prev => [newItem, ...prev]);
+      
+      // 폼 초기화
+      setFormData({
+        partName: '',
+        partNumber: '',
+        quantity: 0,
+        requestDate: '',
+        shippingMethod: '해운',
+        productCostType: '유상',
+        schedules: []
+      });
+      setShowForm(false);
+    } catch (error) {
+      console.error('Failed to create sample schedule:', error);
+      alert('샘플 일정 등록에 실패했습니다.');
+    }
   };
 
   const handleDelete = async (id: string) => {
