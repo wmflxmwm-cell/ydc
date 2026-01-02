@@ -223,6 +223,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           requestDate: item.requestDate,
           shippingMethod: item.shippingMethod,
           productCostType: item.productCostType,
+          moldSequence: item.moldSequence || '',
+          lot: item.lot || '',
           schedules: updatedSchedules
         });
         setItems(prev => prev.map(i => 
