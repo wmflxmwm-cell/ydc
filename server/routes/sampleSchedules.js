@@ -40,9 +40,9 @@ router.post('/', async (req, res) => {
         const schedulesJson = JSON.stringify(schedules || []);
 
         await pool.query(
-            `INSERT INTO sample_schedules (id, part_name, part_number, quantity, request_date, shipping_method, product_cost_type, mold_sequence, lot, remarks, schedules)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-            [id, partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, remarks || null, schedulesJson]
+            `INSERT INTO sample_schedules (id, part_name, part_number, quantity, request_date, shipping_method, product_cost_type, mold_sequence, lot, remarks, is_plan_approved, schedules)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            [id, partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, remarks || null, false, schedulesJson]
         );
 
         res.json({ 
@@ -87,9 +87,9 @@ router.put('/:id', async (req, res) => {
         await pool.query(
             `UPDATE sample_schedules 
              SET part_name = $1, part_number = $2, quantity = $3, request_date = $4, 
-                 shipping_method = $5, product_cost_type = $6, mold_sequence = $7, lot = $8, remarks = $9, schedules = $10
-             WHERE id = $11`,
-            [partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, remarks || null, schedulesJson, id]
+                 shipping_method = $5, product_cost_type = $6, mold_sequence = $7, lot = $8, remarks = $9, is_plan_approved = $10, schedules = $11
+             WHERE id = $12`,
+            [partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, remarks || null, isPlanApproved || false, schedulesJson, id]
         );
 
         res.json({ 
