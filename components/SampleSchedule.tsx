@@ -514,7 +514,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료일정</label>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료일</label>
                                   <input
                                     type="date"
                                     value={schedule.completedDate || ''}
@@ -525,14 +525,30 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                 </div>
                               </div>
                               {!schedule.isCompleted && (
-                                <button
-                                  onClick={() => handleCompleteSchedule(item.id, idx)}
-                                  disabled={!schedule.completedDate}
-                                  className="w-full mt-2 flex items-center justify-center gap-2 px-2 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <CheckCircle2 size={12} />
-                                  완료 처리
-                                </button>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                  <button
+                                    onClick={() => {
+                                      if (!schedule.plannedDate) {
+                                        alert('계획일정을 먼저 입력하세요.');
+                                        return;
+                                      }
+                                      // 계획일정 저장은 이미 handleUpdateSchedule에서 자동으로 처리됨
+                                    }}
+                                    disabled={!schedule.plannedDate}
+                                    className="flex items-center justify-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <CheckCircle2 size={12} />
+                                    계획완료
+                                  </button>
+                                  <button
+                                    onClick={() => handleCompleteSchedule(item.id, idx)}
+                                    disabled={!schedule.completedDate}
+                                    className="flex items-center justify-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <CheckCircle2 size={12} />
+                                    일정완료
+                                  </button>
+                                </div>
                               )}
                             </div>
                           ))}
