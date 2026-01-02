@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
+import { partService, Part } from '../src/api/services/partService';
 import { sampleScheduleService, SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
 import { getTranslations, getLanguage } from '../src/utils/translations';
 import { translatePostProcessingName } from '../src/utils/postProcessingTranslations';
@@ -42,17 +43,51 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [postProcessingsData, schedulesData] = await Promise.all([
+      const [postProcessingsData, schedulesData, partsData] = await Promise.all([
         settingsService.getPostProcessings(),
-        sampleScheduleService.getAll()
+        sampleScheduleService.getAll(),
+        partService.getAll()
       ]);
       setPostProcessings(postProcessingsData);
       setItems(schedulesData);
+      setParts(partsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       alert('데이터를 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePartChange = (partId: string) => {
+    const selectedPart = parts.find(p => p.id === partId);
+    if (selectedPart) {
+      // 품목 선택 시 품번 자동 입력
+      // 후공정들을 자동으로 추가
+      const autoSchedules: ScheduleItem[] = selectedPart.postProcessings.map(ppId => ({
+        postProcessingId: ppId,
+        plannedDate: '',
+        completedDate: '',
+        inputQuantity: 0,
+        completedQuantity: 0,
+        isCompleted: false
+      }));
+
+      setFormData(prev => ({
+        ...prev,
+        partId: selectedPart.id,
+        partName: selectedPart.partName,
+        partNumber: selectedPart.partNumber,
+        schedules: autoSchedules
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        partId: '',
+        partName: '',
+        partNumber: '',
+        schedules: []
+      }));
     }
   };
 
@@ -119,13 +154,13 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
-      alert('품목, 품번, 수량, 납기 요청일을 모두 입력하세요.');
+    if (!formData.partId || !formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
+      alert('품목, 수량, 납기 요청일을 모두 입력하세요.');
       return;
     }
 
     if (formData.schedules.length === 0) {
-      alert('최소 하나의 후공정 일정을 추가하세요.');
+      alert('품목을 선택하면 후공정이 자동으로 추가됩니다.');
       return;
     }
 
@@ -151,6 +186,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       
       // 폼 초기화
       setFormData({
+        partId: '',
         partName: '',
         partNumber: '',
         quantity: 0,
@@ -220,22 +256,25 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">품목</label>
-                  <input
-                    type="text"
-                    value={formData.partName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, partName: e.target.value }))}
+                  <select
+                    value={formData.partId}
+                    onChange={(e) => handlePartChange(e.target.value)}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
-                  />
+                  >
+                    <option value="">품목을 선택하세요</option>
+                    {parts.map(part => (
+                      <option key={part.id} value={part.id}>{part.partName}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">품번</label>
                   <input
                     type="text"
                     value={formData.partNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, partNumber: e.target.value }))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
+                    readOnly
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -365,6 +404,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                   onClick={() => {
                     setShowForm(false);
                     setFormData({
+                      partId: '',
                       partName: '',
                       partNumber: '',
                       quantity: 0,
@@ -438,11 +478,31 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <div className="space-y-3">
+                      {/* 후공정 목록 가로 나열 */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {item.schedules.map((schedule, idx) => {
+                          const isCompleted = schedule.isCompleted;
+                          return (
+                            <div
+                              key={idx}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                isCompleted
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-indigo-100 text-indigo-700'
+                              }`}
+                            >
+                              {getPostProcessingName(schedule.postProcessingId)}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* 계획일정/완료일정 입력 영역 */}
+                      <div className="space-y-2">
                         {item.schedules.map((schedule, idx) => (
                           <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-slate-900">{getPostProcessingName(schedule.postProcessingId)}</span>
+                              <span className="font-bold text-slate-900 text-sm">{getPostProcessingName(schedule.postProcessingId)}</span>
                               {schedule.isCompleted && (
                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
                               )}
@@ -474,7 +534,13 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             <div className="grid grid-cols-2 gap-2 mb-2">
                               <div>
                                 <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
-                                <span className="text-xs text-slate-700">{schedule.plannedDate || '-'}</span>
+                                <input
+                                  type="date"
+                                  value={schedule.plannedDate || ''}
+                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
+                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                  disabled={schedule.isCompleted}
+                                />
                               </div>
                               <div>
                                 <label className="block text-xs font-bold text-slate-600 mb-1">완료일정</label>
