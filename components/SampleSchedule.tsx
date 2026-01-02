@@ -514,7 +514,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
 
                       {/* 계획일정/완료일정 입력 영역 */}
                       {item.schedules.length > 0 && (
-                        <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
                           {item.schedules.map((schedule, idx) => (
                             <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[200px]">
                               <div className="mb-2">
@@ -560,7 +560,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-2 py-4 text-center w-fit">
                       {user.role === 'MANAGER' && (
                         <button
                           onClick={() => handleDelete(item.id)}
