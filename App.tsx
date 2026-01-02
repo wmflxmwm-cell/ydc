@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen, TrendingUp, Calendar, Package } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen, TrendingUp, Calendar, Package, Languages } from 'lucide-react';
 import { Project, Gate, Issue, ProjectStatus, GateStatus } from './types';
 import { projectService } from './src/api/services/projectService';
 import { gateService } from './src/api/services/gateService';
@@ -279,6 +279,30 @@ const App: React.FC = () => {
               <p className="text-xs font-black text-white truncate">{user.name}</p>
               <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{user.role}</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleLanguageChange('ko')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all font-bold text-xs ${
+                language === 'ko' 
+                  ? 'bg-indigo-600 text-white shadow-lg' 
+                  : 'bg-slate-800/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              <Languages size={14} />
+              한국어
+            </button>
+            <button
+              onClick={() => handleLanguageChange('vi')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all font-bold text-xs ${
+                language === 'vi' 
+                  ? 'bg-indigo-600 text-white shadow-lg' 
+                  : 'bg-slate-800/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              <Languages size={14} />
+              Tiếng Việt
+            </button>
           </div>
           <button
             onClick={handleLogout}
