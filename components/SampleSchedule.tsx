@@ -29,6 +29,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     productCostType: string;
     moldSequence: string;
     lot: string;
+    remarks: string;
     schedules: ScheduleItem[];
   }>({
     partId: '',
@@ -39,7 +40,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     shippingMethod: '해운',
     productCostType: '유상',
     moldSequence: '',
-    lot: '',
+    lot: '미적용',
+    remarks: '',
     schedules: []
   });
 
@@ -128,7 +130,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
         moldSequence: item.moldSequence || '',
-        lot: item.lot || '',
+        lot: item.lot || '미적용',
+        remarks: item.remarks || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -159,7 +162,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
         moldSequence: item.moldSequence || '',
-        lot: item.lot || '',
+        lot: item.lot || '미적용',
+        remarks: item.remarks || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -188,7 +192,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
         moldSequence: item.moldSequence || '',
-        lot: item.lot || '',
+        lot: item.lot || '미적용',
+        remarks: item.remarks || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -291,6 +296,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         productCostType: formData.productCostType,
         moldSequence: formData.moldSequence,
         lot: formData.lot,
+        remarks: formData.remarks,
         schedules: autoSchedules
       });
 
@@ -475,7 +481,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                shippingMethod: '해운',
                                productCostType: '유상',
                                moldSequence: '',
-                               lot: '',
+                               lot: '미적용',
+                               remarks: '',
                                schedules: []
                              });
                            }}

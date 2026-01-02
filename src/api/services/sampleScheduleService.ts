@@ -21,6 +21,7 @@ export interface SampleSchedule {
   productCostType: string;
   moldSequence?: string;
   lot?: string;
+  remarks?: string;
   schedules: ScheduleItem[];
 }
 
@@ -33,6 +34,7 @@ export interface CreateSampleScheduleData {
   productCostType: string;
   moldSequence?: string;
   lot?: string;
+  remarks?: string;
   schedules: ScheduleItem[];
 }
 
