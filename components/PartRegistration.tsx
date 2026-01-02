@@ -109,7 +109,7 @@ const PartRegistration: React.FC = () => {
       setShowForm(false);
     } catch (error) {
       console.error('Failed to create part:', error);
-      alert('품목 등록에 실패했습니다.');
+      alert(t.partRegistration.registerFailed);
     }
   };
 
@@ -149,8 +149,8 @@ const PartRegistration: React.FC = () => {
               <Package className="text-indigo-600" size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900">품목 등록</h2>
-              <p className="text-sm text-slate-500 mt-1">품목 정보 등록 및 관리</p>
+              <h2 className="text-2xl font-black text-slate-900">{t.partRegistration.title}</h2>
+              <p className="text-sm text-slate-500 mt-1">{t.partRegistration.subtitle}</p>
             </div>
           </div>
           {!showForm && (
@@ -159,7 +159,7 @@ const PartRegistration: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
             >
               <Plus size={18} />
-              등록
+              {t.partRegistration.register}
             </button>
           )}
         </div>
@@ -167,25 +167,25 @@ const PartRegistration: React.FC = () => {
         {/* 등록 폼 */}
         {showForm && (
           <div className="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-indigo-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">품목 등록</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">{t.partRegistration.title}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">고객사</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.customer}</label>
                   <select
                     value={formData.customerName}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   >
-                    <option value="">선택하세요</option>
+                    <option value="">{t.partRegistration.selectPlaceholder}</option>
                     {customers.map(customer => (
                       <option key={customer.id} value={customer.id}>{customer.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">품번</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.partNumber}</label>
                   <input
                     type="text"
                     value={formData.partNumber}
@@ -195,7 +195,7 @@ const PartRegistration: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">품목</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.partName}</label>
                   <input
                     type="text"
                     value={formData.partName}
@@ -205,21 +205,21 @@ const PartRegistration: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">재질</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.material}</label>
                   <select
                     value={formData.material}
                     onChange={(e) => setFormData(prev => ({ ...prev, material: e.target.value }))}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   >
-                    <option value="">선택하세요</option>
+                    <option value="">{t.partRegistration.selectPlaceholder}</option>
                     {materials.map(material => (
                       <option key={material.id} value={material.id}>{material.name} ({material.code})</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Cav</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.cavity}</label>
                   <input
                     type="text"
                     value={formData.cavity}
@@ -229,20 +229,20 @@ const PartRegistration: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">생산 톤수</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.productionTon}</label>
                   <input
                     type="text"
                     value={formData.productionTon}
                     onChange={(e) => setFormData(prev => ({ ...prev, productionTon: e.target.value }))}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="예: 1.5"
+                    placeholder={t.partRegistration.productionTonPlaceholder}
                   />
                 </div>
               </div>
 
               {/* 후공정 추가 */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">후공정 추가</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t.partRegistration.postProcessingAdd}</label>
                 <div className="flex gap-2 flex-wrap">
                   <select
                     onChange={(e) => {
@@ -253,7 +253,7 @@ const PartRegistration: React.FC = () => {
                     }}
                     className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="">후공정 선택...</option>
+                    <option value="">{t.partRegistration.postProcessingSelect}</option>
                     {postProcessings
                       .filter(pp => !formData.postProcessings.includes(pp.id))
                       .map(pp => (
@@ -318,21 +318,21 @@ const PartRegistration: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <th className="px-6 py-4 text-left text-sm font-bold">고객사</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">품번</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">품목</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">재질</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">Cav</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">생산 톤수</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">후공정</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">관리</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.customer}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.partNumber}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.partName}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.material}</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.cavity}</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.productionTon}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.partRegistration.postProcessingAdd}</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">{t.partRegistration.management}</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
-                    <p className="font-bold">등록된 품목이 없습니다.</p>
+                    <p className="font-bold">{t.partRegistration.noItems}</p>
                   </td>
                 </tr>
               ) : (
