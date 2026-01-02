@@ -116,6 +116,11 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLanguageChange = (lang: 'ko' | 'vi') => {
+    localStorage.setItem('apqp_language', lang);
+    setLanguage(lang);
+  };
+
   const addProject = async (newProject: Project) => {
     try {
       // ID와 createdAt은 서버에서 생성되므로 제외하고 보냄
