@@ -80,6 +80,21 @@ const initDb = async () => {
       );
     `);
 
+        // Sample Schedules Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS sample_schedules (
+        id VARCHAR(50) PRIMARY KEY,
+        part_name VARCHAR(100) NOT NULL,
+        part_number VARCHAR(100) NOT NULL,
+        quantity INTEGER NOT NULL,
+        request_date DATE NOT NULL,
+        shipping_method VARCHAR(50) NOT NULL,
+        product_cost_type VARCHAR(50) NOT NULL,
+        schedules TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
         // Add new columns if they don't exist (for existing databases)
         const alterQueries = [
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',

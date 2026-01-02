@@ -30,7 +30,7 @@ interface Props {
 const SampleSchedule: React.FC<Props> = ({ user }) => {
   const t = getTranslations();
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
-  const [items, setItems] = useState<SampleScheduleItem[]>([]);
+  const [items, setItems] = useState<SampleSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
   // 등록 폼 상태
@@ -54,16 +54,23 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   });
 
   useEffect(() => {
-    fetchPostProcessings();
+    fetchData();
   }, []);
 
-  const fetchPostProcessings = async () => {
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
-      const data = await settingsService.getPostProcessings();
-      setPostProcessings(data);
+      const [postProcessingsData, schedulesData] = await Promise.all([
+        settingsService.getPostProcessings(),
+        sampleScheduleService.getAll()
+      ]);
+      setPostProcessings(postProcessingsData);
+      setItems(schedulesData);
     } catch (error) {
-      console.error('Failed to fetch post processings:', error);
-      alert('후공정 목록을 불러오는데 실패했습니다.');
+      console.error('Failed to fetch data:', error);
+      alert('데이터를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -111,7 +118,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }));
   };
 
-  const handleCompleteSchedule = (itemId: string, scheduleIndex: number) => {
+  const handleCompleteSchedule = async (itemId: string, scheduleIndex: number) => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
 
@@ -122,7 +129,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
 
     if (confirm('이 후공정을 완료 처리하시겠습니까?')) {
-      handleUpdateSchedule(itemId, scheduleIndex, 'isCompleted', true);
+      await handleUpdateSchedule(itemId, scheduleIndex, 'isCompleted', true);
+      await handleUpdateSchedule(itemId, scheduleIndex, 'completionDate', schedule.completedDate);
     }
   };
 
@@ -167,9 +175,17 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     setShowForm(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('이 항목을 삭제하시겠습니까?')) {
+  const handleDelete = async (id: string) => {
+    if (!confirm('이 항목을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await sampleScheduleService.delete(id);
       setItems(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to delete sample schedule:', error);
+      alert('샘플 일정 삭제에 실패했습니다.');
     }
   };
 

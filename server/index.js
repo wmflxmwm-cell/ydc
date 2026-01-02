@@ -7,6 +7,7 @@ const gateRoutes = require('./routes/gates');
 const issueRoutes = require('./routes/issues');
 const settingsRoutes = require('./routes/settings');
 const partRoutes = require('./routes/parts');
+const sampleScheduleRoutes = require('./routes/sampleSchedules');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -56,6 +57,7 @@ app.use('/gates', gateRoutes);
 app.use('/issues', issueRoutes);
 app.use('/settings', settingsRoutes);
 app.use('/api/parts', partRoutes);
+app.use('/api/sample-schedules', sampleScheduleRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
