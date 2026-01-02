@@ -501,28 +501,6 @@ export const translations = {
       registerFailed: 'Đăng ký sản phẩm thất bại.',
       deleteConfirm: 'Bạn có muốn xóa sản phẩm này không?'
     }
-  },
-  // PartRegistration.tsx
-  partRegistration: {
-    title: '품목 등록',
-    subtitle: '품목 정보 등록 및 관리',
-    customer: '고객사',
-    partNumber: '품번',
-    partName: '품목',
-    material: '재질',
-    cavity: 'Cav',
-    productionTon: '생산 톤수',
-    productionTonPlaceholder: '예: 1.5',
-    postProcessingAdd: '후공정 추가',
-    postProcessingSelect: '후공정 선택...',
-    selectPlaceholder: '선택하세요',
-    register: '등록',
-    cancel: '취소',
-    save: '저장',
-    noItems: '등록된 품목이 없습니다.',
-    management: '관리',
-    registerFailed: '품목 등록에 실패했습니다.',
-    deleteConfirm: '이 품목을 삭제하시겠습니까?'
   }
 };
 
