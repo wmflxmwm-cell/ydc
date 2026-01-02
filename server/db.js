@@ -90,6 +90,8 @@ const initDb = async () => {
         request_date DATE NOT NULL,
         shipping_method VARCHAR(50) NOT NULL,
         product_cost_type VARCHAR(50) NOT NULL,
+        mold_sequence VARCHAR(50),
+        lot VARCHAR(50),
         schedules TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

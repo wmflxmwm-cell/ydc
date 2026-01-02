@@ -121,6 +121,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: item.requestDate,
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
+        moldSequence: item.moldSequence || '',
+        lot: item.lot || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -150,6 +152,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: item.requestDate,
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
+        moldSequence: item.moldSequence || '',
+        lot: item.lot || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -177,6 +181,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: item.requestDate,
         shippingMethod: item.shippingMethod,
         productCostType: item.productCostType,
+        moldSequence: item.moldSequence || '',
+        lot: item.lot || '',
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -275,6 +281,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: formData.requestDate,
         shippingMethod: formData.shippingMethod,
         productCostType: formData.productCostType,
+        moldSequence: formData.moldSequence,
+        lot: formData.lot,
         schedules: autoSchedules
       });
 
@@ -349,114 +357,130 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           )}
         </div>
 
-        {/* 등록 폼 */}
-        {showForm && (
-          <div className="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-indigo-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">샘플 일정 등록</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">품목</label>
-                  <select
-                    value={formData.partId}
-                    onChange={(e) => handlePartChange(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="">품목을 선택하세요</option>
-                    {parts.map(part => (
-                      <option key={part.id} value={part.id}>{part.partName}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">품번</label>
-                  <input
-                    type="text"
-                    value={formData.partNumber}
-                    readOnly
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">수량</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">납기 요청일</label>
-                  <input
-                    type="date"
-                    value={formData.requestDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, requestDate: e.target.value }))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-              </div>
+                 {/* 등록 폼 */}
+                 {showForm && (
+                   <div className="mb-6 p-4 bg-slate-50 rounded-2xl border-2 border-indigo-200">
+                     <h3 className="text-lg font-bold text-slate-900 mb-4">샘플 일정 등록</h3>
+                     <form onSubmit={handleSubmit} className="space-y-3">
+                       <div className="grid grid-cols-8 gap-2">
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">품목</label>
+                           <select
+                             value={formData.partId}
+                             onChange={(e) => handlePartChange(e.target.value)}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             required
+                           >
+                             <option value="">선택</option>
+                             {parts.map(part => (
+                               <option key={part.id} value={part.id}>{part.partName}</option>
+                             ))}
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">품번</label>
+                           <input
+                             type="text"
+                             value={formData.partNumber}
+                             readOnly
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">수량</label>
+                           <input
+                             type="number"
+                             min="1"
+                             value={formData.quantity || ''}
+                             onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             required
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">납기 요청일</label>
+                           <input
+                             type="date"
+                             value={formData.requestDate}
+                             onChange={(e) => setFormData(prev => ({ ...prev, requestDate: e.target.value }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             required
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">운송 방법</label>
+                           <select
+                             value={formData.shippingMethod}
+                             onChange={(e) => setFormData(prev => ({ ...prev, shippingMethod: e.target.value }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             required
+                           >
+                             <option value="해운">해운</option>
+                             <option value="항공">항공</option>
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">제품비</label>
+                           <select
+                             value={formData.productCostType}
+                             onChange={(e) => setFormData(prev => ({ ...prev, productCostType: e.target.value }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                             required
+                           >
+                             <option value="무상">무상</option>
+                             <option value="유상">유상</option>
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">금형차수</label>
+                           <input
+                             type="text"
+                             value={formData.moldSequence}
+                             onChange={(e) => setFormData(prev => ({ ...prev, moldSequence: e.target.value }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-slate-700 mb-1">로트</label>
+                           <input
+                             type="text"
+                             value={formData.lot}
+                             onChange={(e) => setFormData(prev => ({ ...prev, lot: e.target.value }))}
+                             className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           />
+                         </div>
+                       </div>
 
-              {/* 운송 방법 및 제품비 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">운송 방법</label>
-                  <select
-                    value={formData.shippingMethod}
-                    onChange={(e) => setFormData(prev => ({ ...prev, shippingMethod: e.target.value }))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="해운">해운</option>
-                    <option value="항공">항공</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">제품비</label>
-                  <select
-                    value={formData.productCostType}
-                    onChange={(e) => setFormData(prev => ({ ...prev, productCostType: e.target.value }))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="무상">무상</option>
-                    <option value="유상">유상</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setFormData({
-                      partId: '',
-                      partName: '',
-                      partNumber: '',
-                      quantity: 0,
-                      requestDate: '',
-                      shippingMethod: '해운',
-                      productCostType: '유상',
-                      schedules: []
-                    });
-                  }}
-                  className="px-4 py-2 border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
-                >
-                  <Save size={18} />
-                  등록
-                </button>
-              </div>
+                       <div className="flex gap-3 justify-end pt-3 border-t border-slate-200">
+                         <button
+                           type="button"
+                           onClick={() => {
+                             setShowForm(false);
+                             setFormData({
+                               partId: '',
+                               partName: '',
+                               partNumber: '',
+                               quantity: 0,
+                               requestDate: '',
+                               shippingMethod: '해운',
+                               productCostType: '유상',
+                               moldSequence: '',
+                               lot: '',
+                               schedules: []
+                             });
+                           }}
+                           className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-50"
+                         >
+                           취소
+                         </button>
+                         <button
+                           type="submit"
+                           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
+                         >
+                           <Save size={16} />
+                           등록
+                         </button>
+                       </div>
             </form>
           </div>
         )}
