@@ -13,6 +13,7 @@ interface Props {
 const SampleSchedule: React.FC<Props> = ({ user }) => {
   const t = getTranslations();
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
   const [items, setItems] = useState<SampleSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
