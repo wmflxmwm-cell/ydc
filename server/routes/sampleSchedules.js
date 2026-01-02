@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 
 // Create a new sample schedule
 router.post('/', async (req, res) => {
-    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, schedules } = req.body;
+    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, remarks, schedules } = req.body;
     
     if (!partName || !partNumber || quantity <= 0 || !requestDate) {
         return res.status(400).json({ error: '필수 필드를 모두 입력하세요.' });
@@ -39,9 +39,9 @@ router.post('/', async (req, res) => {
         const schedulesJson = JSON.stringify(schedules || []);
 
         await pool.query(
-            `INSERT INTO sample_schedules (id, part_name, part_number, quantity, request_date, shipping_method, product_cost_type, mold_sequence, lot, schedules)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, schedulesJson]
+            `INSERT INTO sample_schedules (id, part_name, part_number, quantity, request_date, shipping_method, product_cost_type, mold_sequence, lot, remarks, schedules)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [id, partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence || null, lot || null, remarks || null, schedulesJson]
         );
 
         res.json({ 
@@ -54,6 +54,7 @@ router.post('/', async (req, res) => {
             productCostType,
             moldSequence: moldSequence || null,
             lot: lot || null,
+            remarks: remarks || null,
             schedules: schedules || [] 
         });
     } catch (err) {
