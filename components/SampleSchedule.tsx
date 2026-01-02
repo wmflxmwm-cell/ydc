@@ -230,6 +230,19 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
+    // 품목 정보에서 후공정 목록 가져오기
+    const selectedPart = parts.find(p => p.id === formData.partId);
+    const autoSchedules: ScheduleItem[] = selectedPart 
+      ? selectedPart.postProcessings.map(ppId => ({
+          postProcessingId: ppId,
+          plannedDate: '',
+          completedDate: '',
+          inputQuantity: 0,
+          completedQuantity: 0,
+          isCompleted: false
+        }))
+      : [];
+
     try {
       const newItem = await sampleScheduleService.create({
         partName: formData.partName,
@@ -238,7 +251,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: formData.requestDate,
         shippingMethod: formData.shippingMethod,
         productCostType: formData.productCostType,
-        schedules: []
+        schedules: autoSchedules
       });
 
       setItems(prev => [newItem, ...prev]);
