@@ -450,7 +450,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-3 py-4 text-sm w-fit whitespace-nowrap">
                       <div className="space-y-2">
                         <div>
                           <span className="text-xs font-bold text-slate-500">품목: </span>
