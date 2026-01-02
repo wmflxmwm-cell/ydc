@@ -16,6 +16,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const [parts, setParts] = useState<Part[]>([]);
   const [items, setItems] = useState<SampleSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingItem, setEditingItem] = useState<SampleSchedule | null>(null);
   
   // 등록 폼 상태
   const [showForm, setShowForm] = useState(false);
@@ -345,6 +346,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         schedules: [] // 폼에서는 사용하지 않지만 타입 유지를 위해 유지
       });
       setShowForm(false);
+      setEditingItem(null);
     } catch (error) {
       console.error('Failed to create sample schedule:', error);
       alert('샘플 일정 등록에 실패했습니다.');
@@ -616,7 +618,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               <tr className="bg-slate-900 text-white">
                 <th className="px-2 py-4 text-left text-sm font-bold" style={{ width: '14.4%' }}>품목 정보</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정 일정</th>
-                <th className="px-2 py-4 text-center text-sm font-bold" style={{ width: '80px' }}>관리</th>
+                <th className="px-2 py-4 text-center text-sm font-bold" style={{ width: '8%' }}>관리</th>
               </tr>
             </thead>
             <tbody>
@@ -667,7 +669,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             {item.productCostType}
                           </span>
                         </div>
-                        {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할 또는 관리자인 경우 계획 승인 버튼 표시 */}
+                        {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할인 경우 계획 승인 버튼 표시 */}
                         {(user.role === 'DV_MASTER_PM' || user.role === 'MANAGER') && item.schedules.length > 0 && 
                          item.schedules.every(s => s.isPlanCompleted) && !item.isPlanApproved && (
                           <div className="mt-2">
@@ -806,8 +808,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         </div>
                       )}
                     </td>
-                    <td className="px-2 py-4 text-center" style={{ width: '80px' }}>
-                      <div className="flex flex-col items-center gap-2">
+                    <td className="px-2 py-4 text-center" style={{ width: '8%' }}>
+                      <div className="flex items-center justify-center gap-1">
                         {(user.role === '개발팀' || user.role === 'MANAGER') && !item.isPlanApproved && (
                           <button
                             onClick={() => handleEditItem(item)}
