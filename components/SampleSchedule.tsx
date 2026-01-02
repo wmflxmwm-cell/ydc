@@ -563,6 +563,20 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                           <span className="text-slate-700 text-xs">{item.requestDate.split('T')[0]}</span>
                         </div>
                         <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">차수:</span>
+                          <span className="text-xs text-slate-700">{item.moldSequence || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">로트:</span>
+                          <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                            item.lot === '적용'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {item.lot || '미적용'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
                           <span className="text-xs font-bold text-slate-500">운송:</span>
                           <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                             item.shippingMethod === '해운'
