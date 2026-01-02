@@ -29,6 +29,8 @@ const App: React.FC = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [language, setLanguage] = useState<'ko' | 'vi'>(getLanguage);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   
   const t = getTranslations(language);
 
@@ -63,6 +65,8 @@ const App: React.FC = () => {
   }, [user]);
 
   const fetchData = async () => {
+    setIsLoading(true);
+    setLoadingError(null);
     try {
       const [projectsData, issuesData] = await Promise.all([
         projectService.getAll(),
@@ -71,15 +75,27 @@ const App: React.FC = () => {
       setProjects(projectsData);
       setIssues(issuesData);
 
-      // 모든 프로젝트의 게이트 정보를 가져옴 (실제로는 필요할 때 가져오는 것이 좋지만 기존 구조 유지를 위해)
-      const allGates: Gate[] = [];
-      for (const project of projectsData) {
-        const projectGates = await gateService.getByProjectId(project.id);
-        allGates.push(...projectGates);
+      // 모든 프로젝트의 게이트 정보를 병렬로 가져옴
+      try {
+        const gatesPromises = projectsData.map(project => gateService.getByProjectId(project.id));
+        const gatesResults = await Promise.all(gatesPromises);
+        const allGates = gatesResults.flat();
+        setGates(allGates);
+      } catch (gateError) {
+        console.error('Failed to fetch gates:', gateError);
+        // 게이트 로딩 실패해도 프로젝트와 이슈는 표시
+        setGates([]);
       }
-      setGates(allGates);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch data:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || '데이터를 불러오는 중 오류가 발생했습니다.';
+      setLoadingError(errorMessage);
+      // 네트워크 오류인 경우 알림
+      if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
+        alert('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -282,6 +298,26 @@ const App: React.FC = () => {
         </header>
 
         <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {isLoading && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-bold text-blue-700">데이터를 불러오는 중...</p>
+            </div>
+          )}
+          {loadingError && !isLoading && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <AlertTriangle className="text-red-600" size={20} />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-700">{loadingError}</p>
+                <button
+                  onClick={fetchData}
+                  className="mt-2 text-xs font-bold text-red-600 hover:text-red-800 underline"
+                >
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          )}
           {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 - React 19 removeChild 오류 해결 */}
           <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
             <Dashboard projects={projects} gates={gates} issues={issues} user={user} onDeleteProject={deleteProject} />
