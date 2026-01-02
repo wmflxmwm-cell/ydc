@@ -79,7 +79,7 @@ router.post('/', async (req, res) => {
 // Update a sample schedule
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, remarks, schedules } = req.body;
+    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, remarks, isPlanApproved, schedules } = req.body;
     
     try {
         const schedulesJson = JSON.stringify(schedules || []);
