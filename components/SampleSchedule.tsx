@@ -611,7 +611,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
 
         {/* 목록 */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="bg-slate-900 text-white">
                 <th className="px-2 py-4 text-left text-sm font-bold" style={{ width: '14.4%' }}>품목 정보</th>
@@ -629,7 +629,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-2 py-4 text-sm w-fit">
+                    <td className="px-2 py-4 text-sm" style={{ width: '14.4%' }}>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-bold text-slate-500">품목:</span>
