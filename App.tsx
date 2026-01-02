@@ -404,7 +404,7 @@ const App: React.FC = () => {
             <UserManagement />
           </div>
           <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
-            <SettingsManagement />
+            {user && <SettingsManagement user={user} />}
           </div>
         </div>
       </main>
