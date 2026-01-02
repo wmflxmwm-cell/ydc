@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, CheckCircle2, Edit2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
 import { partService, Part } from '../src/api/services/partService';
 import { sampleScheduleService, SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
