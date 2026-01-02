@@ -121,18 +121,31 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }));
   };
 
-  const handleUpdateSchedule = (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
-    setItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          schedules: item.schedules.map((schedule, i) => 
-            i === scheduleIndex ? { ...schedule, [field]: value } : schedule
-          )
-        };
-      }
-      return item;
-    }));
+  const handleUpdateSchedule = async (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const updatedSchedules = item.schedules.map((schedule, i) => 
+      i === scheduleIndex ? { ...schedule, [field]: value } : schedule
+    );
+
+    try {
+      await sampleScheduleService.update(itemId, {
+        partName: item.partName,
+        partNumber: item.partNumber,
+        quantity: item.quantity,
+        requestDate: item.requestDate,
+        shippingMethod: item.shippingMethod,
+        productCostType: item.productCostType,
+        schedules: updatedSchedules
+      });
+      setItems(prev => prev.map(i => 
+        i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+      ));
+    } catch (error) {
+      console.error('Failed to update schedule:', error);
+      alert('일정 업데이트에 실패했습니다.');
+    }
   };
 
   const handleCompleteSchedule = async (itemId: string, scheduleIndex: number) => {
@@ -146,8 +159,27 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
 
     if (confirm('이 후공정을 완료 처리하시겠습니까?')) {
-      await handleUpdateSchedule(itemId, scheduleIndex, 'isCompleted', true);
-      await handleUpdateSchedule(itemId, scheduleIndex, 'completionDate', schedule.completedDate);
+      const updatedSchedules = item.schedules.map((s, i) => 
+        i === scheduleIndex ? { ...s, isCompleted: true } : s
+      );
+
+      try {
+        await sampleScheduleService.update(itemId, {
+          partName: item.partName,
+          partNumber: item.partNumber,
+          quantity: item.quantity,
+          requestDate: item.requestDate,
+          shippingMethod: item.shippingMethod,
+          productCostType: item.productCostType,
+          schedules: updatedSchedules
+        });
+        setItems(prev => prev.map(i => 
+          i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+        ));
+      } catch (error) {
+        console.error('Failed to complete schedule:', error);
+        alert('완료 처리에 실패했습니다.');
+      }
     }
   };
 
