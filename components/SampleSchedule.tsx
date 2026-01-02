@@ -18,7 +18,7 @@ interface SampleScheduleItem {
   partNumber: string;
   quantity: number;
   requestDate: string;
-  shippingMethod: string; // '해운' | '항공' | '해상'
+    shippingMethod: string; // '해운' | '항공'
   productCostType: string; // '무상' | '유상'
   schedules: ScheduleItem[];
 }
@@ -48,7 +48,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     partNumber: '',
     quantity: 0,
     requestDate: '',
-    shippingMethod: '해상',
+    shippingMethod: '해운',
     productCostType: '유상',
     schedules: []
   });
@@ -160,7 +160,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       partNumber: '',
       quantity: 0,
       requestDate: '',
-      shippingMethod: '해상',
+      shippingMethod: '해운',
       productCostType: '유상',
       schedules: []
     });
@@ -263,7 +263,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                   >
                     <option value="해운">해운</option>
                     <option value="항공">항공</option>
-                    <option value="해상">해상</option>
                   </select>
                 </div>
                 <div>
@@ -356,7 +355,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       partNumber: '',
                       quantity: 0,
                       requestDate: '',
-                      shippingMethod: '해상',
+                      shippingMethod: '해운',
                       productCostType: '유상',
                       schedules: []
                     });
@@ -410,9 +409,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         item.shippingMethod === '해운'
                           ? 'bg-blue-100 text-blue-700'
-                          : item.shippingMethod === '항공'
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-slate-100 text-slate-700'
+                          : 'bg-purple-100 text-purple-700'
                       }`}>
                         {item.shippingMethod}
                       </span>
