@@ -64,62 +64,100 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     const selectedPart = parts.find(p => p.id === partId);
     if (selectedPart) {
       // 품목 선택 시 품번 자동 입력
-      // 후공정들을 자동으로 추가
-      const autoSchedules: ScheduleItem[] = selectedPart.postProcessings.map(ppId => ({
-        postProcessingId: ppId,
-        plannedDate: '',
-        completedDate: '',
-        inputQuantity: 0,
-        completedQuantity: 0,
-        isCompleted: false
-      }));
-
       setFormData(prev => ({
         ...prev,
         partId: selectedPart.id,
         partName: selectedPart.partName,
-        partNumber: selectedPart.partNumber,
-        schedules: autoSchedules
+        partNumber: selectedPart.partNumber
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         partId: '',
         partName: '',
-        partNumber: '',
-        schedules: []
+        partNumber: ''
       }));
     }
   };
 
-  const handleAddSchedule = () => {
-    setFormData(prev => ({
-      ...prev,
-      schedules: [...prev.schedules, { 
-        postProcessingId: '', 
-        plannedDate: '', 
-        completedDate: '',
-        inputQuantity: 0,
-        completedQuantity: 0,
-        isCompleted: false
-      }]
-    }));
+  const handleAddScheduleToItem = async (itemId: string, partNumber: string) => {
+    // 품목 정보 찾기
+    const part = parts.find(p => p.partNumber === partNumber);
+    if (!part) {
+      alert('품목 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    // 해당 품목의 후공정 중 아직 추가되지 않은 후공정 찾기
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const existingPostProcessingIds = item.schedules.map(s => s.postProcessingId);
+    const availablePostProcessings = part.postProcessings.filter(ppId => !existingPostProcessingIds.includes(ppId));
+
+    if (availablePostProcessings.length === 0) {
+      alert('추가할 수 있는 후공정이 없습니다.');
+      return;
+    }
+
+    // 첫 번째 사용 가능한 후공정 추가
+    const newSchedule: ScheduleItem = {
+      postProcessingId: availablePostProcessings[0],
+      plannedDate: '',
+      completedDate: '',
+      inputQuantity: 0,
+      completedQuantity: 0,
+      isCompleted: false
+    };
+
+    const updatedSchedules = [...item.schedules, newSchedule];
+
+    try {
+      await sampleScheduleService.update(itemId, {
+        partName: item.partName,
+        partNumber: item.partNumber,
+        quantity: item.quantity,
+        requestDate: item.requestDate,
+        shippingMethod: item.shippingMethod,
+        productCostType: item.productCostType,
+        schedules: updatedSchedules
+      });
+      setItems(prev => prev.map(i => 
+        i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+      ));
+    } catch (error) {
+      console.error('Failed to add schedule:', error);
+      alert('후공정 추가에 실패했습니다.');
+    }
   };
 
-  const handleRemoveSchedule = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      schedules: prev.schedules.filter((_, i) => i !== index)
-    }));
-  };
+  const handleRemoveScheduleFromItem = async (itemId: string, scheduleIndex: number) => {
+    if (!confirm('이 후공정 일정을 삭제하시겠습니까?')) {
+      return;
+    }
 
-  const handleScheduleChange = (index: number, field: keyof ScheduleItem, value: string | number | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      schedules: prev.schedules.map((schedule, i) => 
-        i === index ? { ...schedule, [field]: value } : schedule
-      )
-    }));
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const updatedSchedules = item.schedules.filter((_, i) => i !== scheduleIndex);
+
+    try {
+      await sampleScheduleService.update(itemId, {
+        partName: item.partName,
+        partNumber: item.partNumber,
+        quantity: item.quantity,
+        requestDate: item.requestDate,
+        shippingMethod: item.shippingMethod,
+        productCostType: item.productCostType,
+        schedules: updatedSchedules
+      });
+      setItems(prev => prev.map(i => 
+        i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+      ));
+    } catch (error) {
+      console.error('Failed to remove schedule:', error);
+      alert('후공정 삭제에 실패했습니다.');
+    }
   };
 
   const handleUpdateSchedule = async (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
@@ -205,7 +243,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: formData.requestDate,
         shippingMethod: formData.shippingMethod,
         productCostType: formData.productCostType,
-        schedules: formData.schedules.map(s => ({ ...s }))
+        schedules: []
       });
 
       setItems(prev => [newItem, ...prev]);
@@ -219,7 +257,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         requestDate: '',
         shippingMethod: '해운',
         productCostType: '유상',
-        schedules: []
+        schedules: [] // 폼에서는 사용하지 않지만 타입 유지를 위해 유지
       });
       setShowForm(false);
     } catch (error) {
@@ -504,94 +542,118 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      {/* 후공정 목록 가로 나열 */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {item.schedules.map((schedule, idx) => {
-                          const isCompleted = schedule.isCompleted;
-                          return (
-                            <div
-                              key={idx}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                                isCompleted
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-indigo-100 text-indigo-700'
-                              }`}
-                            >
-                              {getPostProcessingName(schedule.postProcessingId)}
-                            </div>
-                          );
-                        })}
+                      {/* 후공정 추가 버튼 */}
+                      <div className="mb-3">
+                        <button
+                          onClick={() => handleAddScheduleToItem(item.id, item.partNumber)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-bold"
+                        >
+                          <Plus size={14} />
+                          후공정 추가
+                        </button>
                       </div>
 
+                      {/* 후공정 목록 가로 나열 */}
+                      {item.schedules.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {item.schedules.map((schedule, idx) => {
+                            const isCompleted = schedule.isCompleted;
+                            return (
+                              <div
+                                key={idx}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                  isCompleted
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-indigo-100 text-indigo-700'
+                                }`}
+                              >
+                                {getPostProcessingName(schedule.postProcessingId)}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* 계획일정/완료일정 입력 영역 */}
-                      <div className="space-y-2">
-                        {item.schedules.map((schedule, idx) => (
-                          <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-slate-900 text-sm">{getPostProcessingName(schedule.postProcessingId)}</span>
-                              {schedule.isCompleted && (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                      {item.schedules.length > 0 && (
+                        <div className="space-y-2">
+                          {item.schedules.map((schedule, idx) => (
+                            <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-slate-900 text-sm">{getPostProcessingName(schedule.postProcessingId)}</span>
+                                <div className="flex items-center gap-2">
+                                  {schedule.isCompleted && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                                  )}
+                                  <button
+                                    onClick={() => handleRemoveScheduleFromItem(item.id, idx)}
+                                    className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                    disabled={schedule.isCompleted}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">투입 수량</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={schedule.inputQuantity || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'inputQuantity', parseInt(e.target.value) || 0)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    disabled={schedule.isCompleted}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료 수량</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={schedule.completedQuantity || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedQuantity', parseInt(e.target.value) || 0)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    disabled={schedule.isCompleted}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
+                                  <input
+                                    type="date"
+                                    value={schedule.plannedDate || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    disabled={schedule.isCompleted}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료일정</label>
+                                  <input
+                                    type="date"
+                                    value={schedule.completedDate || ''}
+                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    disabled={schedule.isCompleted}
+                                  />
+                                </div>
+                              </div>
+                              {!schedule.isCompleted && (
+                                <button
+                                  onClick={() => handleCompleteSchedule(item.id, idx)}
+                                  disabled={!schedule.completedDate}
+                                  className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <CheckCircle2 size={14} />
+                                  완료 처리
+                                </button>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                              <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">투입 수량</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={schedule.inputQuantity || ''}
-                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'inputQuantity', parseInt(e.target.value) || 0)}
-                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                  disabled={schedule.isCompleted}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">완료 수량</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={schedule.completedQuantity || ''}
-                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedQuantity', parseInt(e.target.value) || 0)}
-                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                  disabled={schedule.isCompleted}
-                                />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                              <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
-                                <input
-                                  type="date"
-                                  value={schedule.plannedDate || ''}
-                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
-                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                  disabled={schedule.isCompleted}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">완료일정</label>
-                                <input
-                                  type="date"
-                                  value={schedule.completedDate || ''}
-                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
-                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                  disabled={schedule.isCompleted}
-                                />
-                              </div>
-                            </div>
-                            {!schedule.isCompleted && (
-                              <button
-                                onClick={() => handleCompleteSchedule(item.id, idx)}
-                                disabled={!schedule.completedDate}
-                                className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                <CheckCircle2 size={14} />
-                                완료 처리
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {user.role === 'MANAGER' && (
