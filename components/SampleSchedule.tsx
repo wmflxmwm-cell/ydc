@@ -197,7 +197,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
-    if (confirm('이 후공정을 완료 처리하시겠습니까?')) {
+    if (confirm('이 후공정을 최종 완료 처리하시겠습니까?')) {
       const updatedSchedules = item.schedules.map((s, i) => 
         i === scheduleIndex ? { ...s, isCompleted: true } : s
       );
@@ -237,8 +237,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           postProcessingId: ppId,
           plannedDate: '',
           completedDate: '',
-          inputQuantity: 0,
-          completedQuantity: 0,
           isCompleted: false
         }))
       : [];
@@ -479,27 +477,16 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         {item.productCostType}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      {/* 후공정 추가 버튼 */}
-                      <div className="mb-3">
-                        <button
-                          onClick={() => handleAddScheduleToItem(item.id, item.partNumber)}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-bold"
-                        >
-                          <Plus size={14} />
-                          후공정 추가
-                        </button>
-                      </div>
-
-                      {/* 후공정 목록 가로 나열 */}
+                    <td className="px-3 py-4 text-sm w-1/2">
+                      {/* 후공정 목록 - 많을 경우 3줄, 적을 경우 2줄 */}
                       {item.schedules.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className={`grid gap-2 mb-3 ${item.schedules.length > 6 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                           {item.schedules.map((schedule, idx) => {
                             const isCompleted = schedule.isCompleted;
                             return (
                               <div
                                 key={idx}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                className={`px-2 py-1.5 rounded text-xs font-bold ${
                                   isCompleted
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-indigo-100 text-indigo-700'
@@ -516,54 +503,21 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       {item.schedules.length > 0 && (
                         <div className="space-y-2">
                           {item.schedules.map((schedule, idx) => (
-                            <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="font-bold text-slate-900 text-sm">{getPostProcessingName(schedule.postProcessingId)}</span>
-                                <div className="flex items-center gap-2">
-                                  {schedule.isCompleted && (
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
-                                  )}
-                                  <button
-                                    onClick={() => handleRemoveScheduleFromItem(item.id, idx)}
-                                    className="p-1 text-red-500 hover:bg-red-50 rounded"
-                                    disabled={schedule.isCompleted}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
+                                <span className="font-bold text-slate-900 text-xs">{getPostProcessingName(schedule.postProcessingId)}</span>
+                                {schedule.isCompleted && (
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                                )}
                               </div>
-                              <div className="grid grid-cols-2 gap-2 mb-2">
-                                <div>
-                                  <label className="block text-xs font-bold text-slate-600 mb-1">투입 수량</label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={schedule.inputQuantity || ''}
-                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'inputQuantity', parseInt(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                    disabled={schedule.isCompleted}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-bold text-slate-600 mb-1">완료 수량</label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={schedule.completedQuantity || ''}
-                                    onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedQuantity', parseInt(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                                    disabled={schedule.isCompleted}
-                                  />
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 mb-2">
+                              <div className="grid grid-cols-2 gap-2">
                                 <div>
                                   <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
                                   <input
                                     type="date"
                                     value={schedule.plannedDate || ''}
                                     onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
                                     disabled={schedule.isCompleted}
                                   />
                                 </div>
@@ -573,7 +527,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                     type="date"
                                     value={schedule.completedDate || ''}
                                     onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
                                     disabled={schedule.isCompleted}
                                   />
                                 </div>
@@ -582,9 +536,9 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                 <button
                                   onClick={() => handleCompleteSchedule(item.id, idx)}
                                   disabled={!schedule.completedDate}
-                                  className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-full mt-2 flex items-center justify-center gap-2 px-2 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  <CheckCircle2 size={14} />
+                                  <CheckCircle2 size={12} />
                                   완료 처리
                                 </button>
                               )}
