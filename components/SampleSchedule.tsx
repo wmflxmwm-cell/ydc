@@ -15,6 +15,8 @@ interface SampleScheduleItem {
   partNumber: string;
   quantity: number;
   requestDate: string;
+  shippingByAir: boolean; // 해운(true) / 해상(false)
+  productCostFree: boolean; // 무상(true) / 유상(false)
   schedules: ScheduleItem[];
 }
 
@@ -31,12 +33,16 @@ const SampleSchedule: React.FC = () => {
     partNumber: string;
     quantity: number;
     requestDate: string;
+    shippingByAir: boolean;
+    productCostFree: boolean;
     schedules: ScheduleItem[];
   }>({
     partName: '',
     partNumber: '',
     quantity: 0,
     requestDate: '',
+    shippingByAir: false,
+    productCostFree: false,
     schedules: []
   });
 
@@ -111,6 +117,8 @@ const SampleSchedule: React.FC = () => {
       partNumber: '',
       quantity: 0,
       requestDate: '',
+      shippingByAir: false,
+      productCostFree: false,
       schedules: []
     });
     setShowForm(false);
@@ -200,6 +208,34 @@ const SampleSchedule: React.FC = () => {
                 </div>
               </div>
 
+              {/* 운송 방법 및 제품비 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.shippingByAir}
+                      onChange={(e) => setFormData(prev => ({ ...prev, shippingByAir: e.target.checked }))}
+                      className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-bold text-slate-700">해운</span>
+                  </label>
+                  <span className="text-sm text-slate-500">(체크 해제 시 해상)</span>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.productCostFree}
+                      onChange={(e) => setFormData(prev => ({ ...prev, productCostFree: e.target.checked }))}
+                      className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-bold text-slate-700">제품비 무상</span>
+                  </label>
+                  <span className="text-sm text-slate-500">(체크 해제 시 유상)</span>
+                </div>
+              </div>
+
               {/* 후공정 일정 */}
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -276,6 +312,8 @@ const SampleSchedule: React.FC = () => {
                       partNumber: '',
                       quantity: 0,
                       requestDate: '',
+                      shippingByAir: false,
+                      productCostFree: false,
                       schedules: []
                     });
                   }}
@@ -304,6 +342,8 @@ const SampleSchedule: React.FC = () => {
                 <th className="px-6 py-4 text-left text-sm font-bold">품번</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">수량</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">납기 요청일</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">운송 방법</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">제품비</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정 일정</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">관리</th>
               </tr>
@@ -311,7 +351,7 @@ const SampleSchedule: React.FC = () => {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                     <p className="font-bold">등록된 샘플 일정이 없습니다.</p>
                   </td>
                 </tr>
@@ -322,6 +362,24 @@ const SampleSchedule: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-slate-700 font-mono">{item.partNumber}</td>
                     <td className="px-6 py-4 text-sm text-center text-slate-700">{item.quantity.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm text-center text-slate-700">{item.requestDate}</td>
+                    <td className="px-6 py-4 text-sm text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        item.shippingByAir 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {item.shippingByAir ? '해운' : '해상'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        item.productCostFree 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {item.productCostFree ? '무상' : '유상'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="space-y-2">
                         {item.schedules.map((schedule, idx) => (
