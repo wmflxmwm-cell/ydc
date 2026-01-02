@@ -10,6 +10,7 @@ interface PartItem {
   partName: string;
   material: string;
   cavity: string;
+  productionTon: string; // 생산 톤수
   postProcessings: string[]; // 후공정 ID 배열
 }
 
@@ -29,6 +30,7 @@ const PartRegistration: React.FC = () => {
     partName: string;
     material: string;
     cavity: string;
+    productionTon: string;
     postProcessings: string[];
   }>({
     customerName: '',
@@ -36,6 +38,7 @@ const PartRegistration: React.FC = () => {
     partName: '',
     material: '',
     cavity: '',
+    productionTon: '',
     postProcessings: []
   });
 
@@ -94,6 +97,7 @@ const PartRegistration: React.FC = () => {
       partName: formData.partName,
       material: formData.material,
       cavity: formData.cavity,
+      productionTon: formData.productionTon,
       postProcessings: [...formData.postProcessings]
     };
 
@@ -106,6 +110,7 @@ const PartRegistration: React.FC = () => {
       partName: '',
       material: '',
       cavity: '',
+      productionTon: '',
       postProcessings: []
     });
     setShowForm(false);
@@ -159,7 +164,7 @@ const PartRegistration: React.FC = () => {
           <div className="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-indigo-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4">품목 등록</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">고객사</label>
                   <select
@@ -218,6 +223,16 @@ const PartRegistration: React.FC = () => {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">생산 톤수</label>
+                  <input
+                    type="text"
+                    value={formData.productionTon}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productionTon: e.target.value }))}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="예: 1.5"
+                  />
+                </div>
               </div>
 
               {/* 후공정 추가 */}
@@ -273,6 +288,7 @@ const PartRegistration: React.FC = () => {
                       partName: '',
                       material: '',
                       cavity: '',
+                      productionTon: '',
                       postProcessings: []
                     });
                   }}
@@ -302,6 +318,7 @@ const PartRegistration: React.FC = () => {
                 <th className="px-6 py-4 text-left text-sm font-bold">품목</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">재질</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">Cav</th>
+                <th className="px-6 py-4 text-center text-sm font-bold">생산 톤수</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">관리</th>
               </tr>
@@ -309,7 +326,7 @@ const PartRegistration: React.FC = () => {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                     <p className="font-bold">등록된 품목이 없습니다.</p>
                   </td>
                 </tr>
@@ -321,6 +338,7 @@ const PartRegistration: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-slate-700">{item.partName}</td>
                     <td className="px-6 py-4 text-sm text-slate-700">{getMaterialName(item.material)}</td>
                     <td className="px-6 py-4 text-sm text-center text-slate-700">{item.cavity}</td>
+                    <td className="px-6 py-4 text-sm text-center text-slate-700">{item.productionTon || '-'}</td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex flex-wrap gap-2">
                         {item.postProcessings.map(ppId => (

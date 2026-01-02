@@ -315,7 +315,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className={`${activeTab === 'part' ? '' : 'max-w-7xl mx-auto'} animate-in fade-in slide-in-from-bottom-4 duration-700`}>
           {isLoading && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
