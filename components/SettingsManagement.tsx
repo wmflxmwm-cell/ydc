@@ -219,12 +219,15 @@ const SettingsManagement: React.FC<Props> = ({ user }) => {
                                         className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
                                     >
                                         <span className="font-bold text-slate-900">{customer.name}</span>
-                                        <button
-                                            onClick={() => handleDeleteCustomer(customer.id)}
-                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        {user?.role === '개발팀' && (
+                                            <button
+                                                onClick={() => handleDeleteCustomer(customer.id)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                title="삭제"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -388,12 +391,15 @@ const SettingsManagement: React.FC<Props> = ({ user }) => {
                                                     <p className="text-xs text-slate-500 truncate">{translatedDescription}</p>
                                                 )}
                                             </div>
-                                            <button
-                                                onClick={() => handleDeletePostProcessing(postProcessing.id)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ml-2"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {user?.role === '개발팀' && (
+                                                <button
+                                                    onClick={() => handleDeletePostProcessing(postProcessing.id)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ml-2"
+                                                    title="삭제"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })}
