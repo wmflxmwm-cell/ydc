@@ -257,9 +257,13 @@ const PartRegistration: React.FC = () => {
                     <option value="">{t.partRegistration.postProcessingSelect}</option>
                     {postProcessings
                       .filter(pp => !formData.postProcessings.includes(pp.id))
-                      .map(pp => (
-                        <option key={pp.id} value={pp.id}>{pp.name}</option>
-                      ))}
+                      .map(pp => {
+                        const currentLanguage = getLanguage();
+                        const translatedName = translatePostProcessingName(pp.name, currentLanguage);
+                        return (
+                          <option key={pp.id} value={pp.id}>{translatedName}</option>
+                        );
+                      })}
                   </select>
                 </div>
                 {formData.postProcessings.length > 0 && (
