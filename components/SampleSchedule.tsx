@@ -667,8 +667,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             {item.productCostType}
                           </span>
                         </div>
-                        {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할인 경우 계획 승인 버튼 표시 */}
-                        {user.role === 'DV_MASTER_PM' && item.schedules.length > 0 && 
+                        {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할 또는 관리자인 경우 계획 승인 버튼 표시 */}
+                        {(user.role === 'DV_MASTER_PM' || user.role === 'MANAGER') && item.schedules.length > 0 && 
                          item.schedules.every(s => s.isPlanCompleted) && !item.isPlanApproved && (
                           <div className="mt-2">
                             <button
@@ -806,9 +806,9 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         </div>
                       )}
                     </td>
-                    <td className="px-2 py-4 text-center w-fit">
+                    <td className="px-2 py-4 text-center" style={{ width: '80px' }}>
                       <div className="flex flex-col items-center gap-2">
-                        {user.role === '개발팀' && !item.isPlanApproved && (
+                        {(user.role === '개발팀' || user.role === 'MANAGER') && !item.isPlanApproved && (
                           <button
                             onClick={() => handleEditItem(item)}
                             className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
@@ -817,7 +817,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             <Edit2 size={18} />
                           </button>
                         )}
-                        {user.role === '개발팀' && (
+                        {(user.role === '개발팀' || user.role === 'MANAGER') && (
                           <button
                             onClick={() => handleDelete(item.id)}
                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
