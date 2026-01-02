@@ -119,6 +119,8 @@ const App: React.FC = () => {
   const handleLanguageChange = (lang: 'ko' | 'vi') => {
     localStorage.setItem('apqp_language', lang);
     setLanguage(lang);
+    // 페이지 새로고침하여 모든 컴포넌트에 언어 변경 적용
+    window.location.reload();
   };
 
   const addProject = async (newProject: Project) => {
