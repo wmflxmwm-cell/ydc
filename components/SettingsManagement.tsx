@@ -299,7 +299,7 @@ const SettingsManagement: React.FC<Props> = ({ user }) => {
                                             <p className="font-bold text-slate-900">{material.name}</p>
                                             <p className="text-xs text-slate-500 font-mono">{material.code}</p>
                                         </div>
-                                        {user.role === '개발팀' && (
+                                        {user?.role === '개발팀' && (
                                             <button
                                                 onClick={() => handleDeleteMaterial(material.id)}
                                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
