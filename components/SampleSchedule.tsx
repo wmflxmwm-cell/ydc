@@ -435,12 +435,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <th className="px-6 py-4 text-left text-sm font-bold">품목</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">품번</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">수량</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">납기 요청일</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">운송 방법</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">제품비</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">품목 정보</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정 일정</th>
                 <th className="px-6 py-4 text-center text-sm font-bold">관리</th>
               </tr>
@@ -448,34 +443,52 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={3} className="px-6 py-12 text-center text-slate-400">
                     <p className="font-bold">등록된 샘플 일정이 없습니다.</p>
                   </td>
                 </tr>
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm font-bold text-slate-900">{item.partName}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700 font-mono">{item.partNumber}</td>
-                    <td className="px-6 py-4 text-sm text-center text-slate-700">{item.quantity.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-center text-slate-700">{item.requestDate}</td>
-                    <td className="px-6 py-4 text-sm text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.shippingMethod === '해운'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-purple-100 text-purple-700'
-                      }`}>
-                        {item.shippingMethod}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.productCostType === '무상'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {item.productCostType}
-                      </span>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">품목: </span>
+                          <span className="font-bold text-slate-900">{item.partName}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">품번: </span>
+                          <span className="text-slate-700 font-mono">{item.partNumber}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">수량: </span>
+                          <span className="text-slate-700">{item.quantity.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">납기 요청일: </span>
+                          <span className="text-slate-700">{item.requestDate}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">운송 방법: </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            item.shippingMethod === '해운'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {item.shippingMethod}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">제품비: </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            item.productCostType === '무상'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {item.productCostType}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-3 py-4 text-sm w-1/2">
                       {/* 후공정 목록 - 많을 경우 3줄, 적을 경우 2줄 */}
