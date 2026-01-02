@@ -17,6 +17,7 @@ export const translations = {
       issueTracker: '품질 이슈 트래커',
       itemForecast: '아이템별 Forecast',
       sample: 'Sample 일정',
+      part: '품목 등록',
       userManagement: '사용자 관리',
       basicSettings: '기본 내용',
       logout: '시스템 로그아웃',
@@ -31,6 +32,7 @@ export const translations = {
         issueTracker: '품질 결함 이슈 관리',
         forecast: '아이템별 Forecast',
         sample: 'Sample 일정',
+        part: '품목 등록',
         userManagement: '사용자 관리',
         settings: '기본 내용'
       }
@@ -241,6 +243,7 @@ export const translations = {
       issueTracker: 'Theo dõi lỗi chất lượng',
       itemForecast: 'Dự báo theo mặt hàng',
       sample: 'Lịch mẫu',
+      part: 'Đăng ký sản phẩm',
       userManagement: 'Quản lý người dùng',
       basicSettings: 'Nội dung cơ bản',
       logout: 'Đăng xuất hệ thống',
@@ -255,6 +258,7 @@ export const translations = {
         issueTracker: 'Quản lý lỗi chất lượng',
         forecast: 'Dự báo theo mặt hàng',
         sample: 'Lịch mẫu',
+        part: 'Đăng ký sản phẩm',
         userManagement: 'Quản lý người dùng',
         settings: 'Nội dung cơ bản'
       }

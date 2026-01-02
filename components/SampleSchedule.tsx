@@ -18,8 +18,8 @@ interface SampleScheduleItem {
   partNumber: string;
   quantity: number;
   requestDate: string;
-  shippingByAir: boolean; // 해운(true) / 해상(false)
-  productCostFree: boolean; // 무상(true) / 유상(false)
+  shippingMethod: string; // '해운' | '항공' | '해상'
+  productCostType: string; // '무상' | '유상'
   schedules: ScheduleItem[];
 }
 
@@ -40,16 +40,16 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     partNumber: string;
     quantity: number;
     requestDate: string;
-    shippingByAir: boolean;
-    productCostFree: boolean;
+    shippingMethod: string;
+    productCostType: string;
     schedules: ScheduleItem[];
   }>({
     partName: '',
     partNumber: '',
     quantity: 0,
     requestDate: '',
-    shippingByAir: false,
-    productCostFree: false,
+    shippingMethod: '해상',
+    productCostType: '유상',
     schedules: []
   });
 
@@ -160,8 +160,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       partNumber: '',
       quantity: 0,
       requestDate: '',
-      shippingByAir: false,
-      productCostFree: false,
+      shippingMethod: '해상',
+      productCostType: '유상',
       schedules: []
     });
     setShowForm(false);
@@ -253,29 +253,30 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
 
               {/* 운송 방법 및 제품비 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.shippingByAir}
-                      onChange={(e) => setFormData(prev => ({ ...prev, shippingByAir: e.target.checked }))}
-                      className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="text-sm font-bold text-slate-700">해운</span>
-                  </label>
-                  <span className="text-sm text-slate-500">(체크 해제 시 해상)</span>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">운송 방법</label>
+                  <select
+                    value={formData.shippingMethod}
+                    onChange={(e) => setFormData(prev => ({ ...prev, shippingMethod: e.target.value }))}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="해운">해운</option>
+                    <option value="항공">항공</option>
+                    <option value="해상">해상</option>
+                  </select>
                 </div>
-                <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.productCostFree}
-                      onChange={(e) => setFormData(prev => ({ ...prev, productCostFree: e.target.checked }))}
-                      className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="text-sm font-bold text-slate-700">제품비 무상</span>
-                  </label>
-                  <span className="text-sm text-slate-500">(체크 해제 시 유상)</span>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">제품비</label>
+                  <select
+                    value={formData.productCostType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productCostType: e.target.value }))}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="무상">무상</option>
+                    <option value="유상">유상</option>
+                  </select>
                 </div>
               </div>
 
@@ -355,8 +356,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       partNumber: '',
                       quantity: 0,
                       requestDate: '',
-                      shippingByAir: false,
-                      productCostFree: false,
+                      shippingMethod: '해상',
+                      productCostType: '유상',
                       schedules: []
                     });
                   }}
@@ -407,20 +408,22 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                     <td className="px-6 py-4 text-sm text-center text-slate-700">{item.requestDate}</td>
                     <td className="px-6 py-4 text-sm text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.shippingByAir 
-                          ? 'bg-blue-100 text-blue-700' 
+                        item.shippingMethod === '해운'
+                          ? 'bg-blue-100 text-blue-700'
+                          : item.shippingMethod === '항공'
+                          ? 'bg-purple-100 text-purple-700'
                           : 'bg-slate-100 text-slate-700'
                       }`}>
-                        {item.shippingByAir ? '해운' : '해상'}
+                        {item.shippingMethod}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.productCostFree 
-                          ? 'bg-green-100 text-green-700' 
+                        item.productCostType === '무상'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-amber-100 text-amber-700'
                       }`}>
-                        {item.productCostFree ? '무상' : '유상'}
+                        {item.productCostType}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen, TrendingUp, Calendar } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen, TrendingUp, Calendar, Package } from 'lucide-react';
 import { Project, Gate, Issue, ProjectStatus, GateStatus } from './types';
 import { projectService } from './src/api/services/projectService';
 import { gateService } from './src/api/services/gateService';
@@ -13,6 +13,7 @@ import UserManagement from './src/components/UserManagement';
 import SettingsManagement from './components/SettingsManagement';
 import Forecast from './components/Forecast';
 import SampleSchedule from './components/SampleSchedule';
+import PartRegistration from './components/PartRegistration';
 import Login from './components/Login';
 import { getLanguage, getTranslations } from './src/utils/translations';
 
@@ -24,7 +25,7 @@ interface UserSession {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part'>('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -241,6 +242,13 @@ const App: React.FC = () => {
             <Calendar className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.sample}</span>
           </button>
+          <button
+            onClick={() => setActiveTab('part')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'part' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Package className="w-5 h-5" />
+            <span className="font-medium text-sm">{t.app.sidebar.part}</span>
+          </button>
 
           {(user.role === 'MANAGER') && (
             <>
@@ -292,6 +300,7 @@ const App: React.FC = () => {
               {activeTab === 'issues' && t.app.issues}
               {activeTab === 'forecast' && t.app.forecast}
               {activeTab === 'sample' && t.app.sample}
+              {activeTab === 'part' && t.app.part}
               {activeTab === 'users' && t.app.users}
               {activeTab === 'settings' && t.app.settings}
             </h1>
@@ -356,6 +365,9 @@ const App: React.FC = () => {
           </div>
           <div style={{ display: activeTab === 'sample' ? 'block' : 'none' }}>
             <SampleSchedule user={user} />
+          </div>
+          <div style={{ display: activeTab === 'part' ? 'block' : 'none' }}>
+            <PartRegistration />
           </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
