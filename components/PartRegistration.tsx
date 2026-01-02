@@ -370,14 +370,17 @@ const PartRegistration: React.FC<Props> = ({ user }) => {
                           <span className="text-slate-400 text-xs">-</span>
                         )}
                       </div>
-                    </td>
+                      </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {user?.role === '개발팀' && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="삭제"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
