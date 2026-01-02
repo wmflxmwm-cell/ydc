@@ -230,11 +230,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
-    if (formData.schedules.length === 0) {
-      alert('품목을 선택하면 후공정이 자동으로 추가됩니다.');
-      return;
-    }
-
     try {
       const newItem = await sampleScheduleService.create({
         partName: formData.partName,
