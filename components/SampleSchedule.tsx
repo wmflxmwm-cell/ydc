@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
 import { sampleScheduleService, SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
-import { getTranslations } from '../src/utils/translations';
+import { getTranslations, getLanguage } from '../src/utils/translations';
+import { translatePostProcessingName } from '../src/utils/postProcessingTranslations';
 
 interface Props {
   user: { id: string; name: string; role: string };
@@ -180,7 +181,10 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   };
 
   const getPostProcessingName = (id: string) => {
-    return postProcessings.find(p => p.id === id)?.name || '';
+    const postProcessing = postProcessings.find(p => p.id === id);
+    if (!postProcessing) return '';
+    const currentLanguage = getLanguage();
+    return translatePostProcessingName(postProcessing.name, currentLanguage);
   };
 
   return (

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Building2, Package, Plus, Trash2, Save, Cog } from 'lucide-react';
 import { settingsService, Customer, Material, PostProcessing } from '../src/api/services/settingsService';
-import { getTranslations } from '../src/utils/translations';
+import { getTranslations, getLanguage } from '../src/utils/translations';
+import { translatePostProcessingName, translatePostProcessingDescription } from '../src/utils/postProcessingTranslations';
 
 const SettingsManagement: React.FC = () => {
     const t = getTranslations();

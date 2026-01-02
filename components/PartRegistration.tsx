@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Package, Plus, X, Save, Trash2 } from 'lucide-react';
 import { settingsService, Customer, Material, PostProcessing } from '../src/api/services/settingsService';
 import { partService, Part } from '../src/api/services/partService';
-import { getTranslations } from '../src/utils/translations';
+import { getTranslations, getLanguage } from '../src/utils/translations';
+import { translatePostProcessingName } from '../src/utils/postProcessingTranslations';
 
 
 const PartRegistration: React.FC = () => {
