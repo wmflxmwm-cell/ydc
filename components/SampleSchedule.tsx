@@ -466,7 +466,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         </div>
                         <div>
                           <span className="text-xs font-bold text-slate-500">납기 요청일: </span>
-                          <span className="text-slate-700">{item.requestDate}</span>
+                          <span className="text-slate-700">{item.requestDate.split('T')[0]}</span>
                         </div>
                         <div>
                           <span className="text-xs font-bold text-slate-500">운송 방법: </span>
@@ -516,14 +516,14 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       {item.schedules.length > 0 && (
                         <div className="space-y-2">
                           {item.schedules.map((schedule, idx) => (
-                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200">
-                              <div className="flex items-center justify-between mb-2">
+                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[200px]">
+                              <div className="mb-2">
                                 <span className="font-bold text-slate-900 text-xs">{getPostProcessingName(schedule.postProcessingId)}</span>
                                 {schedule.isCompleted && (
-                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                                  <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-2">
                                 <div>
                                   <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
                                   <input
