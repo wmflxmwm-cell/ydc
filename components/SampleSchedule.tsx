@@ -132,6 +132,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         moldSequence: item.moldSequence || '',
         lot: item.lot || '미적용',
         remarks: item.remarks || '',
+        isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -164,6 +165,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         moldSequence: item.moldSequence || '',
         lot: item.lot || '미적용',
         remarks: item.remarks || '',
+        isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -178,6 +180,17 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const handleUpdateSchedule = async (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
+
+    // 계획일정 validation: 이전 카드의 계획일정보다 빠른 날짜는 선택 불가
+    if (field === 'plannedDate' && typeof value === 'string' && value) {
+      if (scheduleIndex > 0) {
+        const prevSchedule = item.schedules[scheduleIndex - 1];
+        if (prevSchedule.plannedDate && value < prevSchedule.plannedDate) {
+          alert('이전 일정보다 빠른 날짜를 선택할 수 없습니다.');
+          return;
+        }
+      }
+    }
 
     const updatedSchedules = item.schedules.map((schedule, i) => 
       i === scheduleIndex ? { ...schedule, [field]: value } : schedule
@@ -194,6 +207,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         moldSequence: item.moldSequence || '',
         lot: item.lot || '미적용',
         remarks: item.remarks || '',
+        isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
       setItems(prev => prev.map(i => 
@@ -582,6 +596,49 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             {item.productCostType}
                           </span>
                         </div>
+                        {/* 모든 계획일정이 완료되었고 DV_MASTER_PM 역할인 경우 계획 승인 버튼 표시 */}
+                        {user.role === 'DV_MASTER_PM' && item.schedules.length > 0 && 
+                         item.schedules.every(s => s.isPlanCompleted) && !item.isPlanApproved && (
+                          <div className="mt-2">
+                            <button
+                              onClick={async () => {
+                                if (confirm('일정을 승인 완료 처리하시겠습니까?')) {
+                                  try {
+                                    await sampleScheduleService.update(item.id, {
+                                      partName: item.partName,
+                                      partNumber: item.partNumber,
+                                      quantity: item.quantity,
+                                      requestDate: item.requestDate,
+                                      shippingMethod: item.shippingMethod,
+                                      productCostType: item.productCostType,
+                                      moldSequence: item.moldSequence || '',
+                                      lot: item.lot || '미적용',
+                                      remarks: item.remarks || '',
+                                      isPlanApproved: true,
+                                      schedules: item.schedules
+                                    });
+                                    setItems(prev => prev.map(i =>
+                                      i.id === item.id ? { ...i, isPlanApproved: true } : i
+                                    ));
+                                  } catch (error) {
+                                    console.error('Failed to approve plan:', error);
+                                    alert('계획 승인에 실패했습니다.');
+                                  }
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700"
+                            >
+                              계획 승인
+                            </button>
+                          </div>
+                        )}
+                        {item.isPlanApproved && (
+                          <div className="mt-2">
+                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">
+                              일정 승인 완료
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-bold text-slate-500">차수:</span>
                           <span className="text-xs text-slate-700">{item.moldSequence || '-'}</span>

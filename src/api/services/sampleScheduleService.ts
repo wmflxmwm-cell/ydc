@@ -22,6 +22,7 @@ export interface SampleSchedule {
   moldSequence?: string;
   lot?: string;
   remarks?: string;
+  isPlanApproved?: boolean;
   schedules: ScheduleItem[];
 }
 
@@ -35,6 +36,7 @@ export interface CreateSampleScheduleData {
   moldSequence?: string;
   lot?: string;
   remarks?: string;
+  isPlanApproved?: boolean;
   schedules: ScheduleItem[];
 }
 

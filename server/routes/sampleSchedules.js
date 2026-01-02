@@ -17,6 +17,7 @@ router.get('/', async (req, res) => {
             moldSequence: row.mold_sequence,
             lot: row.lot,
             remarks: row.remarks,
+            isPlanApproved: row.is_plan_approved || false,
             schedules: row.schedules ? JSON.parse(row.schedules) : []
         }));
         res.json(schedules);
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
 
 // Create a new sample schedule
 router.post('/', async (req, res) => {
-    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, remarks, schedules } = req.body;
+    const { partName, partNumber, quantity, requestDate, shippingMethod, productCostType, moldSequence, lot, remarks, isPlanApproved, schedules } = req.body;
     
     if (!partName || !partNumber || quantity <= 0 || !requestDate) {
         return res.status(400).json({ error: '필수 필드를 모두 입력하세요.' });
@@ -55,6 +56,7 @@ router.post('/', async (req, res) => {
             moldSequence: moldSequence || null,
             lot: lot || null,
             remarks: remarks || null,
+            isPlanApproved: isPlanApproved || false,
             schedules: schedules || [] 
         });
     } catch (err) {
@@ -101,6 +103,7 @@ router.put('/:id', async (req, res) => {
             moldSequence: moldSequence || null,
             lot: lot || null,
             remarks: remarks || null,
+            isPlanApproved: isPlanApproved || false,
             schedules: schedules || [] 
         });
     } catch (err) {

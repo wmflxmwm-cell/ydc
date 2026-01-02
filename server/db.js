@@ -93,6 +93,7 @@ const initDb = async () => {
         mold_sequence VARCHAR(50),
         lot VARCHAR(50),
         remarks TEXT,
+        is_plan_approved BOOLEAN DEFAULT FALSE,
         schedules TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
