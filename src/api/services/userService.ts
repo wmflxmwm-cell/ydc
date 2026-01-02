@@ -34,6 +34,16 @@ export const userService = {
         await client.post('/auth/register', user);
     },
 
+    update: async (id: string, data: { name: string; role: string }): Promise<User> => {
+        const headers: any = { 'x-admin': 'true' };
+        const response = await client.put<User>(`/auth/users/${id}`, data, { headers });
+        return response.data;
+    },
+
+    changePassword: async (id: string, password: string): Promise<void> => {
+        await client.put(`/auth/users/${id}/password`, { password });
+    },
+
     delete: async (id: string): Promise<void> => {
         await client.delete(`/auth/users/${id}`);
     }

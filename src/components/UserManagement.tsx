@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff, Edit2, Key } from 'lucide-react';
 import { userService, UserWithPassword } from '../api/services/userService';
 import { getTranslations } from '../utils/translations';
 
@@ -10,6 +10,11 @@ const UserManagement: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
+    const [currentUserId, setCurrentUserId] = useState<string>('');
+    const [editingUser, setEditingUser] = useState<UserWithPassword | null>(null);
+    const [passwordChangeUserId, setPasswordChangeUserId] = useState<string | null>(null);
+    const [newPassword, setNewPassword] = useState<string>('');
+    const [editFormData, setEditFormData] = useState({ name: '', role: '' });
 
     // Form state
     const [formData, setFormData] = useState({
@@ -25,6 +30,7 @@ const UserManagement: React.FC = () => {
         if (savedUser) {
             const user = JSON.parse(savedUser);
             setIsAdmin(user.role === 'MANAGER' || user.role?.includes('총괄'));
+            setCurrentUserId(user.id);
         }
         fetchUsers();
     }, []);
@@ -89,6 +95,44 @@ const UserManagement: React.FC = () => {
             alert(`사용자 등록 실패: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleEditUser = (user: UserWithPassword) => {
+        setEditingUser(user);
+        setEditFormData({ name: user.name, role: user.role });
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingUser) return;
+        
+        try {
+            await userService.update(editingUser.id, editFormData);
+            await fetchUsers();
+            setEditingUser(null);
+            alert('사용자 정보가 수정되었습니다.');
+        } catch (error: any) {
+            console.error('Failed to update user:', error);
+            const errorMessage = error.response?.data?.error || error.message || '사용자 정보 수정에 실패했습니다.';
+            alert(`사용자 정보 수정 실패: ${errorMessage}`);
+        }
+    };
+
+    const handleChangePassword = async (userId: string) => {
+        if (!newPassword || newPassword.trim() === '') {
+            alert('새 비밀번호를 입력해주세요.');
+            return;
+        }
+
+        try {
+            await userService.changePassword(userId, newPassword);
+            setPasswordChangeUserId(null);
+            setNewPassword('');
+            alert('비밀번호가 변경되었습니다.');
+        } catch (error: any) {
+            console.error('Failed to change password:', error);
+            const errorMessage = error.response?.data?.error || error.message || '비밀번호 변경에 실패했습니다.';
+            alert(`비밀번호 변경 실패: ${errorMessage}`);
         }
     };
 
@@ -275,6 +319,108 @@ const UserManagement: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 사용자 편집 모달 (관리자만) */}
+            {isAdmin && editingUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">사용자 정보 편집</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">사용자 ID</label>
+                                <input
+                                    type="text"
+                                    value={editingUser.id}
+                                    disabled
+                                    className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 font-mono text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">이름</label>
+                                <input
+                                    type="text"
+                                    value={editFormData.name}
+                                    onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">역할</label>
+                                <select
+                                    value={editFormData.role}
+                                    onChange={e => setEditFormData({ ...editFormData, role: e.target.value })}
+                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="개발팀">개발팀</option>
+                                    <option value="품질팀">품질팀</option>
+                                    <option value="로지스틱">로지스틱</option>
+                                    <option value="구매">구매</option>
+                                    <option value="생산관리">생산관리</option>
+                                    <option value="생산1팀">생산1팀</option>
+                                    <option value="생산2팀">생산2팀</option>
+                                    <option value="금형팀">금형팀</option>
+                                    <option value="본사 개발">본사 개발</option>
+                                    <option value="본사 품질">본사 품질</option>
+                                    <option value="MANAGER">MANAGER (관리자)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={handleSaveEdit}
+                                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+                            >
+                                저장
+                            </button>
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-300 transition-colors"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 비밀번호 변경 모달 */}
+            {passwordChangeUserId && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">비밀번호 변경</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">새 비밀번호</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="새 비밀번호를 입력하세요"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => handleChangePassword(passwordChangeUserId)}
+                                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+                            >
+                                변경
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setPasswordChangeUserId(null);
+                                    setNewPassword('');
+                                }}
+                                className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-300 transition-colors"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

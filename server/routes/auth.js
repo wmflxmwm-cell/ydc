@@ -195,6 +195,69 @@ router.get('/users', async (req, res) => {
     }
 });
 
+// Update user (admin only - for editing user info)
+router.put('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, role } = req.body;
+    
+    // Check if requester is admin (from header)
+    const isAdmin = req.headers['x-admin'] === 'true';
+    if (!isAdmin) {
+        return res.status(403).json({ error: '관리자만 사용자 정보를 수정할 수 있습니다.' });
+    }
+
+    try {
+        // Check if user exists
+        const checkResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update user
+        await pool.query(
+            'UPDATE users SET name = $1, role = $2 WHERE id = $3',
+            [name, role, id]
+        );
+
+        // Return updated user
+        const result = await pool.query('SELECT id, name, role FROM users WHERE id = $1', [id]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating user:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Change password (self-service)
+router.put('/users/:id/password', async (req, res) => {
+    const { id } = req.params;
+    const { password } = req.body;
+    
+    if (!password || password.trim() === '') {
+        return res.status(400).json({ error: '비밀번호를 입력해주세요.' });
+    }
+
+    try {
+        // Check if user exists
+        const checkResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update password
+        const cleanPassword = String(password).trim();
+        await pool.query(
+            'UPDATE users SET password = $1 WHERE id = $2',
+            [cleanPassword, id]
+        );
+
+        res.json({ message: '비밀번호가 변경되었습니다.' });
+    } catch (err) {
+        console.error('Error changing password:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Delete user
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
