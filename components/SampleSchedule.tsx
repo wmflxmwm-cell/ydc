@@ -346,6 +346,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         schedules: [] // 폼에서는 사용하지 않지만 타입 유지를 위해 유지
       });
       setShowForm(false);
+      setEditingItem(null);
     } catch (error) {
       console.error('Failed to create sample schedule:', error);
       alert('샘플 일정 등록에 실패했습니다.');
