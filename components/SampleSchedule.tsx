@@ -616,7 +616,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               <tr className="bg-slate-900 text-white">
                 <th className="px-2 py-4 text-left text-sm font-bold" style={{ width: '14.4%' }}>품목 정보</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정 일정</th>
-                <th className="px-2 py-4 text-center text-sm font-bold">관리</th>
+                <th className="px-2 py-4 text-center text-sm font-bold" style={{ width: '80px' }}>관리</th>
               </tr>
             </thead>
             <tbody>
