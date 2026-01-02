@@ -233,12 +233,33 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     // 품목 정보에서 후공정 목록 가져오기
     const selectedPart = parts.find(p => p.id === formData.partId);
     const autoSchedules: ScheduleItem[] = selectedPart 
-      ? selectedPart.postProcessings.map(ppId => ({
-          postProcessingId: ppId,
-          plannedDate: '',
-          completedDate: '',
-          isCompleted: false
-        }))
+      ? [
+          ...selectedPart.postProcessings.map(ppId => ({
+            postProcessingId: ppId,
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false
+          })),
+          // 로딩, ETD, ETA 항목 추가
+          {
+            postProcessingId: 'LOADING',
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false
+          },
+          {
+            postProcessingId: 'ETD',
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false
+          },
+          {
+            postProcessingId: 'ETA',
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false
+          }
+        ]
       : [];
 
     try {
@@ -287,6 +308,11 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   };
 
   const getPostProcessingName = (id: string) => {
+    // 로딩, ETD, ETA 처리
+    if (id === 'LOADING') return '로딩';
+    if (id === 'ETD') return 'ETD';
+    if (id === 'ETA') return 'ETA';
+    
     const postProcessing = postProcessings.find(p => p.id === id);
     if (!postProcessing) return '';
     const currentLanguage = getLanguage();
@@ -495,7 +521,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                       {item.schedules.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {item.schedules.map((schedule, idx) => (
-                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[200px]">
+                            <div key={idx} className="p-2 bg-slate-50 rounded border border-slate-200 w-fit min-w-[150px]">
                               <div className="mb-2">
                                 <span className="font-bold text-slate-900 text-xs">{getPostProcessingName(schedule.postProcessingId)}</span>
                                 {schedule.isCompleted && (
