@@ -20,20 +20,26 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   // 등록 폼 상태
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<{
+    partId: string;
     partName: string;
     partNumber: string;
     quantity: number;
     requestDate: string;
     shippingMethod: string;
     productCostType: string;
+    moldSequence: string;
+    lot: string;
     schedules: ScheduleItem[];
   }>({
+    partId: '',
     partName: '',
     partNumber: '',
     quantity: 0,
     requestDate: '',
     shippingMethod: '해운',
     productCostType: '유상',
+    moldSequence: '',
+    lot: '',
     schedules: []
   });
 
