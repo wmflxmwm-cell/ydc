@@ -7,6 +7,7 @@ export interface ScheduleItem {
   inputQuantity?: number;
   completedQuantity?: number;
   isCompleted: boolean;
+  isPlanCompleted?: boolean;
   completionDate?: string;
 }
 

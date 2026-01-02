@@ -234,30 +234,34 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     const selectedPart = parts.find(p => p.id === formData.partId);
     const autoSchedules: ScheduleItem[] = selectedPart 
       ? [
-          ...selectedPart.postProcessings.map(ppId => ({
-            postProcessingId: ppId,
-            plannedDate: '',
-            completedDate: '',
-            isCompleted: false
-          })),
+        ...selectedPart.postProcessings.map(ppId => ({
+          postProcessingId: ppId,
+          plannedDate: '',
+          completedDate: '',
+          isCompleted: false,
+          isPlanCompleted: false
+        })),
           // 로딩, ETD, ETA 항목 추가
           {
             postProcessingId: 'LOADING',
             plannedDate: '',
             completedDate: '',
-            isCompleted: false
+            isCompleted: false,
+            isPlanCompleted: false
           },
           {
             postProcessingId: 'ETD',
             plannedDate: '',
             completedDate: '',
-            isCompleted: false
+            isCompleted: false,
+            isPlanCompleted: false
           },
           {
             postProcessingId: 'ETA',
             plannedDate: '',
             completedDate: '',
-            isCompleted: false
+            isCompleted: false,
+            isPlanCompleted: false
           }
         ]
       : [];
@@ -536,7 +540,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                     value={schedule.plannedDate || ''}
                                     onChange={(e) => handleUpdateSchedule(item.id, idx, 'plannedDate', e.target.value)}
                                     className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
-                                    disabled={schedule.isCompleted}
+                                    disabled={schedule.isCompleted || schedule.isPlanCompleted}
                                   />
                                 </div>
                                 <div>
@@ -553,14 +557,15 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                               {!schedule.isCompleted && (
                                 <div className="grid grid-cols-2 gap-2 mt-2">
                                   <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                       if (!schedule.plannedDate) {
                                         alert('계획일정을 먼저 입력하세요.');
                                         return;
                                       }
-                                      // 계획일정 저장은 이미 handleUpdateSchedule에서 자동으로 처리됨
+                                      // 계획완료 상태로 설정
+                                      await handleUpdateSchedule(item.id, idx, 'isPlanCompleted', true);
                                     }}
-                                    disabled={!schedule.plannedDate}
+                                    disabled={!schedule.plannedDate || schedule.isPlanCompleted}
                                     className="flex items-center justify-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     <CheckCircle2 size={12} />
