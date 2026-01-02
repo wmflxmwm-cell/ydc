@@ -365,6 +365,71 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  const handleEditItem = (item: SampleSchedule) => {
+    setEditingItem(item);
+    setFormData({
+      partId: parts.find(p => p.partNumber === item.partNumber)?.id || '',
+      partName: item.partName,
+      partNumber: item.partNumber,
+      quantity: item.quantity,
+      requestDate: item.requestDate.split('T')[0],
+      shippingMethod: item.shippingMethod,
+      productCostType: item.productCostType,
+      moldSequence: item.moldSequence || '',
+      lot: item.lot || '미적용',
+      remarks: item.remarks || '',
+      schedules: []
+    });
+    setShowForm(true);
+  };
+
+  const handleUpdateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    if (!formData.partId || !formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
+      alert('품목, 수량, 납기 요청일을 모두 입력하세요.');
+      return;
+    }
+
+    try {
+      await sampleScheduleService.update(editingItem.id, {
+        partName: formData.partName,
+        partNumber: formData.partNumber,
+        quantity: formData.quantity,
+        requestDate: formData.requestDate,
+        shippingMethod: formData.shippingMethod,
+        productCostType: formData.productCostType,
+        moldSequence: formData.moldSequence || '',
+        lot: formData.lot || '미적용',
+        remarks: formData.remarks || '',
+        isPlanApproved: editingItem.isPlanApproved || false,
+        schedules: editingItem.schedules
+      });
+      
+      await fetchData();
+      setShowForm(false);
+      setEditingItem(null);
+      setFormData({
+        partId: '',
+        partName: '',
+        partNumber: '',
+        quantity: 0,
+        requestDate: '',
+        shippingMethod: '해운',
+        productCostType: '유상',
+        moldSequence: '',
+        lot: '미적용',
+        remarks: '',
+        schedules: []
+      });
+      alert('항목이 수정되었습니다.');
+    } catch (error) {
+      console.error('Failed to update item:', error);
+      alert('수정에 실패했습니다.');
+    }
+  };
+
   const getPostProcessingName = (id: string) => {
     // 특수 항목 처리
     if (id === 'MOLD') return '금형';
