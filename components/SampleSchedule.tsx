@@ -450,27 +450,27 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-3 py-4 text-sm w-fit whitespace-nowrap">
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">품목: </span>
-                          <span className="font-bold text-slate-900">{item.partName}</span>
+                    <td className="px-2 py-4 text-sm w-fit">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">품목:</span>
+                          <span className="font-bold text-slate-900 text-xs">{item.partName}</span>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">품번: </span>
-                          <span className="text-slate-700 font-mono">{item.partNumber}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">품번:</span>
+                          <span className="text-slate-700 font-mono text-xs">{item.partNumber}</span>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">수량: </span>
-                          <span className="text-slate-700">{item.quantity.toLocaleString()}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">수량:</span>
+                          <span className="text-slate-700 text-xs">{item.quantity.toLocaleString()}</span>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">납기 요청일: </span>
-                          <span className="text-slate-700">{item.requestDate.split('T')[0]}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">납기:</span>
+                          <span className="text-slate-700 text-xs">{item.requestDate.split('T')[0]}</span>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">운송 방법: </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">운송:</span>
+                          <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                             item.shippingMethod === '해운'
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-purple-100 text-purple-700'
@@ -478,9 +478,9 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             {item.shippingMethod}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500">제품비: </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-500">제품비:</span>
+                          <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                             item.productCostType === '무상'
                               ? 'bg-green-100 text-green-700'
                               : 'bg-amber-100 text-amber-700'
@@ -490,7 +490,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-sm w-1/2">
+                    <td className="px-3 py-4 text-sm">
                       {/* 후공정 목록 - 많을 경우 3줄, 적을 경우 2줄 */}
                       {item.schedules.length > 0 && (
                         <div className={`grid gap-2 mb-3 ${item.schedules.length > 6 ? 'grid-cols-3' : 'grid-cols-2'}`}>
