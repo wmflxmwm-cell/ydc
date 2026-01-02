@@ -364,25 +364,32 @@ const SettingsManagement: React.FC = () => {
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {postProcessings.map((postProcessing) => (
-                                    <div
-                                        key={postProcessing.id}
-                                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-slate-900">{postProcessing.name}</p>
-                                            {postProcessing.description && (
-                                                <p className="text-xs text-slate-500 truncate">{postProcessing.description}</p>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeletePostProcessing(postProcessing.id)}
-                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ml-2"
+                                {postProcessings.map((postProcessing) => {
+                                    const currentLanguage = getLanguage();
+                                    const translatedName = translatePostProcessingName(postProcessing.name, currentLanguage);
+                                    const translatedDescription = postProcessing.description 
+                                        ? translatePostProcessingDescription(postProcessing.description, currentLanguage)
+                                        : undefined;
+                                    return (
+                                        <div
+                                            key={postProcessing.id}
+                                            className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
                                         >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-slate-900">{translatedName}</p>
+                                                {translatedDescription && (
+                                                    <p className="text-xs text-slate-500 truncate">{translatedDescription}</p>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeletePostProcessing(postProcessing.id)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ml-2"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
