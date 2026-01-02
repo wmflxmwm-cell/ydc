@@ -864,11 +864,10 @@ ${JSON.stringify(sampleData, null, 2)}
           </div>
         )}
         <div className="overflow-x-auto">
-          {isEditMode ? (
-            <table 
-              className="w-full"
-              onPaste={handlePasteInEditMode}
-            >
+          <table 
+            className="w-full"
+            onPaste={isEditMode ? handlePasteInEditMode : undefined}
+          >
             <thead>
               <tr className="bg-slate-900 text-white">
                 <th className="px-6 py-4 text-left text-sm font-bold sticky left-0 bg-slate-900 z-10">{t.forecast.partName}</th>
@@ -947,7 +946,6 @@ ${JSON.stringify(sampleData, null, 2)}
               )}
             </tbody>
           </table>
-          )}
         </div>
       </div>
     </div>
