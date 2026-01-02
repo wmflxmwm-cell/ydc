@@ -196,13 +196,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
-    // 모든 일정에 후공정이 선택되었는지 확인
-    const hasEmptyPostProcessing = formData.schedules.some(s => !s.postProcessingId);
-    if (hasEmptyPostProcessing) {
-      alert('모든 후공정을 선택하세요.');
-      return;
-    }
-
     try {
       const newItem = await sampleScheduleService.create({
         partName: formData.partName,
