@@ -254,13 +254,21 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     const selectedPart = parts.find(p => p.id === formData.partId);
     const autoSchedules: ScheduleItem[] = selectedPart 
       ? [
-        ...selectedPart.postProcessings.map(ppId => ({
-          postProcessingId: ppId,
-          plannedDate: '',
-          completedDate: '',
-          isCompleted: false,
-          isPlanCompleted: false
-        })),
+          // 금형 일정 카드를 맨 앞에 추가
+          {
+            postProcessingId: 'MOLD',
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false,
+            isPlanCompleted: false
+          },
+          ...selectedPart.postProcessings.map(ppId => ({
+            postProcessingId: ppId,
+            plannedDate: '',
+            completedDate: '',
+            isCompleted: false,
+            isPlanCompleted: false
+          })),
           // 로딩, ETD, ETA 항목 추가
           {
             postProcessingId: 'LOADING',
@@ -338,7 +346,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   };
 
   const getPostProcessingName = (id: string) => {
-    // 로딩, ETD, ETA 처리
+    // 특수 항목 처리
+    if (id === 'MOLD') return '금형';
     if (id === 'LOADING') return '로딩';
     if (id === 'ETD') return 'ETD';
     if (id === 'ETA') return 'ETA';
