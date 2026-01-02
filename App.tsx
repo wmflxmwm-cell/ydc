@@ -355,7 +355,7 @@ const App: React.FC = () => {
             <Forecast projects={projects} onProjectsUpdate={fetchData} />
           </div>
           <div style={{ display: activeTab === 'sample' ? 'block' : 'none' }}>
-            <SampleSchedule />
+            <SampleSchedule user={user} />
           </div>
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />

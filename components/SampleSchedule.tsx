@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, Save } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
 import { getTranslations } from '../src/utils/translations';
 
@@ -7,6 +7,9 @@ interface ScheduleItem {
   postProcessingId: string;
   plannedDate: string;
   completedDate: string;
+  inputQuantity: number; // 투입 수량
+  completedQuantity: number; // 완료 수량
+  isCompleted: boolean; // 완료 여부
 }
 
 interface SampleScheduleItem {
@@ -20,7 +23,11 @@ interface SampleScheduleItem {
   schedules: ScheduleItem[];
 }
 
-const SampleSchedule: React.FC = () => {
+interface Props {
+  user: { id: string; name: string; role: string };
+}
+
+const SampleSchedule: React.FC<Props> = ({ user }) => {
   const t = getTranslations();
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
   const [items, setItems] = useState<SampleScheduleItem[]>([]);
@@ -63,7 +70,14 @@ const SampleSchedule: React.FC = () => {
   const handleAddSchedule = () => {
     setFormData(prev => ({
       ...prev,
-      schedules: [...prev.schedules, { postProcessingId: '', plannedDate: '', completedDate: '' }]
+      schedules: [...prev.schedules, { 
+        postProcessingId: '', 
+        plannedDate: '', 
+        completedDate: '',
+        inputQuantity: 0,
+        completedQuantity: 0,
+        isCompleted: false
+      }]
     }));
   };
 
@@ -74,13 +88,42 @@ const SampleSchedule: React.FC = () => {
     }));
   };
 
-  const handleScheduleChange = (index: number, field: keyof ScheduleItem, value: string) => {
+  const handleScheduleChange = (index: number, field: keyof ScheduleItem, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       schedules: prev.schedules.map((schedule, i) => 
         i === index ? { ...schedule, [field]: value } : schedule
       )
     }));
+  };
+
+  const handleUpdateSchedule = (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
+    setItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          schedules: item.schedules.map((schedule, i) => 
+            i === scheduleIndex ? { ...schedule, [field]: value } : schedule
+          )
+        };
+      }
+      return item;
+    }));
+  };
+
+  const handleCompleteSchedule = (itemId: string, scheduleIndex: number) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const schedule = item.schedules[scheduleIndex];
+    if (!schedule.completedDate) {
+      alert('완료 일자를 먼저 입력하세요.');
+      return;
+    }
+
+    if (confirm('이 후공정을 완료 처리하시겠습니까?')) {
+      handleUpdateSchedule(itemId, scheduleIndex, 'isCompleted', true);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -381,23 +424,78 @@ const SampleSchedule: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {item.schedules.map((schedule, idx) => (
-                          <div key={idx} className="flex gap-4 text-xs">
-                            <span className="font-bold text-slate-700 min-w-[100px]">{getPostProcessingName(schedule.postProcessingId)}</span>
-                            <span className="text-slate-600">계획: {schedule.plannedDate || '-'}</span>
-                            <span className="text-slate-600">완료: {schedule.completedDate || '-'}</span>
+                          <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-slate-900">{getPostProcessingName(schedule.postProcessingId)}</span>
+                              {schedule.isCompleted && (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">완료</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-1">투입 수량</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={schedule.inputQuantity || ''}
+                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'inputQuantity', parseInt(e.target.value) || 0)}
+                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                  disabled={schedule.isCompleted}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-1">완료 수량</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={schedule.completedQuantity || ''}
+                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedQuantity', parseInt(e.target.value) || 0)}
+                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                  disabled={schedule.isCompleted}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-1">계획일정</label>
+                                <span className="text-xs text-slate-700">{schedule.plannedDate || '-'}</span>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-600 mb-1">완료일정</label>
+                                <input
+                                  type="date"
+                                  value={schedule.completedDate || ''}
+                                  onChange={(e) => handleUpdateSchedule(item.id, idx, 'completedDate', e.target.value)}
+                                  className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                                  disabled={schedule.isCompleted}
+                                />
+                              </div>
+                            </div>
+                            {!schedule.isCompleted && (
+                              <button
+                                onClick={() => handleCompleteSchedule(item.id, idx)}
+                                disabled={!schedule.completedDate}
+                                className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <CheckCircle2 size={14} />
+                                완료 처리
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {user.role === 'MANAGER' && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
