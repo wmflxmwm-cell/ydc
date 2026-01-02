@@ -1,27 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
+import { sampleScheduleService, SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
 import { getTranslations } from '../src/utils/translations';
-
-interface ScheduleItem {
-  postProcessingId: string;
-  plannedDate: string;
-  completedDate: string;
-  inputQuantity: number; // 투입 수량
-  completedQuantity: number; // 완료 수량
-  isCompleted: boolean; // 완료 여부
-}
-
-interface SampleScheduleItem {
-  id: string;
-  partName: string;
-  partNumber: string;
-  quantity: number;
-  requestDate: string;
-    shippingMethod: string; // '해운' | '항공'
-  productCostType: string; // '무상' | '유상'
-  schedules: ScheduleItem[];
-}
 
 interface Props {
   user: { id: string; name: string; role: string };
