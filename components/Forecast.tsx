@@ -29,7 +29,15 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [parsedRows, setParsedRows] = useState<ExcelRow[]>([]);
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editData, setEditData] = useState<{ [projectId: string]: { [year: number]: number } }>({});
+  const [editData, setEditData] = useState<{ 
+    [projectId: string]: { 
+      [year: number]: number;
+      partName?: string;
+      partNumber?: string;
+      customerName?: string;
+      carModel?: string;
+    } 
+  }>({});
 
   useEffect(() => {
     const filtered = projects.filter(project => {
@@ -498,6 +506,15 @@ ${JSON.stringify(sampleData, null, 2)}
 
         try {
           const updateData: Partial<Project> = {};
+          
+          // 프로젝트 정보 업데이트
+          const projectInfo = editData[projectId];
+          if (projectInfo.partName !== undefined) updateData.partName = projectInfo.partName;
+          if (projectInfo.partNumber !== undefined) updateData.partNumber = projectInfo.partNumber;
+          if (projectInfo.customerName !== undefined) updateData.customerName = projectInfo.customerName;
+          if (projectInfo.carModel !== undefined) updateData.carModel = projectInfo.carModel;
+          
+          // 연도별 수량 업데이트
           years.forEach(year => {
             const volume = editData[projectId][year];
             if (volume !== undefined && volume !== null) {
@@ -507,7 +524,7 @@ ${JSON.stringify(sampleData, null, 2)}
           });
 
           if (Object.keys(updateData).length > 0) {
-            await projectService.updateVolumes(projectId, updateData);
+            await projectService.update(projectId, updateData);
             successCount++;
           }
         } catch (error) {
@@ -544,6 +561,17 @@ ${JSON.stringify(sampleData, null, 2)}
       [projectId]: {
         ...prev[projectId],
         [year]: value
+      }
+    }));
+  };
+
+  // 프로젝트 정보 업데이트
+  const updateProjectInfo = (projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'carModel', value: string) => {
+    setEditData(prev => ({
+      ...prev,
+      [projectId]: {
+        ...prev[projectId],
+        [field]: value
       }
     }));
   };
@@ -628,9 +656,22 @@ ${JSON.stringify(sampleData, null, 2)}
                   onClick={() => {
                     setIsEditMode(true);
                     // 현재 프로젝트 데이터를 편집 데이터로 초기화
-                    const initialData: { [projectId: string]: { [year: number]: number } } = {};
+                    const initialData: { 
+                      [projectId: string]: { 
+                        [year: number]: number;
+                        partName?: string;
+                        partNumber?: string;
+                        customerName?: string;
+                        carModel?: string;
+                      } 
+                    } = {};
                     filteredProjects.forEach(project => {
-                      initialData[project.id] = {};
+                      initialData[project.id] = {
+                        partName: project.partName,
+                        partNumber: project.partNumber,
+                        customerName: project.customerName,
+                        carModel: project.carModel
+                      };
                       years.forEach(year => {
                         initialData[project.id][year] = getVolumeForYear(project, year);
                       });
@@ -892,10 +933,54 @@ ${JSON.stringify(sampleData, null, 2)}
               ) : (
                 filteredProjects.map((project) => (
                   <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-bold text-slate-900 sticky left-0 bg-white z-10">{project.partName}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-mono">{project.partNumber}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{project.customerName}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{project.carModel}</td>
+                    <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editData[project.id]?.partName ?? project.partName}
+                          onChange={(e) => updateProjectInfo(project.id, 'partName', e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                        />
+                      ) : (
+                        <span className="font-bold text-slate-900">{project.partName}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editData[project.id]?.partNumber ?? project.partNumber}
+                          onChange={(e) => updateProjectInfo(project.id, 'partNumber', e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
+                        />
+                      ) : (
+                        <span className="text-slate-600 font-mono">{project.partNumber}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editData[project.id]?.customerName ?? project.customerName}
+                          onChange={(e) => updateProjectInfo(project.id, 'customerName', e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      ) : (
+                        <span className="text-slate-700">{project.customerName}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editData[project.id]?.carModel ?? project.carModel}
+                          onChange={(e) => updateProjectInfo(project.id, 'carModel', e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      ) : (
+                        <span className="text-slate-700">{project.carModel}</span>
+                      )}
+                    </td>
                     {years.map(year => {
                       if (isEditMode) {
                         return (
