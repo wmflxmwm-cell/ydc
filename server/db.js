@@ -104,6 +104,7 @@ const initDb = async () => {
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS mold_sequence VARCHAR(50)',
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS lot VARCHAR(50)',
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS remarks TEXT',
+            'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS is_plan_approved BOOLEAN DEFAULT FALSE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fot_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fai_date DATE',
