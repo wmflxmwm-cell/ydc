@@ -315,9 +315,13 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             required
                           >
                             <option value="">선택하세요</option>
-                            {postProcessings.map(pp => (
-                              <option key={pp.id} value={pp.id}>{pp.name}</option>
-                            ))}
+                            {postProcessings.map(pp => {
+                              const currentLanguage = getLanguage();
+                              const translatedName = translatePostProcessingName(pp.name, currentLanguage);
+                              return (
+                                <option key={pp.id} value={pp.id}>{translatedName}</option>
+                              );
+                            })}
                           </select>
                         </div>
                         <div>
