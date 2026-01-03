@@ -19,6 +19,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   
   // 등록 폼 상태
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<SampleSchedule | null>(null);
   const [formData, setFormData] = useState<{
     partId: string;
     partName: string;
@@ -329,6 +330,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       });
 
       setItems(prev => [newItem, ...prev]);
+      setEditingItem(null);
       
       // 폼 초기화
       setFormData({
@@ -579,6 +581,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                            type="button"
                            onClick={() => {
                              setShowForm(false);
+                             setEditingItem(null);
                              setFormData({
                                partId: '',
                                partName: '',

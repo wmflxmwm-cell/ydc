@@ -1,10 +1,24 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Settings2,
+  AlertTriangle,
+  Activity,
+  LogOut,
+  User as UserIcon,
+  BookOpen,
+  TrendingUp,
+  Calendar,
+  Package,
+  Languages,
+} from 'lucide-react';
 
-import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PlusCircle, Settings2, AlertTriangle, ChevronRight, Activity, Database, CheckCircle2, LogOut, User as UserIcon, BookOpen, TrendingUp, Calendar, Package, Languages } from 'lucide-react';
-import { Project, Gate, Issue, ProjectStatus, GateStatus } from './types';
+import { Project, Gate, Issue } from './types';
 import { projectService } from './src/api/services/projectService';
 import { gateService } from './src/api/services/gateService';
 import { issueService } from './src/api/services/issueService';
+
 import Dashboard from './components/Dashboard';
 import ProjectRegistration from './components/ProjectRegistration';
 import PhaseManagement from './components/PhaseManagement';
@@ -25,81 +39,114 @@ interface UserSession {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part'>('dashboard');
+  const [activeTab, setActiveTab] = useState<
+    'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part'
+  >('dashboard');
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'ko' | 'vi'>(getLanguage);
+
+  const [language, setLanguage] = useState<'ko' | 'vi'>(() => getLanguage());
   const [isLoading, setIsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
-  
+
   const t = getTranslations(language);
 
-  // 로컬 스토리지에서 세션 복구 시도
+  // in-flight 요청 무효화 / 최신 요청만 반영
+  const fetchSeqRef = useRef(0);
+
+  // 로컬 스토리지에서 세션 복구 + (다른 탭에서) 언어 변경 감지
   useEffect(() => {
     const savedUser = localStorage.getItem('apqp_session');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    // 언어 설정 감지
-    const handleStorageChange = () => {
-      setLanguage(getLanguage());
-    };
-    window.addEventListener('storage', handleStorageChange);
-    const interval = setInterval(() => {
-      const currentLang = getLanguage();
-      if (currentLang !== language) {
-        setLanguage(currentLang);
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.warn('Invalid apqp_session in localStorage. Clearing it.', e);
+        localStorage.removeItem('apqp_session');
       }
-    }, 100);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'apqp_language') {
+        setLanguage(getLanguage());
+      }
+      if (e.key === 'apqp_session') {
+        // 다른 탭에서 세션이 바뀐 경우도 방어적으로 반영
+        const next = localStorage.getItem('apqp_session');
+        if (!next) {
+          setUser(null);
+          setProjects([]);
+          setGates([]);
+          setIssues([]);
+        } else {
+          try {
+            setUser(JSON.parse(next));
+          } catch {
+            localStorage.removeItem('apqp_session');
+            setUser(null);
+          }
+        }
+      }
     };
-  }, [language]);
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    const seq = ++fetchSeqRef.current;
+
+    setIsLoading(true);
+    setLoadingError(null);
+
+    try {
+      const [projectsData, issuesData] = await Promise.all([projectService.getAll(), issueService.getAll()]);
+
+      if (seq !== fetchSeqRef.current) return;
+
+      setProjects(projectsData);
+      setIssues(issuesData);
+
+      // 모든 프로젝트의 게이트 정보를 병렬로 가져오되, 일부 실패해도 성공한 건 유지
+      const gatesPromises = projectsData.map((project) => gateService.getByProjectId(project.id));
+      const gatesResults = await Promise.allSettled(gatesPromises);
+
+      if (seq !== fetchSeqRef.current) return;
+
+      const allGates = gatesResults.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+      setGates(allGates);
+
+      const rejectedCount = gatesResults.filter((r) => r.status === 'rejected').length;
+      if (rejectedCount > 0) {
+        console.warn(`Some gate fetches failed: ${rejectedCount}/${gatesResults.length}`);
+      }
+    } catch (error: any) {
+      if (seq !== fetchSeqRef.current) return;
+
+      console.error('Failed to fetch data:', error);
+      const errorMessage =
+        error?.response?.data?.message || error?.message || '데이터를 불러오는 중 오류가 발생했습니다.';
+      setLoadingError(errorMessage);
+
+      if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
+        alert('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      }
+    } finally {
+      if (seq === fetchSeqRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   // 데이터 로딩
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [user]);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    setLoadingError(null);
-    try {
-      const [projectsData, issuesData] = await Promise.all([
-        projectService.getAll(),
-        issueService.getAll()
-      ]);
-      setProjects(projectsData);
-      setIssues(issuesData);
-
-      // 모든 프로젝트의 게이트 정보를 병렬로 가져옴
-      try {
-        const gatesPromises = projectsData.map(project => gateService.getByProjectId(project.id));
-        const gatesResults = await Promise.all(gatesPromises);
-        const allGates = gatesResults.flat();
-        setGates(allGates);
-      } catch (gateError) {
-        console.error('Failed to fetch gates:', gateError);
-        // 게이트 로딩 실패해도 프로젝트와 이슈는 표시
-        setGates([]);
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch data:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || '데이터를 불러오는 중 오류가 발생했습니다.';
-      setLoadingError(errorMessage);
-      // 네트워크 오류인 경우 알림
-      if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
-        alert('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [user, fetchData]);
 
   const handleLogin = (userData: UserSession) => {
     setUser(userData);
@@ -108,6 +155,9 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     if (confirm(t.app.logoutConfirm)) {
+      // 진행 중인 fetch 무효화
+      fetchSeqRef.current += 1;
+
       setUser(null);
       localStorage.removeItem('apqp_session');
       setProjects([]);
@@ -125,14 +175,12 @@ const App: React.FC = () => {
 
   const addProject = async (newProject: Project) => {
     try {
-      // ID와 createdAt은 서버에서 생성되므로 제외하고 보냄
-      const { id, createdAt, ...projectData } = newProject;
+      const { id, createdAt, ...projectData } = newProject as any;
       const createdProject = await projectService.create(projectData);
-      setProjects(prev => [...prev, createdProject]);
+      setProjects((prev) => [...prev, createdProject]);
 
-      // 게이트 정보도 다시 불러옴
       const newGates = await gateService.getByProjectId(createdProject.id);
-      setGates(prev => [...prev, ...newGates]);
+      setGates((prev) => [...prev, ...newGates]);
     } catch (error) {
       console.error('Failed to add project:', error);
       alert(t.registration.error);
@@ -142,7 +190,7 @@ const App: React.FC = () => {
   const updateGate = async (updatedGate: Gate) => {
     try {
       const result = await gateService.update(updatedGate.id, updatedGate);
-      setGates(prev => prev.map(g => g.id === result.id ? result : g));
+      setGates((prev) => prev.map((g) => (g.id === result.id ? result : g)));
     } catch (error) {
       console.error('Failed to update gate:', error);
       alert(t.phaseManagement.update + ' 실패');
@@ -151,9 +199,9 @@ const App: React.FC = () => {
 
   const addIssue = async (newIssue: Issue) => {
     try {
-      const { id, ...issueData } = newIssue;
+      const { id, ...issueData } = newIssue as any;
       const createdIssue = await issueService.create(issueData);
-      setIssues(prev => [...prev, createdIssue]);
+      setIssues((prev) => [...prev, createdIssue]);
     } catch (error) {
       console.error('Failed to add issue:', error);
       alert(t.issueTracker.addIssue + ' 실패');
@@ -162,10 +210,10 @@ const App: React.FC = () => {
 
   const toggleIssueResolution = async (id: string) => {
     try {
-      const issue = issues.find(i => i.id === id);
+      const issue = issues.find((i) => i.id === id);
       if (issue) {
         const updatedIssue = await issueService.update(id, { isResolved: !issue.isResolved });
-        setIssues(prev => prev.map(i => i.id === id ? updatedIssue : i));
+        setIssues((prev) => prev.map((i) => (i.id === id ? updatedIssue : i)));
       }
     } catch (error) {
       console.error('Failed to toggle issue resolution:', error);
@@ -174,14 +222,15 @@ const App: React.FC = () => {
   };
 
   const deleteProject = async (id: string) => {
+    // TODO(i18n): t로 통일 권장
     if (!confirm('이 프로젝트를 삭제하시겠습니까? 관련된 모든 게이트와 이슈도 함께 삭제됩니다.')) {
       return;
     }
     try {
       await projectService.delete(id);
-      setProjects(prev => prev.filter(p => p.id !== id));
-      setGates(prev => prev.filter(g => g.projectId !== id));
-      setIssues(prev => prev.filter(i => i.projectId !== id));
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      setGates((prev) => prev.filter((g) => g.projectId !== id));
+      setIssues((prev) => prev.filter((i) => i.projectId !== id));
       alert('프로젝트가 삭제되었습니다.');
     } catch (error) {
       console.error('Failed to delete project:', error);
@@ -189,7 +238,6 @@ const App: React.FC = () => {
     }
   };
 
-  // 로그인되지 않은 경우 로그인 화면 표시
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
@@ -202,73 +250,100 @@ const App: React.FC = () => {
             <Settings2 className="w-6 h-6 text-white" />
           </div>
           <span className="font-bold text-lg text-white tracking-tight leading-tight">
-            {t.app.titleMain}<br /><span className="text-indigo-400 text-sm uppercase">{t.app.titleSub}</span>
+            {t.app.titleMain}
+            <br />
+            <span className="text-indigo-400 text-sm uppercase">{t.app.titleSub}</span>
           </span>
         </div>
 
         <nav className="flex-1 mt-6 px-4 space-y-1">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.dashboard}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('registration')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'registration' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'registration' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <PlusCircle className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.newProject}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('management')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'management' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'management' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <Activity className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.gateManagement}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('issues')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'issues' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'issues' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <AlertTriangle className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.issueTracker}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('forecast')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <TrendingUp className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.forecast}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('sample')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'sample' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'sample' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <Calendar className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.sample}</span>
           </button>
+
           <button
             onClick={() => setActiveTab('part')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'part' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'part' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <Package className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.part}</span>
           </button>
 
-          {(user.role === 'MANAGER') && (
+          {user.role === 'MANAGER' && (
             <>
               <button
                 onClick={() => setActiveTab('users')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+                }`}
               >
                 <UserIcon className="w-5 h-5" />
                 <span className="font-medium text-sm">{t.app.sidebar.userManagement}</span>
               </button>
+
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+                }`}
               >
                 <BookOpen className="w-5 h-5" />
                 <span className="font-medium text-sm">{t.app.sidebar.settings}</span>
@@ -287,23 +362,25 @@ const App: React.FC = () => {
               <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{user.role}</p>
             </div>
           </div>
+
           <div className="flex gap-2">
             <button
               onClick={() => handleLanguageChange('ko')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all font-bold text-xs ${
-                language === 'ko' 
-                  ? 'bg-indigo-600 text-white shadow-lg' 
+                language === 'ko'
+                  ? 'bg-indigo-600 text-white shadow-lg'
                   : 'bg-slate-800/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300'
               }`}
             >
               <Languages size={14} />
               한국어
             </button>
+
             <button
               onClick={() => handleLanguageChange('vi')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all font-bold text-xs ${
-                language === 'vi' 
-                  ? 'bg-indigo-600 text-white shadow-lg' 
+                language === 'vi'
+                  ? 'bg-indigo-600 text-white shadow-lg'
                   : 'bg-slate-800/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300'
               }`}
             >
@@ -311,6 +388,7 @@ const App: React.FC = () => {
               Tiếng Việt
             </button>
           </div>
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800/30 hover:bg-red-900/40 text-slate-400 hover:text-red-400 transition-all font-bold text-xs"
@@ -335,10 +413,9 @@ const App: React.FC = () => {
               {activeTab === 'users' && t.app.users}
               {activeTab === 'settings' && t.app.settings}
             </h1>
-            <p className="text-slate-500 mt-1 font-medium">
-              {t.app.subtitle}
-            </p>
+            <p className="text-slate-500 mt-1 font-medium">{t.app.subtitle}</p>
           </div>
+
           <div className="flex items-center gap-4">
             <div className="text-[11px] font-black text-slate-400 bg-white px-4 py-2 rounded-full border shadow-sm flex items-center gap-2 uppercase tracking-widest">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> {t.app.systemOnline}
@@ -353,31 +430,28 @@ const App: React.FC = () => {
               <p className="text-sm font-bold text-blue-700">데이터를 불러오는 중...</p>
             </div>
           )}
+
           {loadingError && !isLoading && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
               <AlertTriangle className="text-red-600" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-bold text-red-700">{loadingError}</p>
-                <button
-                  onClick={fetchData}
-                  className="mt-2 text-xs font-bold text-red-600 hover:text-red-800 underline"
-                >
+                <button onClick={fetchData} className="mt-2 text-xs font-bold text-red-600 hover:text-red-800 underline">
                   다시 시도
                 </button>
               </div>
             </div>
           )}
+
           {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 - React 19 removeChild 오류 해결 */}
           <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
             <Dashboard projects={projects} gates={gates} issues={issues} user={user} onDeleteProject={deleteProject} />
           </div>
+
           <div style={{ display: activeTab === 'registration' ? 'block' : 'none' }}>
-            <ProjectRegistration 
-              activeTab={activeTab}
-              onAddProject={addProject} 
-              onNavigateToManagement={() => setActiveTab('management')} 
-            />
+            <ProjectRegistration activeTab={activeTab} onAddProject={addProject} onNavigateToManagement={() => setActiveTab('management')} />
           </div>
+
           <div style={{ display: activeTab === 'management' ? 'block' : 'none' }}>
             <PhaseManagement
               projects={projects}
@@ -388,24 +462,28 @@ const App: React.FC = () => {
               setSelectedProjectId={setSelectedProjectId}
             />
           </div>
+
           <div style={{ display: activeTab === 'issues' ? 'block' : 'none' }}>
             <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />
           </div>
+
           <div style={{ display: activeTab === 'forecast' ? 'block' : 'none' }}>
             <Forecast projects={projects} onProjectsUpdate={fetchData} />
           </div>
+
           <div style={{ display: activeTab === 'sample' ? 'block' : 'none' }}>
             <SampleSchedule user={user} />
           </div>
+
           <div style={{ display: activeTab === 'part' ? 'block' : 'none' }}>
             <PartRegistration user={user} />
           </div>
+
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
           </div>
-          <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
-            {user && <SettingsManagement user={user} />}
-          </div>
+
+          <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>{user && <SettingsManagement user={user} />}</div>
         </div>
       </main>
     </div>
