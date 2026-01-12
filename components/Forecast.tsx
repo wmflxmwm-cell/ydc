@@ -5,6 +5,7 @@ import { partService, Part } from '../src/api/services/partService';
 import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check, Edit, Save, X } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
+import * as Select from '@radix-ui/react-select';
 
 // 4️⃣ ISOLATE INPUT COMPONENTS
 const PartNumberInput = ({ value, onChange }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
@@ -1285,35 +1286,46 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <>
-                          <select
-                            style={{ border: '5px solid red', background: 'yellow' }}
+                          {/* 이벤트는 "보이는 컴포넌트의 최상위"에 달아야 함 */}
+                          <Select.Root
                             value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
+                            onValueChange={(value) => {
                               // 🧪 즉시 확인 방법 (5초 컷)
                               alert('EVENT FIRED: ' + value);
                               
-                              console.log('🔥 onValueChange fired', value);
-                              const newPartName = value;
-                              console.log('🔵 SELECT ONCHANGE:', newPartName, 'Project ID:', project.id, 'Type:', typeof project.id);
-                              console.log('🔵 SELECT ONCHANGE Normalized ID:', normalizedProjectId);
+                              console.log('🔥 Radix Select value:', value);
+                              console.log('🔵 SELECT ONVALUECHANGE:', value, 'Project ID:', project.id, 'Type:', typeof project.id);
+                              console.log('🔵 SELECT ONVALUECHANGE Normalized ID:', normalizedProjectId);
                               console.log('🔵 [BEFORE] Current editData keys:', Object.keys(editData));
                               console.log('🔵 [BEFORE] editData[project.id]:', JSON.stringify(editData[project.id]));
                               console.log('🔵 [BEFORE] editData[normalizedProjectId]:', JSON.stringify(editData[normalizedProjectId]));
                               
                               // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
                               // CRITICAL: 정규화된 projectId 전달
-                              handlePartNameUpdate(normalizedProjectId, newPartName);
+                              handlePartNameUpdate(normalizedProjectId, value);
                             }}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                           >
-                            <option value="">품목 선택</option>
-                            {parts.map(part => (
-                              <option key={part.id} value={part.partName}>
-                                {part.partName}
-                              </option>
-                            ))}
-                          </select>
+                            <Select.Trigger 
+                              style={{ border: '5px solid red', background: 'yellow' }}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                            >
+                              <Select.Value placeholder="품목 선택" />
+                            </Select.Trigger>
+
+                            <Select.Content className="bg-white border border-slate-300 rounded-lg shadow-lg z-50">
+                              <Select.Viewport>
+                                {parts.map((part) => (
+                                  <Select.Item
+                                    key={part.id}
+                                    value={part.partName}
+                                    className="px-3 py-2 cursor-pointer hover:bg-slate-100 focus:bg-slate-100 outline-none"
+                                  >
+                                    <Select.ItemText>{part.partName}</Select.ItemText>
+                                  </Select.Item>
+                                ))}
+                              </Select.Viewport>
+                            </Select.Content>
+                          </Select.Root>
                         </>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
