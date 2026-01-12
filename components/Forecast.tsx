@@ -692,9 +692,20 @@ ${JSON.stringify(sampleData, null, 2)}
       return;
     }
 
+    // CRITICAL: projectId 정규화 (문자열로 통일)
+    const normalizedProjectId = String(projectId);
+    console.log('🔍 [handlePartNameUpdate] Called with:', { 
+      projectId, 
+      normalizedProjectId,
+      projectIdType: typeof projectId,
+      newPartName 
+    });
+    console.log('🔍 [handlePartNameUpdate] Current editData keys:', Object.keys(editData));
+    console.log('🔍 [handlePartNameUpdate] editData[projectId] exists?', projectId in editData);
+    console.log('🔍 [handlePartNameUpdate] editData[normalizedProjectId] exists?', normalizedProjectId in editData);
+
     // partsRef를 우선 사용 (항상 최신 데이터)
     const allParts = partsRef.current;
-    console.log('🔍 [handlePartNameUpdate] Called with:', { projectId, newPartName });
     console.log('🔍 [handlePartNameUpdate] Available parts in ref:', allParts.length);
     
     if (allParts.length === 0) {
@@ -730,11 +741,19 @@ ${JSON.stringify(sampleData, null, 2)}
       });
       
       // CRITICAL FIX: 모든 필드를 한 번에 업데이트
+      // CRITICAL: 정규화된 projectId 사용
+      const normalizedProjectId = String(projectId);
+      
       setEditData(prev => {
-        const currentProjectData = prev[projectId] || {};
+        // CRITICAL: 정규화된 키로 접근
+        const currentProjectData = prev[normalizedProjectId] || {};
         
         // BEFORE 상태 로깅
+        console.log('🔍 [BEFORE setEditData] projectId:', projectId, 'type:', typeof projectId);
+        console.log('🔍 [BEFORE setEditData] normalizedProjectId:', normalizedProjectId);
+        console.log('🔍 [BEFORE setEditData] prev keys:', Object.keys(prev));
         console.log('🔍 [BEFORE setEditData] prev[projectId]:', JSON.stringify(prev[projectId]));
+        console.log('🔍 [BEFORE setEditData] prev[normalizedProjectId]:', JSON.stringify(prev[normalizedProjectId]));
         console.log('🔍 [BEFORE setEditData] currentProjectData:', JSON.stringify(currentProjectData));
         console.log('🔍 [BEFORE setEditData] selectedPart values:', {
           partNumber: selectedPart!.partNumber,
@@ -744,7 +763,7 @@ ${JSON.stringify(sampleData, null, 2)}
         
         const updated = {
           ...prev,
-          [projectId]: {
+          [normalizedProjectId]: {  // CRITICAL: 정규화된 키 사용
             ...currentProjectData, // 기존 연도별 데이터 유지
             partName: newPartName,
             // CRITICAL: 빈 문자열이 아닌 실제 값만 설정 (null/undefined 체크)
@@ -755,10 +774,11 @@ ${JSON.stringify(sampleData, null, 2)}
         };
         
         // AFTER 상태 로깅
-        console.log('✅ [AFTER setEditData] updated[projectId]:', JSON.stringify(updated[projectId]));
-        console.log('✅ [AFTER setEditData] partNumber type:', typeof updated[projectId].partNumber, 'value:', JSON.stringify(updated[projectId].partNumber));
-        console.log('✅ [AFTER setEditData] customerName type:', typeof updated[projectId].customerName, 'value:', JSON.stringify(updated[projectId].customerName));
-        console.log('✅ [AFTER setEditData] material type:', typeof updated[projectId].material, 'value:', JSON.stringify(updated[projectId].material));
+        console.log('✅ [AFTER setEditData] updated keys:', Object.keys(updated));
+        console.log('✅ [AFTER setEditData] updated[normalizedProjectId]:', JSON.stringify(updated[normalizedProjectId]));
+        console.log('✅ [AFTER setEditData] partNumber type:', typeof updated[normalizedProjectId].partNumber, 'value:', JSON.stringify(updated[normalizedProjectId].partNumber));
+        console.log('✅ [AFTER setEditData] customerName type:', typeof updated[normalizedProjectId].customerName, 'value:', JSON.stringify(updated[normalizedProjectId].customerName));
+        console.log('✅ [AFTER setEditData] material type:', typeof updated[normalizedProjectId].material, 'value:', JSON.stringify(updated[normalizedProjectId].material));
         
         return updated;
       });
@@ -1180,23 +1200,30 @@ ${JSON.stringify(sampleData, null, 2)}
                   ))}
                 </tr>
               ) : (
-                filteredProjects.map((project) => (
-                  <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                filteredProjects.map((project) => {
+                  // CRITICAL: projectId 정규화 (렌더링 시 일관성 유지)
+                  const normalizedProjectId = String(project.id);
+                  
+                  return (
+                  <tr key={normalizedProjectId} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <>
                           <input
                             type="text"
-                            list={`part-list-${project.id}`}
-                            value={editData[project.id]?.partName ?? project.partName ?? ''}
+                            list={`part-list-${normalizedProjectId}`}
+                            value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
                             onChange={(e) => {
                               const newPartName = e.target.value;
-                              console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project:', project.id);
-                              console.log('🔵 [BEFORE] Current editData:', JSON.stringify(editData[project.id]));
+                              console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project ID:', project.id, 'Type:', typeof project.id);
+                              console.log('🔵 INPUT ONCHANGE Normalized ID:', normalizedProjectId);
+                              console.log('🔵 [BEFORE] Current editData keys:', Object.keys(editData));
+                              console.log('🔵 [BEFORE] editData[project.id]:', JSON.stringify(editData[project.id]));
+                              console.log('🔵 [BEFORE] editData[normalizedProjectId]:', JSON.stringify(editData[normalizedProjectId]));
                               
                               // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
-                              // partName만 먼저 업데이트하지 않고, handlePartNameUpdate에 위임
-                              handlePartNameUpdate(project.id, newPartName);
+                              // CRITICAL: 정규화된 projectId 전달
+                              handlePartNameUpdate(normalizedProjectId, newPartName);
                             }}
                             onInput={(e) => {
                               const target = e.target as HTMLInputElement;
@@ -1204,26 +1231,29 @@ ${JSON.stringify(sampleData, null, 2)}
                               console.log('🔵 INPUT ONINPUT:', newPartName, 'Project:', project.id);
                               
                               // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
-                              handlePartNameUpdate(project.id, newPartName);
+                              // CRITICAL: 정규화된 projectId 전달
+                              handlePartNameUpdate(normalizedProjectId, newPartName);
                             }}
                             onBlur={(e) => {
                               const newPartName = e.target.value;
                               console.log('🔵 INPUT ONBLUR:', newPartName, 'Project:', project.id);
                               
                               // blur 시에도 자동 채우기 처리
-                              handlePartNameUpdate(project.id, newPartName);
+                              // CRITICAL: 정규화된 projectId 전달
+                              handlePartNameUpdate(normalizedProjectId, newPartName);
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === 'Tab') {
                                 const target = e.target as HTMLInputElement;
                                 const newPartName = target.value;
                                 console.log('🔵 INPUT KEYDOWN (Enter/Tab):', newPartName);
-                                handlePartNameUpdate(project.id, newPartName);
+                                // CRITICAL: 정규화된 projectId 전달
+                                handlePartNameUpdate(normalizedProjectId, newPartName);
                               }
                             }}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                           />
-                          <datalist id={`part-list-${project.id}`}>
+                          <datalist id={`part-list-${normalizedProjectId}`}>
                             {parts.map(part => (
                               <option key={part.id} value={part.partName}>
                                 {part.partName}
@@ -1239,8 +1269,13 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.partNumber !== undefined ? editData[project.id].partNumber : project.partNumber}
-                          onChange={(e) => updateProjectInfo(project.id, 'partNumber', e.target.value)}
+                          value={(() => {
+                            const value = editData[normalizedProjectId]?.partNumber;
+                            const result = value !== undefined ? value : project.partNumber;
+                            console.log('🔍 [RENDER] partNumber input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
+                            return result;
+                          })()}
+                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'partNumber', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
                         />
                       ) : (
@@ -1251,8 +1286,13 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.customerName !== undefined ? editData[project.id].customerName : project.customerName}
-                          onChange={(e) => updateProjectInfo(project.id, 'customerName', e.target.value)}
+                          value={(() => {
+                            const value = editData[normalizedProjectId]?.customerName;
+                            const result = value !== undefined ? value : project.customerName;
+                            console.log('🔍 [RENDER] customerName input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
+                            return result;
+                          })()}
+                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'customerName', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                         />
                       ) : (
@@ -1263,8 +1303,13 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.material !== undefined ? editData[project.id].material : project.material}
-                          onChange={(e) => updateProjectInfo(project.id, 'material', e.target.value)}
+                          value={(() => {
+                            const value = editData[normalizedProjectId]?.material;
+                            const result = value !== undefined ? value : project.material;
+                            console.log('🔍 [RENDER] material input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
+                            return result;
+                          })()}
+                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'material', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                           readOnly
                         />
@@ -1280,10 +1325,10 @@ ${JSON.stringify(sampleData, null, 2)}
                               type="number"
                               min="0"
                               step="1"
-                              value={editData[project.id]?.[year] ?? getVolumeForYear(project, year)}
+                              value={editData[normalizedProjectId]?.[year] ?? getVolumeForYear(project, year)}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 0;
-                                updateEditData(project.id, year, value);
+                                updateEditData(normalizedProjectId, year, value);
                               }}
                               className="w-28 px-3 py-2 text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
                               placeholder="0"
@@ -1299,7 +1344,8 @@ ${JSON.stringify(sampleData, null, 2)}
                       );
                     })}
                   </tr>
-                ))
+                  );
+                })
               )}
               {/* 합계 행 */}
               {filteredProjects.length > 0 && (
