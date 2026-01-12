@@ -19,8 +19,16 @@ interface ForecastProps {
 const Forecast: React.FC<ForecastProps> = () => {
   // MVP State - ONLY what's needed
   const [parts, setParts] = useState<Part[]>([]);
-  const [selectedPartName, setSelectedPartName] = useState<string>('');
-  const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
+  
+  // Row data structure
+  const [row, setRow] = useState({
+    partName: '',
+    partNumber: '',
+    customerName: '',
+    material: '',
+    forecast: {} as { [year: number]: number }
+  });
 
   // MVP: Load parts on mount
   useEffect(() => {
@@ -36,15 +44,12 @@ const Forecast: React.FC<ForecastProps> = () => {
     loadParts();
   }, []);
 
-  // MVP: Simple onChange handler
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    console.log('🔥 MVP onChange FIRED:', value);
-    
-    setSelectedPartName(value);
+  // MVP: Handle part selection
+  const handlePartSelect = (partName: string) => {
+    console.log('🔥 MVP handlePartSelect FIRED:', partName);
     
     // Find matching part
-    const foundPart = parts.find(p => p.partName === value);
+    const foundPart = parts.find(p => p.partName === partName);
     if (foundPart) {
       console.log('✅ MVP: Found part:', {
         partName: foundPart.partName,
@@ -52,11 +57,36 @@ const Forecast: React.FC<ForecastProps> = () => {
         customerName: foundPart.customerName,
         material: foundPart.material
       });
-      setSelectedPart(foundPart);
+      
+      setRow({
+        partName: foundPart.partName,
+        partNumber: foundPart.partNumber || '',
+        customerName: foundPart.customerName || '',
+        material: foundPart.material || '',
+        forecast: row.forecast // Keep existing forecast values
+      });
     } else {
-      console.log('❌ MVP: Part not found for:', value);
-      setSelectedPart(null);
+      console.log('❌ MVP: Part not found for:', partName);
+      setRow({
+        partName: partName,
+        partNumber: '',
+        customerName: '',
+        material: '',
+        forecast: row.forecast
+      });
     }
+  };
+
+  // MVP: Update forecast value
+  const updateForecast = (year: number, value: number) => {
+    console.log('🔥 MVP updateForecast FIRED:', year, value);
+    setRow(prev => ({
+      ...prev,
+      forecast: {
+        ...prev.forecast,
+        [year]: value
+      }
+    }));
   };
 
   return (
@@ -95,91 +125,40 @@ const Forecast: React.FC<ForecastProps> = () => {
         <div>2032</div>
       </div>
 
-      {/* MVP: Visible select */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ 
-          display: 'block', 
-          marginBottom: '8px', 
-          fontWeight: 'bold',
-          fontSize: '14px',
-          color: '#475569'
-        }}>
-          품목 선택:
-        </label>
+      {/* Table Row */}
+      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,100px)] gap-2 p-2 border-b">
+        {/* 품목 */}
         <select
-          value={selectedPartName}
-          onChange={handleSelectChange}
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: '2px solid #cbd5e1',
-            borderRadius: '6px',
-            fontSize: '14px',
-            backgroundColor: 'white',
-            cursor: 'pointer'
-          }}
+          className="border px-2 py-1"
+          value={row.partName}
+          onChange={(e) => handlePartSelect(e.target.value)}
         >
-          <option value="">-- 품목을 선택하세요 --</option>
-          {parts.map((part) => (
-            <option key={part.id} value={part.partName}>
-              {part.partName}
+          <option value="">선택</option>
+          {parts.map(p => (
+            <option key={p.id} value={p.partName}>
+              {p.partName}
             </option>
           ))}
         </select>
+
+        {/* 품번 / 고객사 / 재질 */}
+        <input className="border px-2 py-1" value={row.partNumber} readOnly />
+        <input className="border px-2 py-1" value={row.customerName} readOnly />
+        <input className="border px-2 py-1" value={row.material} readOnly />
+
+        {/* 연도별 Forecast */}
+        {years.map(year => (
+          <input
+            key={year}
+            type="number"
+            className="border px-2 py-1 text-right"
+            value={row.forecast[year] ?? ''}
+            onChange={(e) =>
+              updateForecast(year, Number(e.target.value))
+            }
+          />
+        ))}
       </div>
-
-      {/* MVP: Visible rendering of selected fields */}
-      {selectedPart && (
-        <div style={{ 
-          marginTop: '20px', 
-          padding: '16px', 
-          background: '#f8fafc', 
-          border: '1px solid #e2e8f0',
-          borderRadius: '6px'
-        }}>
-          <h3 style={{ 
-            marginTop: 0, 
-            marginBottom: '12px',
-            fontSize: '16px', 
-            fontWeight: 'bold',
-            color: '#1e293b'
-          }}>
-            선택된 정보:
-          </h3>
-          <div style={{ 
-            fontSize: '14px', 
-            lineHeight: '1.8',
-            color: '#334155'
-          }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>품목:</strong> {selectedPart.partName}
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>품번:</strong> {selectedPart.partNumber || '(없음)'}
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>고객사:</strong> {selectedPart.customerName || '(없음)'}
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>재질:</strong> {selectedPart.material || '(없음)'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!selectedPart && selectedPartName && (
-        <div style={{ 
-          marginTop: '12px', 
-          padding: '12px', 
-          color: '#dc2626', 
-          fontSize: '14px',
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '6px'
-        }}>
-          ⚠️ 매칭되는 부품을 찾을 수 없습니다.
-        </div>
-      )}
 
       {parts.length === 0 && (
         <div style={{ 
