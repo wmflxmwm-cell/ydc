@@ -730,24 +730,36 @@ ${JSON.stringify(sampleData, null, 2)}
       });
       
       // CRITICAL FIX: 모든 필드를 한 번에 업데이트
-      // partName도 함께 업데이트하여 input value가 즉시 반영되도록 함
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
+        
+        // BEFORE 상태 로깅
+        console.log('🔍 [BEFORE setEditData] prev[projectId]:', JSON.stringify(prev[projectId]));
+        console.log('🔍 [BEFORE setEditData] currentProjectData:', JSON.stringify(currentProjectData));
+        console.log('🔍 [BEFORE setEditData] selectedPart values:', {
+          partNumber: selectedPart!.partNumber,
+          customerName: selectedPart!.customerName,
+          material: selectedPart!.material
+        });
+        
         const updated = {
           ...prev,
           [projectId]: {
             ...currentProjectData, // 기존 연도별 데이터 유지
-            partName: newPartName, // 사용자가 입력한 값 (즉시 반영)
-            partNumber: selectedPart!.partNumber || '',
-            customerName: selectedPart!.customerName || '',
-            material: selectedPart!.material || ''
+            partName: newPartName,
+            // CRITICAL: 빈 문자열이 아닌 실제 값만 설정 (null/undefined 체크)
+            partNumber: selectedPart!.partNumber ?? '',
+            customerName: selectedPart!.customerName ?? '',
+            material: selectedPart!.material ?? ''
           }
         };
-        console.log('✅ [handlePartNameUpdate] Updated editData:', JSON.stringify(updated[projectId]));
-        console.log('🔧 [handlePartNameUpdate] partNumber:', updated[projectId].partNumber);
-        console.log('🔧 [handlePartNameUpdate] customerName:', updated[projectId].customerName);
-        console.log('🔧 [handlePartNameUpdate] material:', updated[projectId].material);
-        console.log('🔧 [handlePartNameUpdate] partName:', updated[projectId].partName);
+        
+        // AFTER 상태 로깅
+        console.log('✅ [AFTER setEditData] updated[projectId]:', JSON.stringify(updated[projectId]));
+        console.log('✅ [AFTER setEditData] partNumber type:', typeof updated[projectId].partNumber, 'value:', JSON.stringify(updated[projectId].partNumber));
+        console.log('✅ [AFTER setEditData] customerName type:', typeof updated[projectId].customerName, 'value:', JSON.stringify(updated[projectId].customerName));
+        console.log('✅ [AFTER setEditData] material type:', typeof updated[projectId].material, 'value:', JSON.stringify(updated[projectId].material));
+        
         return updated;
       });
     } else {
@@ -1227,7 +1239,7 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.partNumber ?? project.partNumber}
+                          value={editData[project.id]?.partNumber !== undefined ? editData[project.id].partNumber : project.partNumber}
                           onChange={(e) => updateProjectInfo(project.id, 'partNumber', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
                         />
@@ -1239,7 +1251,7 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.customerName ?? project.customerName}
+                          value={editData[project.id]?.customerName !== undefined ? editData[project.id].customerName : project.customerName}
                           onChange={(e) => updateProjectInfo(project.id, 'customerName', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                         />
@@ -1251,7 +1263,7 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.material ?? project.material}
+                          value={editData[project.id]?.material !== undefined ? editData[project.id].material : project.material}
                           onChange={(e) => updateProjectInfo(project.id, 'material', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                           readOnly
