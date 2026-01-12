@@ -1099,8 +1099,11 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <select
+                          key={`select-${project.id}`}
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             const selectedValue = e.target.value;
                             console.log('🔵🔵🔵 Select onChange triggered! 🔵🔵🔵');
                             console.log('   Project ID:', project.id);
@@ -1117,6 +1120,15 @@ ${JSON.stringify(sampleData, null, 2)}
                             } else {
                               console.log('   ⚠️ Empty value, skipping');
                             }
+                          }}
+                          onMouseDown={(e) => {
+                            console.log('🟢 Select onMouseDown triggered');
+                            console.log('   Project ID:', project.id);
+                            console.log('   isEditMode:', isEditMode);
+                            console.log('   parts.length:', parts.length);
+                          }}
+                          onMouseUp={(e) => {
+                            console.log('🟢 Select onMouseUp triggered');
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
