@@ -614,7 +614,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           <table className="w-full table-fixed">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <th className="px-2 py-4 text-left text-sm font-bold" style={{ width: '14.4%' }}>품목 정보</th>
+                <th className="px-2 py-4 text-left text-sm font-bold" style={{ width: '10%' }}>품목 정보</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">후공정 일정</th>
                 <th className="px-2 py-4 text-center text-sm font-bold" style={{ width: '80px' }}>관리</th>
               </tr>
@@ -629,7 +629,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-2 py-4 text-sm" style={{ width: '14.4%' }}>
+                    <td className="px-2 py-4 text-sm" style={{ width: '10%' }}>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-bold text-slate-500">품목:</span>

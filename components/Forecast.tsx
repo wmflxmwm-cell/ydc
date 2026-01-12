@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
+import { partService, Part } from '../src/api/services/partService';
 import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check, Edit, Save, X } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
@@ -29,15 +30,28 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [parsedRows, setParsedRows] = useState<ExcelRow[]>([]);
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [parts, setParts] = useState<Part[]>([]);
   const [editData, setEditData] = useState<{ 
     [projectId: string]: { 
       [year: number]: number;
       partName?: string;
       partNumber?: string;
       customerName?: string;
-      carModel?: string;
+      material?: string;
     } 
   }>({});
+
+  useEffect(() => {
+    const loadParts = async () => {
+      try {
+        const partsData = await partService.getAll();
+        setParts(partsData);
+      } catch (error) {
+        console.error('Failed to load parts:', error);
+      }
+    };
+    loadParts();
+  }, []);
 
   useEffect(() => {
     if (!projects || !Array.isArray(projects)) {
@@ -45,11 +59,12 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
       return;
     }
     const filtered = projects.filter(project => {
+      if (!project) return false;
       const matchesSearch = 
         project.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.partNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.carModel.toLowerCase().includes(searchTerm.toLowerCase());
+        (project.material && project.material.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchesSearch;
     });
     setFilteredProjects(filtered);
@@ -516,7 +531,7 @@ ${JSON.stringify(sampleData, null, 2)}
           if (projectInfo.partName !== undefined) updateData.partName = projectInfo.partName;
           if (projectInfo.partNumber !== undefined) updateData.partNumber = projectInfo.partNumber;
           if (projectInfo.customerName !== undefined) updateData.customerName = projectInfo.customerName;
-          if (projectInfo.carModel !== undefined) updateData.carModel = projectInfo.carModel;
+          if (projectInfo.material !== undefined) updateData.material = projectInfo.material;
           
           // 연도별 수량 업데이트
           years.forEach(year => {
@@ -570,14 +585,31 @@ ${JSON.stringify(sampleData, null, 2)}
   };
 
   // 프로젝트 정보 업데이트
-  const updateProjectInfo = (projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'carModel', value: string) => {
-    setEditData(prev => ({
-      ...prev,
-      [projectId]: {
-        ...prev[projectId],
-        [field]: value
+  const updateProjectInfo = (projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
+    setEditData(prev => {
+      const updated = {
+        ...prev,
+        [projectId]: {
+          ...prev[projectId],
+          [field]: value
+        }
+      };
+      
+      // 품목이 변경되면 해당 품목의 재질 정보를 자동으로 설정
+      if (field === 'partName') {
+        const selectedPart = parts.find(p => p.partName === value);
+        if (selectedPart) {
+          updated[projectId] = {
+            ...updated[projectId],
+            material: selectedPart.material,
+            partNumber: selectedPart.partNumber,
+            customerName: selectedPart.customerName
+          };
+        }
       }
-    }));
+      
+      return updated;
+    });
   };
 
   // 엑셀 붙여넣기 처리 (편집 모드에서)
@@ -666,7 +698,7 @@ ${JSON.stringify(sampleData, null, 2)}
                         partName?: string;
                         partNumber?: string;
                         customerName?: string;
-                        carModel?: string;
+                        material?: string;
                       } 
                     } = {};
                     filteredProjects.forEach(project => {
@@ -674,7 +706,7 @@ ${JSON.stringify(sampleData, null, 2)}
                         partName: project.partName,
                         partNumber: project.partNumber,
                         customerName: project.customerName,
-                        carModel: project.carModel
+                        material: project.material
                       };
                       years.forEach(year => {
                         initialData[project.id][year] = getVolumeForYear(project, year);
@@ -918,7 +950,7 @@ ${JSON.stringify(sampleData, null, 2)}
                 <th className="px-6 py-4 text-left text-sm font-bold sticky left-0 bg-slate-900 z-10">{t.forecast.partName}</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.partNumber}</th>
                 <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.customerName}</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.carModel}</th>
+                <th className="px-6 py-4 text-left text-sm font-bold">{t.forecast.material}</th>
                 {years.map(year => (
                   <th key={year} className={`px-6 py-4 text-center text-sm font-bold ${selectedYear === year ? 'bg-indigo-600' : ''}`}>
                     {year}
@@ -927,24 +959,72 @@ ${JSON.stringify(sampleData, null, 2)}
               </tr>
             </thead>
             <tbody>
-              {filteredProjects.length === 0 ? (
+              {filteredProjects.length === 0 && !isEditMode ? (
                 <tr>
                   <td colSpan={4 + years.length} className="px-6 py-12 text-center text-slate-400">
                     <Package className="mx-auto mb-3 opacity-20" size={48} />
                     <p className="font-bold">{t.forecast.noResults}</p>
                   </td>
                 </tr>
+              ) : filteredProjects.length === 0 && isEditMode ? (
+                <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
+                    <input
+                      type="text"
+                      placeholder="품목명"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="품번"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="고객사명"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="차종"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    />
+                  </td>
+                  {years.map(year => (
+                    <td key={year} className={`px-6 py-4 text-center ${selectedYear === year ? 'bg-indigo-50' : ''}`}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                        className="w-28 px-3 py-2 text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                      />
+                    </td>
+                  ))}
+                </tr>
               ) : (
                 filteredProjects.map((project) => (
                   <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
-                        <input
-                          type="text"
+                        <select
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => updateProjectInfo(project.id, 'partName', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
-                        />
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                        >
+                          <option value="">품목 선택</option>
+                          {parts.map(part => (
+                            <option key={part.id} value={part.partName}>
+                              {part.partName}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
                       )}
@@ -977,12 +1057,13 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <input
                           type="text"
-                          value={editData[project.id]?.carModel ?? project.carModel}
-                          onChange={(e) => updateProjectInfo(project.id, 'carModel', e.target.value)}
+                          value={editData[project.id]?.material ?? project.material}
+                          onChange={(e) => updateProjectInfo(project.id, 'material', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          readOnly
                         />
                       ) : (
-                        <span className="text-slate-700">{project.carModel}</span>
+                        <span className="text-slate-700">{project.material}</span>
                       )}
                     </td>
                     {years.map(year => {
