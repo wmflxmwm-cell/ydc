@@ -980,13 +980,18 @@ ${JSON.stringify(sampleData, null, 2)}
                   <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                     <select
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                      defaultValue=""
                     >
                       <option value="">품목 선택</option>
-                      {parts.map(part => (
-                        <option key={part.id} value={part.partName}>
-                          {part.partName}
-                        </option>
-                      ))}
+                      {parts.length > 0 ? (
+                        parts.map(part => (
+                          <option key={part.id} value={part.partName}>
+                            {part.partName}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>부품 데이터 로딩 중...</option>
+                      )}
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -1006,7 +1011,7 @@ ${JSON.stringify(sampleData, null, 2)}
                   <td className="px-6 py-4 text-sm">
                     <input
                       type="text"
-                      placeholder="차종"
+                      placeholder="재질"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     />
                   </td>
