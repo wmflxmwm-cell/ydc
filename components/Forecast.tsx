@@ -6,6 +6,44 @@ import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkle
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
 
+// 4️⃣ ISOLATE INPUT COMPONENTS
+const PartNumberInput = ({ value, onChange }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+  console.log('🟡 [PartNumberInput] RENDER - value:', value, 'type:', typeof value);
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
+    />
+  );
+};
+
+const CustomerNameInput = ({ value, onChange }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+  console.log('🟡 [CustomerNameInput] RENDER - value:', value, 'type:', typeof value);
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+    />
+  );
+};
+
+const MaterialInput = ({ value, onChange }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+  console.log('🟡 [MaterialInput] RENDER - value:', value, 'type:', typeof value);
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+      readOnly
+    />
+  );
+};
+
 interface Props {
   projects: Project[];
   onProjectsUpdate?: () => void;
@@ -744,7 +782,14 @@ ${JSON.stringify(sampleData, null, 2)}
       // CRITICAL: 정규화된 projectId 사용
       const normalizedProjectId = String(projectId);
       
+      // 5️⃣ VERIFY RENDER ORDER - Step 1: Event
+      console.log('🟠 [RENDER ORDER] Step 1: Event → handlePartNameUpdate called');
+      console.log('🟠 [RENDER ORDER] Step 1: projectId:', projectId, 'normalizedProjectId:', normalizedProjectId);
+      
       setEditData(prev => {
+        // 5️⃣ VERIFY RENDER ORDER - Step 2: setEditData
+        console.log('🟠 [RENDER ORDER] Step 2: setEditData callback executing');
+        
         // CRITICAL: 정규화된 키로 접근
         const currentProjectData = prev[normalizedProjectId] || {};
         
@@ -779,6 +824,9 @@ ${JSON.stringify(sampleData, null, 2)}
         console.log('✅ [AFTER setEditData] partNumber type:', typeof updated[normalizedProjectId].partNumber, 'value:', JSON.stringify(updated[normalizedProjectId].partNumber));
         console.log('✅ [AFTER setEditData] customerName type:', typeof updated[normalizedProjectId].customerName, 'value:', JSON.stringify(updated[normalizedProjectId].customerName));
         console.log('✅ [AFTER setEditData] material type:', typeof updated[normalizedProjectId].material, 'value:', JSON.stringify(updated[normalizedProjectId].material));
+        
+        // 5️⃣ VERIFY RENDER ORDER - Step 3: State updated
+        console.log('🟠 [RENDER ORDER] Step 3: State updated, React will re-render');
         
         return updated;
       });
@@ -1204,6 +1252,27 @@ ${JSON.stringify(sampleData, null, 2)}
                   // CRITICAL: projectId 정규화 (렌더링 시 일관성 유지)
                   const normalizedProjectId = String(project.id);
                   
+                  // 1️⃣ PROVE STATE CHANGE VS RENDER CONSUMPTION
+                  const editDataForProject = editData[normalizedProjectId];
+                  const partNumberValue = editDataForProject?.partNumber;
+                  const customerNameValue = editDataForProject?.customerName;
+                  const materialValue = editDataForProject?.material;
+                  
+                  console.log('🔴 [RENDER] Project Row Rendering:', {
+                    projectId: project.id,
+                    projectIdType: typeof project.id,
+                    normalizedProjectId,
+                    editDataKeys: Object.keys(editData),
+                    editDataForProjectExists: !!editDataForProject,
+                    editDataForProject: JSON.stringify(editDataForProject),
+                    partNumberValue,
+                    customerNameValue,
+                    materialValue,
+                    partNumberType: typeof partNumberValue,
+                    customerNameType: typeof customerNameValue,
+                    materialType: typeof materialValue
+                  });
+                  
                   return (
                   <tr key={normalizedProjectId} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
@@ -1267,52 +1336,45 @@ ${JSON.stringify(sampleData, null, 2)}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       {isEditMode ? (
-                        <input
-                          type="text"
-                          value={(() => {
-                            const value = editData[normalizedProjectId]?.partNumber;
-                            const result = value !== undefined ? value : project.partNumber;
-                            console.log('🔍 [RENDER] partNumber input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
-                            return result;
-                          })()}
-                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'partNumber', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
-                        />
+                        <div key={`partNumber-${normalizedProjectId}`}>
+                          <PartNumberInput
+                            value={partNumberValue ?? ''}
+                            onChange={(e) => {
+                              console.log('🟢 [PartNumberInput] onChange called:', e.target.value);
+                              updateProjectInfo(normalizedProjectId, 'partNumber', e.target.value);
+                            }}
+                          />
+                        </div>
                       ) : (
                         <span className="text-slate-600 font-mono">{project.partNumber}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       {isEditMode ? (
-                        <input
-                          type="text"
-                          value={(() => {
-                            const value = editData[normalizedProjectId]?.customerName;
-                            const result = value !== undefined ? value : project.customerName;
-                            console.log('🔍 [RENDER] customerName input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
-                            return result;
-                          })()}
-                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'customerName', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                        />
+                        <div key={`customerName-${normalizedProjectId}`}>
+                          <CustomerNameInput
+                            value={customerNameValue ?? ''}
+                            onChange={(e) => {
+                              console.log('🟢 [CustomerNameInput] onChange called:', e.target.value);
+                              updateProjectInfo(normalizedProjectId, 'customerName', e.target.value);
+                            }}
+                          />
+                        </div>
                       ) : (
                         <span className="text-slate-700">{project.customerName}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       {isEditMode ? (
-                        <input
-                          type="text"
-                          value={(() => {
-                            const value = editData[normalizedProjectId]?.material;
-                            const result = value !== undefined ? value : project.material;
-                            console.log('🔍 [RENDER] material input - project.id:', project.id, 'normalizedProjectId:', normalizedProjectId, 'value:', result, 'editData value:', value);
-                            return result;
-                          })()}
-                          onChange={(e) => updateProjectInfo(normalizedProjectId, 'material', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                          readOnly
-                        />
+                        <div key={`material-${normalizedProjectId}`}>
+                          <MaterialInput
+                            value={materialValue ?? ''}
+                            onChange={(e) => {
+                              console.log('🟢 [MaterialInput] onChange called:', e.target.value);
+                              updateProjectInfo(normalizedProjectId, 'material', e.target.value);
+                            }}
+                          />
+                        </div>
                       ) : (
                         <span className="text-slate-700">{project.material}</span>
                       )}
