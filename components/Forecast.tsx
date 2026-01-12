@@ -625,27 +625,36 @@ ${JSON.stringify(sampleData, null, 2)}
   // 부품명 업데이트 핸들러 (자동 채우기 포함)
   const handlePartNameUpdate = useCallback((projectId: string, newPartName: string) => {
     if (!newPartName || newPartName.trim() === '') {
+      console.log('⚠️ Empty partName, skipping');
       return;
     }
 
-    const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+    // partsRef를 우선 사용 (항상 최신 데이터)
+    const allParts = partsRef.current;
     console.log('🔍 Searching for part:', newPartName);
-    console.log('🔍 Available parts:', allParts.length);
+    console.log('🔍 Available parts in ref:', allParts.length);
+    console.log('🔍 First 3 part names:', allParts.slice(0, 3).map(p => p.partName));
     
     // 정확한 매칭 시도
-    let selectedPart = allParts.find(p => p.partName === newPartName);
-    
-    // 정확한 매칭 실패 시 공백 제거 후 매칭
-    if (!selectedPart) {
-      const trimmedName = newPartName.trim();
-      selectedPart = allParts.find(p => p.partName.trim() === trimmedName);
-    }
+    let selectedPart = allParts.find(p => {
+      const match = p.partName === newPartName;
+      if (!match) {
+        // 공백 제거 후 매칭 시도
+        return p.partName.trim() === newPartName.trim();
+      }
+      return match;
+    });
     
     if (selectedPart) {
-      console.log('✅ Found part:', selectedPart);
+      console.log('✅ Found part:', {
+        partName: selectedPart.partName,
+        partNumber: selectedPart.partNumber,
+        customerName: selectedPart.customerName,
+        material: selectedPart.material
+      });
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
-        return {
+        const updated = {
           ...prev,
           [projectId]: {
             ...currentProjectData,
@@ -655,9 +664,12 @@ ${JSON.stringify(sampleData, null, 2)}
             material: selectedPart!.material || ''
           }
         };
+        console.log('✅ Updated editData:', updated[projectId]);
+        return updated;
       });
     } else {
-      console.log('❌ Part not found, updating partName only');
+      console.log('❌ Part not found for:', newPartName);
+      console.log('❌ Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
         return {
@@ -669,7 +681,7 @@ ${JSON.stringify(sampleData, null, 2)}
         };
       });
     }
-  }, [parts]);
+  }, []); // parts 의존성 제거 - partsRef만 사용
 
   // 엑셀 붙여넣기 처리 (편집 모드에서)
   const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
