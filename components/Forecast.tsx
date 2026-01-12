@@ -1290,6 +1290,8 @@ ${JSON.stringify(sampleData, null, 2)}
                             list={`part-list-${normalizedProjectId}`}
                             value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
                             onChange={(e) => {
+                              // 3️⃣ PROVE THE EVENT ACTUALLY FIRES
+                              console.log('🔥 ONCHANGE FIRED', e.target.value);
                               const newPartName = e.target.value;
                               console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project ID:', project.id, 'Type:', typeof project.id);
                               console.log('🔵 INPUT ONCHANGE Normalized ID:', normalizedProjectId);
