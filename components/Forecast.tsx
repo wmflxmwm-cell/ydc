@@ -610,6 +610,11 @@ ${JSON.stringify(sampleData, null, 2)}
 
   // 부품명 변경 핸들러 (자동 채우기 포함)
   const handlePartNameChange = useCallback((projectId: string, partName: string) => {
+    if (!partName) {
+      console.warn('⚠️ Empty partName provided');
+      return;
+    }
+    
     // partsRef와 parts 상태 모두 확인
     const currentParts = partsRef.current.length > 0 ? partsRef.current : parts;
     
@@ -617,7 +622,6 @@ ${JSON.stringify(sampleData, null, 2)}
     console.log('Project ID:', projectId);
     console.log('Selected partName:', partName);
     console.log('Available parts count:', currentParts.length);
-    console.log('Available parts:', currentParts.map(p => ({ id: p.id, partName: p.partName, partNumber: p.partNumber, customerName: p.customerName, material: p.material })));
     
     // 정확한 매칭 시도
     let selectedPart = currentParts.find(p => p.partName === partName);
@@ -653,7 +657,7 @@ ${JSON.stringify(sampleData, null, 2)}
     } else {
       console.warn('❌ Part not found!');
       console.warn('Looking for:', partName);
-      console.warn('Available part names:', currentParts.map(p => p.partName));
+      console.warn('Available part names (first 10):', currentParts.slice(0, 10).map(p => p.partName));
       // 부품을 찾지 못해도 partName은 업데이트
       setEditData(prev => ({
         ...prev,
@@ -1103,24 +1107,33 @@ ${JSON.stringify(sampleData, null, 2)}
                             console.log('   Selected value:', selectedValue);
                             console.log('   Current editData partName:', editData[project.id]?.partName);
                             console.log('   Project partName:', project.partName);
-                            if (selectedValue) {
+                            console.log('   Parts ref count:', partsRef.current.length);
+                            if (selectedValue && selectedValue !== (editData[project.id]?.partName ?? project.partName)) {
+                              console.log('   Calling handlePartNameChange...');
                               handlePartNameChange(project.id, selectedValue);
+                            } else {
+                              console.log('   Skipping - same value or empty');
                             }
                           }}
                           onFocus={() => {
-                            console.log('🔵 Select focused, current parts count:', partsRef.current.length);
+                            console.log('🔵 Select focused');
+                            console.log('   Current parts count:', partsRef.current.length);
+                            console.log('   Current value:', editData[project.id]?.partName ?? project.partName);
+                            console.log('   Available options:', parts.length);
+                          }}
+                          onClick={(e) => {
+                            console.log('🔵 Select clicked');
+                            console.log('   Current value:', (e.target as HTMLSelectElement).value);
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
-                          <option value={project.partName}>{project.partName} (현재)</option>
+                          <option value="">-- 품목 선택 --</option>
                           {parts.length > 0 ? (
-                            parts
-                              .filter(part => part.partName !== project.partName) // 현재 값 제외
-                              .map(part => (
-                                <option key={part.id} value={part.partName}>
-                                  {part.partName}
-                                </option>
-                              ))
+                            parts.map(part => (
+                              <option key={part.id} value={part.partName}>
+                                {part.partName}
+                              </option>
+                            ))
                           ) : (
                             <option value="" disabled>부품 데이터 로딩 중...</option>
                           )}
