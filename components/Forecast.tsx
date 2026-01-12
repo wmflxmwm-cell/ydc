@@ -1097,18 +1097,30 @@ ${JSON.stringify(sampleData, null, 2)}
                         <select
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => {
-                            console.log('Select onChange triggered:', e.target.value);
-                            handlePartNameChange(project.id, e.target.value);
+                            const selectedValue = e.target.value;
+                            console.log('🔵 Select onChange triggered!');
+                            console.log('   Project ID:', project.id);
+                            console.log('   Selected value:', selectedValue);
+                            console.log('   Current editData partName:', editData[project.id]?.partName);
+                            console.log('   Project partName:', project.partName);
+                            if (selectedValue) {
+                              handlePartNameChange(project.id, selectedValue);
+                            }
+                          }}
+                          onFocus={() => {
+                            console.log('🔵 Select focused, current parts count:', partsRef.current.length);
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
-                          <option value={project.partName}>{project.partName}</option>
+                          <option value={project.partName}>{project.partName} (현재)</option>
                           {parts.length > 0 ? (
-                            parts.map(part => (
-                              <option key={part.id} value={part.partName}>
-                                {part.partName}
-                              </option>
-                            ))
+                            parts
+                              .filter(part => part.partName !== project.partName) // 현재 값 제외
+                              .map(part => (
+                                <option key={part.id} value={part.partName}>
+                                  {part.partName}
+                                </option>
+                              ))
                           ) : (
                             <option value="" disabled>부품 데이터 로딩 중...</option>
                           )}
