@@ -604,9 +604,15 @@ ${JSON.stringify(sampleData, null, 2)}
         }
       };
       
-      // 품목이 변경되면 해당 품목의 재질 정보를 자동으로 설정
-      if (field === 'partName') {
+      // 품목이 변경되면 해당 품목의 정보를 자동으로 설정
+      if (field === 'partName' && value) {
+        console.log('Part name changed to:', value);
+        console.log('Available parts count:', parts.length);
+        console.log('Available parts:', parts.map(p => p.partName));
+        
         const selectedPart = parts.find(p => p.partName === value);
+        console.log('Selected part:', selectedPart);
+        
         if (selectedPart) {
           updated[projectId] = {
             ...updated[projectId],
@@ -614,6 +620,10 @@ ${JSON.stringify(sampleData, null, 2)}
             partNumber: selectedPart.partNumber,
             customerName: selectedPart.customerName
           };
+          console.log('Updated editData for project:', projectId, updated[projectId]);
+        } else {
+          console.warn('Part not found for partName:', value);
+          console.warn('Available part names:', parts.map(p => p.partName));
         }
       }
       
