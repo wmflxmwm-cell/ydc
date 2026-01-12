@@ -1102,32 +1102,24 @@ ${JSON.stringify(sampleData, null, 2)}
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => {
                             const selectedValue = e.target.value;
-                            console.log('🔵 Select onChange triggered!');
+                            console.log('🔵🔵🔵 Select onChange triggered! 🔵🔵🔵');
                             console.log('   Project ID:', project.id);
                             console.log('   Selected value:', selectedValue);
+                            console.log('   Event target:', e.target);
                             console.log('   Current editData partName:', editData[project.id]?.partName);
                             console.log('   Project partName:', project.partName);
                             console.log('   Parts ref count:', partsRef.current.length);
-                            if (selectedValue && selectedValue !== (editData[project.id]?.partName ?? project.partName)) {
-                              console.log('   Calling handlePartNameChange...');
+                            
+                            // 무조건 handlePartNameChange 호출
+                            if (selectedValue) {
+                              console.log('   ✅ Calling handlePartNameChange with:', selectedValue);
                               handlePartNameChange(project.id, selectedValue);
                             } else {
-                              console.log('   Skipping - same value or empty');
+                              console.log('   ⚠️ Empty value, skipping');
                             }
-                          }}
-                          onFocus={() => {
-                            console.log('🔵 Select focused');
-                            console.log('   Current parts count:', partsRef.current.length);
-                            console.log('   Current value:', editData[project.id]?.partName ?? project.partName);
-                            console.log('   Available options:', parts.length);
-                          }}
-                          onClick={(e) => {
-                            console.log('🔵 Select clicked');
-                            console.log('   Current value:', (e.target as HTMLSelectElement).value);
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
-                          <option value="">-- 품목 선택 --</option>
                           {parts.length > 0 ? (
                             parts.map(part => (
                               <option key={part.id} value={part.partName}>
