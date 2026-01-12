@@ -44,21 +44,24 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const loadParts = async () => {
     try {
       const partsData = await partService.getAll();
-      console.log('Loaded parts:', partsData);
-      console.log('Parts count:', partsData.length);
+      console.log('📦 Loaded parts:', partsData);
+      console.log('📦 Parts count:', partsData.length);
       if (partsData.length > 0) {
-        console.log('First part example:', {
+        console.log('📦 First part example:', {
           partName: partsData[0].partName,
           partNumber: partsData[0].partNumber,
           customerName: partsData[0].customerName,
           material: partsData[0].material
         });
+        console.log('📦 All part names:', partsData.map(p => p.partName));
+      } else {
+        console.warn('⚠️ No parts data loaded!');
       }
       setParts(partsData);
       partsRef.current = partsData; // ref에도 저장
-      console.log('partsRef.current updated:', partsRef.current.length);
+      console.log('✅ partsRef.current updated:', partsRef.current.length);
     } catch (error) {
-      console.error('Failed to load parts:', error);
+      console.error('❌ Failed to load parts:', error);
     }
   };
 
@@ -606,35 +609,50 @@ ${JSON.stringify(sampleData, null, 2)}
 
   // 부품명 변경 핸들러 (자동 채우기 포함)
   const handlePartNameChange = useCallback((projectId: string, partName: string) => {
-    const currentParts = partsRef.current;
+    // partsRef와 parts 상태 모두 확인
+    const currentParts = partsRef.current.length > 0 ? partsRef.current : parts;
+    
     console.log('=== Part Name Change Handler ===');
     console.log('Project ID:', projectId);
     console.log('Selected partName:', partName);
     console.log('Available parts count:', currentParts.length);
-    console.log('Available parts:', currentParts.map(p => ({ id: p.id, partName: p.partName })));
+    console.log('Available parts:', currentParts.map(p => ({ id: p.id, partName: p.partName, partNumber: p.partNumber, customerName: p.customerName, material: p.material })));
     
-    const selectedPart = currentParts.find(p => p.partName === partName);
+    // 정확한 매칭 시도
+    let selectedPart = currentParts.find(p => p.partName === partName);
+    
+    // 정확한 매칭 실패 시 공백 제거 후 매칭 시도
+    if (!selectedPart) {
+      const trimmedPartName = partName.trim();
+      selectedPart = currentParts.find(p => p.partName.trim() === trimmedPartName);
+    }
+    
     console.log('Selected part:', selectedPart);
     
     if (selectedPart) {
+      // 즉시 상태 업데이트
       setEditData(prev => {
-        const updated = {
+        const newData = {
           ...prev,
           [projectId]: {
             ...prev[projectId],
             partName: partName,
-            material: selectedPart.material,
-            partNumber: selectedPart.partNumber,
-            customerName: selectedPart.customerName
+            material: selectedPart!.material,
+            partNumber: selectedPart!.partNumber,
+            customerName: selectedPart!.customerName
           }
         };
-        console.log('Updated editData:', updated[projectId]);
-        return updated;
+        console.log('✅ Updated editData for project:', projectId);
+        console.log('   - partName:', newData[projectId].partName);
+        console.log('   - partNumber:', newData[projectId].partNumber);
+        console.log('   - customerName:', newData[projectId].customerName);
+        console.log('   - material:', newData[projectId].material);
+        return newData;
       });
     } else {
-      console.warn('Part not found!');
+      console.warn('❌ Part not found!');
       console.warn('Looking for:', partName);
-      console.warn('Available:', currentParts.map(p => p.partName));
+      console.warn('Available part names:', currentParts.map(p => p.partName));
       // 부품을 찾지 못해도 partName은 업데이트
       setEditData(prev => ({
         ...prev,
@@ -644,7 +662,7 @@ ${JSON.stringify(sampleData, null, 2)}
         }
       }));
     }
-  }, []);
+  }, [parts]);
 
   // 프로젝트 정보 업데이트
   const updateProjectInfo = useCallback((projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
