@@ -78,6 +78,41 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
     }
   }, [isEditMode]);
 
+  // partName 변경 감지하여 자동 채우기 (추가 안전장치)
+  useEffect(() => {
+    if (!isEditMode) return;
+    
+    Object.keys(editData).forEach(projectId => {
+      const projectData = editData[projectId];
+      if (projectData?.partName) {
+        const allParts = partsRef.current;
+        if (allParts.length > 0) {
+          const selectedPart = allParts.find(p => 
+            p.partName === projectData.partName || 
+            p.partName.trim() === projectData.partName.trim()
+          );
+          
+          if (selectedPart && (
+            !projectData.partNumber || 
+            !projectData.customerName || 
+            !projectData.material
+          )) {
+            console.log('🔄 [useEffect] Auto-filling missing fields for project:', projectId);
+            setEditData(prev => ({
+              ...prev,
+              [projectId]: {
+                ...prev[projectId],
+                partNumber: selectedPart.partNumber || prev[projectId]?.partNumber || '',
+                customerName: selectedPart.customerName || prev[projectId]?.customerName || '',
+                material: selectedPart.material || prev[projectId]?.material || ''
+              }
+            }));
+          }
+        }
+      }
+    });
+  }, [editData, isEditMode]);
+
   useEffect(() => {
     if (!projects || !Array.isArray(projects)) {
       setFilteredProjects([]);
@@ -631,28 +666,36 @@ ${JSON.stringify(sampleData, null, 2)}
 
     // partsRef를 우선 사용 (항상 최신 데이터)
     const allParts = partsRef.current;
-    console.log('🔍 Searching for part:', newPartName);
-    console.log('🔍 Available parts in ref:', allParts.length);
-    console.log('🔍 First 3 part names:', allParts.slice(0, 3).map(p => p.partName));
+    console.log('🔍 [handlePartNameUpdate] Called with:', { projectId, newPartName });
+    console.log('🔍 [handlePartNameUpdate] Available parts in ref:', allParts.length);
+    
+    if (allParts.length === 0) {
+      console.error('❌ [handlePartNameUpdate] partsRef.current is empty!');
+      console.error('❌ [handlePartNameUpdate] parts state:', parts.length);
+      return;
+    }
+    
+    console.log('🔍 [handlePartNameUpdate] First 3 part names:', allParts.slice(0, 3).map(p => ({
+      partName: p.partName,
+      partNumber: p.partNumber
+    })));
     
     // 정확한 매칭 시도
     let selectedPart = allParts.find(p => {
-      const match = p.partName === newPartName;
-      if (!match) {
-        // 공백 제거 후 매칭 시도
-        return p.partName.trim() === newPartName.trim();
-      }
-      return match;
+      const exactMatch = p.partName === newPartName;
+      const trimmedMatch = p.partName.trim() === newPartName.trim();
+      return exactMatch || trimmedMatch;
     });
     
     if (selectedPart) {
-      console.log('✅ Found part:', {
+      console.log('✅ [handlePartNameUpdate] Found part:', {
         partName: selectedPart.partName,
         partNumber: selectedPart.partNumber,
         customerName: selectedPart.customerName,
         material: selectedPart.material
       });
-      console.log('🔧 Updating editData for project:', projectId);
+      
+      // 상태 업데이트를 즉시 실행
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
         const updated = {
@@ -665,29 +708,19 @@ ${JSON.stringify(sampleData, null, 2)}
             material: selectedPart!.material || ''
           }
         };
-        console.log('✅ Updated editData:', updated[projectId]);
-        console.log('🔧 partNumber will be:', updated[projectId].partNumber);
-        console.log('🔧 customerName will be:', updated[projectId].customerName);
-        console.log('🔧 material will be:', updated[projectId].material);
+        console.log('✅ [handlePartNameUpdate] Updated editData:', updated[projectId]);
+        console.log('🔧 [handlePartNameUpdate] partNumber:', updated[projectId].partNumber);
+        console.log('🔧 [handlePartNameUpdate] customerName:', updated[projectId].customerName);
+        console.log('🔧 [handlePartNameUpdate] material:', updated[projectId].material);
         return updated;
       });
-      
-      // 강제 리렌더링 확인을 위한 추가 로그
-      setTimeout(() => {
-        console.log('🔍 After update - checking editData state...');
-      }, 100);
     } else {
-      console.log('❌ Part not found for:', newPartName);
-      console.log('❌ Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
-      setEditData(prev => {
-        const currentProjectData = prev[projectId] || {};
-        return {
-          ...prev,
-          [projectId]: {
-            ...currentProjectData,
-            partName: newPartName
-          }
-        };
+      console.log('❌ [handlePartNameUpdate] Part not found for:', newPartName);
+      console.log('❌ [handlePartNameUpdate] Available part names (first 10):', allParts.slice(0, 10).map(p => p.partName));
+      console.log('❌ [handlePartNameUpdate] Searching for exact match...');
+      allParts.slice(0, 5).forEach(p => {
+        console.log(`  - "${p.partName}" === "${newPartName}"?`, p.partName === newPartName);
+        console.log(`  - "${p.partName.trim()}" === "${newPartName.trim()}"?`, p.partName.trim() === newPartName.trim());
       });
     }
   }, []); // parts 의존성 제거 - partsRef만 사용
@@ -1110,19 +1143,57 @@ ${JSON.stringify(sampleData, null, 2)}
                             value={editData[project.id]?.partName ?? project.partName ?? ''}
                             onChange={(e) => {
                               const newPartName = e.target.value;
-                              console.log('🔵 INPUT ONCHANGE:', newPartName);
+                              console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project:', project.id);
+                              
+                              // 즉시 partName 업데이트
+                              setEditData(prev => {
+                                const current = prev[project.id] || {};
+                                return {
+                                  ...prev,
+                                  [project.id]: {
+                                    ...current,
+                                    partName: newPartName
+                                  }
+                                };
+                              });
+                              
+                              // 자동 채우기 처리
                               handlePartNameUpdate(project.id, newPartName);
                             }}
                             onInput={(e) => {
                               const target = e.target as HTMLInputElement;
                               const newPartName = target.value;
-                              console.log('🔵 INPUT ONINPUT:', newPartName);
+                              console.log('🔵 INPUT ONINPUT:', newPartName, 'Project:', project.id);
+                              
+                              // 즉시 partName 업데이트
+                              setEditData(prev => {
+                                const current = prev[project.id] || {};
+                                return {
+                                  ...prev,
+                                  [project.id]: {
+                                    ...current,
+                                    partName: newPartName
+                                  }
+                                };
+                              });
+                              
+                              // 자동 채우기 처리
                               handlePartNameUpdate(project.id, newPartName);
                             }}
                             onBlur={(e) => {
                               const newPartName = e.target.value;
-                              console.log('🔵 INPUT ONBLUR:', newPartName);
+                              console.log('🔵 INPUT ONBLUR:', newPartName, 'Project:', project.id);
+                              
+                              // blur 시에도 자동 채우기 처리
                               handlePartNameUpdate(project.id, newPartName);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === 'Tab') {
+                                const target = e.target as HTMLInputElement;
+                                const newPartName = target.value;
+                                console.log('🔵 INPUT KEYDOWN (Enter/Tab):', newPartName);
+                                handlePartNameUpdate(project.id, newPartName);
+                              }
                             }}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                           />
