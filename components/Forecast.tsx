@@ -928,12 +928,54 @@ ${JSON.stringify(sampleData, null, 2)}
               </tr>
             </thead>
             <tbody>
-              {filteredProjects.length === 0 ? (
+              {filteredProjects.length === 0 && !isEditMode ? (
                 <tr>
                   <td colSpan={4 + years.length} className="px-6 py-12 text-center text-slate-400">
                     <Package className="mx-auto mb-3 opacity-20" size={48} />
                     <p className="font-bold">{t.forecast.noResults}</p>
                   </td>
+                </tr>
+              ) : filteredProjects.length === 0 && isEditMode ? (
+                <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
+                    <input
+                      type="text"
+                      placeholder="품목명"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="품번"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="고객사명"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <input
+                      type="text"
+                      placeholder="차종"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    />
+                  </td>
+                  {years.map(year => (
+                    <td key={year} className={`px-6 py-4 text-center ${selectedYear === year ? 'bg-indigo-50' : ''}`}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                        className="w-28 px-3 py-2 text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
+                      />
+                    </td>
+                  ))}
                 </tr>
               ) : (
                 filteredProjects.map((project) => (
