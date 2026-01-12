@@ -729,23 +729,25 @@ ${JSON.stringify(sampleData, null, 2)}
         material: selectedPart.material
       });
       
-      // 상태 업데이트를 즉시 실행
+      // CRITICAL FIX: 모든 필드를 한 번에 업데이트
+      // partName도 함께 업데이트하여 input value가 즉시 반영되도록 함
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
         const updated = {
           ...prev,
           [projectId]: {
-            ...currentProjectData,
-            partName: selectedPart!.partName,
+            ...currentProjectData, // 기존 연도별 데이터 유지
+            partName: newPartName, // 사용자가 입력한 값 (즉시 반영)
             partNumber: selectedPart!.partNumber || '',
             customerName: selectedPart!.customerName || '',
             material: selectedPart!.material || ''
           }
         };
-        console.log('✅ [handlePartNameUpdate] Updated editData:', updated[projectId]);
+        console.log('✅ [handlePartNameUpdate] Updated editData:', JSON.stringify(updated[projectId]));
         console.log('🔧 [handlePartNameUpdate] partNumber:', updated[projectId].partNumber);
         console.log('🔧 [handlePartNameUpdate] customerName:', updated[projectId].customerName);
         console.log('🔧 [handlePartNameUpdate] material:', updated[projectId].material);
+        console.log('🔧 [handlePartNameUpdate] partName:', updated[projectId].partName);
         return updated;
       });
     } else {
@@ -1178,20 +1180,10 @@ ${JSON.stringify(sampleData, null, 2)}
                             onChange={(e) => {
                               const newPartName = e.target.value;
                               console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project:', project.id);
+                              console.log('🔵 [BEFORE] Current editData:', JSON.stringify(editData[project.id]));
                               
-                              // 즉시 partName 업데이트
-                              setEditData(prev => {
-                                const current = prev[project.id] || {};
-                                return {
-                                  ...prev,
-                                  [project.id]: {
-                                    ...current,
-                                    partName: newPartName
-                                  }
-                                };
-                              });
-                              
-                              // 자동 채우기 처리
+                              // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
+                              // partName만 먼저 업데이트하지 않고, handlePartNameUpdate에 위임
                               handlePartNameUpdate(project.id, newPartName);
                             }}
                             onInput={(e) => {
@@ -1199,19 +1191,7 @@ ${JSON.stringify(sampleData, null, 2)}
                               const newPartName = target.value;
                               console.log('🔵 INPUT ONINPUT:', newPartName, 'Project:', project.id);
                               
-                              // 즉시 partName 업데이트
-                              setEditData(prev => {
-                                const current = prev[project.id] || {};
-                                return {
-                                  ...prev,
-                                  [project.id]: {
-                                    ...current,
-                                    partName: newPartName
-                                  }
-                                };
-                              });
-                              
-                              // 자동 채우기 처리
+                              // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
                               handlePartNameUpdate(project.id, newPartName);
                             }}
                             onBlur={(e) => {
