@@ -40,6 +40,10 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   }>({});
 
   useEffect(() => {
+    if (!projects || !Array.isArray(projects)) {
+      setFilteredProjects([]);
+      return;
+    }
     const filtered = projects.filter(project => {
       const matchesSearch = 
         project.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
