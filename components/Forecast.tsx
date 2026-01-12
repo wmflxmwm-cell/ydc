@@ -32,6 +32,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [parts, setParts] = useState<Part[]>([]);
   const partsRef = useRef<Part[]>([]);
+  const selectRefs = useRef<{ [key: string]: HTMLSelectElement | null }>({});
   const [editData, setEditData] = useState<{ 
     [projectId: string]: { 
       [year: number]: number;
@@ -1032,116 +1033,137 @@ ${JSON.stringify(sampleData, null, 2)}
                   <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
-                        <select
-                          key={`part-select-${project.id}-${parts.length}`}
-                          value={editData[project.id]?.partName ?? project.partName ?? ''}
+                        <div 
                           onClick={(e) => {
-                            console.log('🟢 SELECT CLICKED!');
+                            console.log('🟢 DIV CLICKED!');
                             e.stopPropagation();
                           }}
                           onMouseDown={(e) => {
-                            console.log('🟢 SELECT MOUSEDOWN!');
+                            console.log('🟢 DIV MOUSEDOWN!');
                             e.stopPropagation();
                           }}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            const newPartName = e.target.value;
-                            console.log('🔵🔵🔵 SELECT ONCHANGE CALLED!');
-                            console.log('Project ID:', project.id);
-                            console.log('New partName:', newPartName);
-                            console.log('Current partsRef length:', partsRef.current.length);
-                            console.log('Current parts state length:', parts.length);
-                            
-                            // partsRef를 우선 사용, 없으면 parts 상태 사용
-                            const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
-                            console.log('All parts available:', allParts.length);
-                            
-                            const selectedPart = allParts.find(p => {
-                              const match = p.partName === newPartName;
-                              if (!match && newPartName) {
-                                console.log('Comparing:', p.partName, 'with', newPartName);
+                          style={{ position: 'relative', zIndex: 1000 }}
+                        >
+                          <select
+                            ref={(el) => {
+                              if (el) {
+                                selectRefs.current[project.id] = el;
+                                // 직접 이벤트 리스너 추가
+                                el.addEventListener('change', (e) => {
+                                  const target = e.target as HTMLSelectElement;
+                                  const newPartName = target.value;
+                                  console.log('🔵🔵🔵 SELECT CHANGE EVENT (addEventListener)!');
+                                  console.log('Project ID:', project.id);
+                                  console.log('New partName:', newPartName);
+                                  
+                                  const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+                                  const selectedPart = allParts.find(p => p.partName === newPartName);
+                                  
+                                  if (selectedPart) {
+                                    setEditData(prev => {
+                                      const currentProjectData = prev[project.id] || {};
+                                      return {
+                                        ...prev,
+                                        [project.id]: {
+                                          ...currentProjectData,
+                                          partName: selectedPart.partName,
+                                          partNumber: selectedPart.partNumber || '',
+                                          customerName: selectedPart.customerName || '',
+                                          material: selectedPart.material || ''
+                                        }
+                                      };
+                                    });
+                                  }
+                                });
                               }
-                              return match;
-                            });
-                            
-                            console.log('Selected part:', selectedPart);
-                            
-                            if (selectedPart) {
-                              console.log('✅ Updating with:', {
-                                partName: selectedPart.partName,
-                                partNumber: selectedPart.partNumber,
-                                customerName: selectedPart.customerName,
-                                material: selectedPart.material
+                            }}
+                            key={`part-select-${project.id}-${parts.length}`}
+                            value={editData[project.id]?.partName ?? project.partName ?? ''}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const newPartName = e.target.value;
+                              console.log('🔵🔵🔵 SELECT ONCHANGE CALLED!');
+                              console.log('Project ID:', project.id);
+                              console.log('New partName:', newPartName);
+                              console.log('Current partsRef length:', partsRef.current.length);
+                              console.log('Current parts state length:', parts.length);
+                              
+                              // partsRef를 우선 사용, 없으면 parts 상태 사용
+                              const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+                              console.log('All parts available:', allParts.length);
+                              
+                              const selectedPart = allParts.find(p => {
+                                const match = p.partName === newPartName;
+                                if (!match && newPartName) {
+                                  console.log('Comparing:', p.partName, 'with', newPartName);
+                                }
+                                return match;
                               });
                               
-                              setEditData(prev => {
-                                const currentProjectData = prev[project.id] || {};
-                                const updated = {
-                                  ...prev,
-                                  [project.id]: {
-                                    ...currentProjectData,
-                                    partName: selectedPart.partName,
-                                    partNumber: selectedPart.partNumber || '',
-                                    customerName: selectedPart.customerName || '',
-                                    material: selectedPart.material || ''
-                                  }
-                                };
-                                console.log('✅ Updated editData for project:', project.id);
-                                console.log('✅ New editData:', updated[project.id]);
-                                return updated;
-                              });
-                            } else {
-                              console.warn('❌ Part not found for:', newPartName);
-                              console.warn('Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
-                              setEditData(prev => {
-                                const currentProjectData = prev[project.id] || {};
-                                return {
-                                  ...prev,
-                                  [project.id]: {
-                                    ...currentProjectData,
-                                    partName: newPartName
-                                  }
-                                };
-                              });
-                            }
-                          }}
-                          onInput={(e) => {
-                            console.log('🟡 SELECT ONINPUT!');
-                            const target = e.target as HTMLSelectElement;
-                            const newPartName = target.value;
-                            const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
-                            const selectedPart = allParts.find(p => p.partName === newPartName);
-                            
-                            if (selectedPart) {
-                              setEditData(prev => {
-                                const currentProjectData = prev[project.id] || {};
-                                return {
-                                  ...prev,
-                                  [project.id]: {
-                                    ...currentProjectData,
-                                    partName: selectedPart.partName,
-                                    partNumber: selectedPart.partNumber || '',
-                                    customerName: selectedPart.customerName || '',
-                                    material: selectedPart.material || ''
-                                  }
-                                };
-                              });
-                            }
-                          }}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
-                          style={{ pointerEvents: 'auto', zIndex: 1000 }}
-                        >
-                          <option value="">-- 품목 선택 --</option>
-                          {parts.length > 0 ? (
-                            parts.map(part => (
-                              <option key={part.id} value={part.partName}>
-                                {part.partName}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="" disabled>부품 데이터 로딩 중...</option>
-                          )}
-                        </select>
+                              console.log('Selected part:', selectedPart);
+                              
+                              if (selectedPart) {
+                                console.log('✅ Updating with:', {
+                                  partName: selectedPart.partName,
+                                  partNumber: selectedPart.partNumber,
+                                  customerName: selectedPart.customerName,
+                                  material: selectedPart.material
+                                });
+                                
+                                setEditData(prev => {
+                                  const currentProjectData = prev[project.id] || {};
+                                  const updated = {
+                                    ...prev,
+                                    [project.id]: {
+                                      ...currentProjectData,
+                                      partName: selectedPart.partName,
+                                      partNumber: selectedPart.partNumber || '',
+                                      customerName: selectedPart.customerName || '',
+                                      material: selectedPart.material || ''
+                                    }
+                                  };
+                                  console.log('✅ Updated editData for project:', project.id);
+                                  console.log('✅ New editData:', updated[project.id]);
+                                  return updated;
+                                });
+                              } else {
+                                console.warn('❌ Part not found for:', newPartName);
+                                console.warn('Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
+                                setEditData(prev => {
+                                  const currentProjectData = prev[project.id] || {};
+                                  return {
+                                    ...prev,
+                                    [project.id]: {
+                                      ...currentProjectData,
+                                      partName: newPartName
+                                    }
+                                  };
+                                });
+                              }
+                            }}
+                            onClick={(e) => {
+                              console.log('🟢 SELECT CLICKED!');
+                              e.stopPropagation();
+                            }}
+                            onMouseDown={(e) => {
+                              console.log('🟢 SELECT MOUSEDOWN!');
+                              e.stopPropagation();
+                            }}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                            style={{ pointerEvents: 'auto', zIndex: 1001 }}
+                          >
+                            <option value="">-- 품목 선택 --</option>
+                            {parts.length > 0 ? (
+                              parts.map(part => (
+                                <option key={part.id} value={part.partName}>
+                                  {part.partName}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="" disabled>부품 데이터 로딩 중...</option>
+                            )}
+                          </select>
+                        </div>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
                       )}
