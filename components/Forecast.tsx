@@ -1286,6 +1286,7 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <>
                           <select
+                            style={{ border: '5px solid red', background: 'yellow' }}
                             value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
                             onChange={(e) => {
                               const value = e.target.value;
