@@ -1036,8 +1036,6 @@ ${JSON.stringify(sampleData, null, 2)}
                           key={`part-select-${project.id}`}
                           value={editData[project.id]?.partName ?? project.partName ?? ''}
                           onChange={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
                             const newPartName = e.target.value;
                             console.log('🔵🔵🔵 SELECT ONCHANGE CALLED!');
                             console.log('Project ID:', project.id);
@@ -1058,10 +1056,11 @@ ${JSON.stringify(sampleData, null, 2)}
                               });
                               
                               setEditData(prev => {
+                                const currentProjectData = prev[project.id] || {};
                                 const newData = {
                                   ...prev,
                                   [project.id]: {
-                                    ...prev[project.id],
+                                    ...currentProjectData,
                                     partName: selectedPart.partName,
                                     partNumber: selectedPart.partNumber,
                                     customerName: selectedPart.customerName,
@@ -1073,33 +1072,16 @@ ${JSON.stringify(sampleData, null, 2)}
                               });
                             } else {
                               console.warn('Part not found!');
-                              setEditData(prev => ({
-                                ...prev,
-                                [project.id]: {
-                                  ...prev[project.id],
-                                  partName: newPartName
-                                }
-                              }));
-                            }
-                          }}
-                          onInput={(e) => {
-                            console.log('🔵 onInput triggered');
-                            const target = e.target as HTMLSelectElement;
-                            const newPartName = target.value;
-                            const allParts = partsRef.current.length > 0 ? partsRef.current : parts;
-                            const selectedPart = allParts.find(p => p.partName === newPartName);
-                            
-                            if (selectedPart) {
-                              setEditData(prev => ({
-                                ...prev,
-                                [project.id]: {
-                                  ...prev[project.id],
-                                  partName: selectedPart.partName,
-                                  partNumber: selectedPart.partNumber,
-                                  customerName: selectedPart.customerName,
-                                  material: selectedPart.material
-                                }
-                              }));
+                              setEditData(prev => {
+                                const currentProjectData = prev[project.id] || {};
+                                return {
+                                  ...prev,
+                                  [project.id]: {
+                                    ...currentProjectData,
+                                    partName: newPartName
+                                  }
+                                };
+                              });
                             }
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
