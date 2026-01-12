@@ -40,12 +40,17 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   }>({});
 
   useEffect(() => {
+    if (!projects || !Array.isArray(projects)) {
+      setFilteredProjects([]);
+      return;
+    }
     const filtered = projects.filter(project => {
+      if (!project) return false;
       const matchesSearch = 
-        project.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.partNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.carModel.toLowerCase().includes(searchTerm.toLowerCase());
+        (project.partName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.partNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.carModel || '').toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
     setFilteredProjects(filtered);
