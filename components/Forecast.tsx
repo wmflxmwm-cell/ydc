@@ -1033,7 +1033,7 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <select
-                          key={`part-select-${project.id}`}
+                          key={`part-select-${project.id}-${parts.length}`}
                           value={editData[project.id]?.partName ?? project.partName ?? ''}
                           onChange={(e) => {
                             const newPartName = e.target.value;
@@ -1041,14 +1041,24 @@ ${JSON.stringify(sampleData, null, 2)}
                             console.log('Project ID:', project.id);
                             console.log('New partName:', newPartName);
                             console.log('Current partsRef length:', partsRef.current.length);
+                            console.log('Current parts state length:', parts.length);
                             
-                            const allParts = partsRef.current.length > 0 ? partsRef.current : parts;
-                            const selectedPart = allParts.find(p => p.partName === newPartName);
+                            // partsRef를 우선 사용, 없으면 parts 상태 사용
+                            const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+                            console.log('All parts available:', allParts.length);
+                            
+                            const selectedPart = allParts.find(p => {
+                              const match = p.partName === newPartName;
+                              if (!match && newPartName) {
+                                console.log('Comparing:', p.partName, 'with', newPartName);
+                              }
+                              return match;
+                            });
                             
                             console.log('Selected part:', selectedPart);
                             
                             if (selectedPart) {
-                              console.log('Updating with:', {
+                              console.log('✅ Updating with:', {
                                 partName: selectedPart.partName,
                                 partNumber: selectedPart.partNumber,
                                 customerName: selectedPart.customerName,
@@ -1057,21 +1067,23 @@ ${JSON.stringify(sampleData, null, 2)}
                               
                               setEditData(prev => {
                                 const currentProjectData = prev[project.id] || {};
-                                const newData = {
+                                const updated = {
                                   ...prev,
                                   [project.id]: {
                                     ...currentProjectData,
                                     partName: selectedPart.partName,
-                                    partNumber: selectedPart.partNumber,
-                                    customerName: selectedPart.customerName,
-                                    material: selectedPart.material
+                                    partNumber: selectedPart.partNumber || '',
+                                    customerName: selectedPart.customerName || '',
+                                    material: selectedPart.material || ''
                                   }
                                 };
-                                console.log('New editData:', newData[project.id]);
-                                return newData;
+                                console.log('✅ Updated editData for project:', project.id);
+                                console.log('✅ New editData:', updated[project.id]);
+                                return updated;
                               });
                             } else {
-                              console.warn('Part not found!');
+                              console.warn('❌ Part not found for:', newPartName);
+                              console.warn('Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
                               setEditData(prev => {
                                 const currentProjectData = prev[project.id] || {};
                                 return {
@@ -1087,11 +1099,15 @@ ${JSON.stringify(sampleData, null, 2)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
                           <option value="">-- 품목 선택 --</option>
-                          {parts.map(part => (
-                            <option key={part.id} value={part.partName}>
-                              {part.partName}
-                            </option>
-                          ))}
+                          {parts.length > 0 ? (
+                            parts.map(part => (
+                              <option key={part.id} value={part.partName}>
+                                {part.partName}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>부품 데이터 로딩 중...</option>
+                          )}
                         </select>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
