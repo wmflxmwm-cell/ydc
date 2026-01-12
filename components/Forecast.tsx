@@ -79,39 +79,57 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   }, [isEditMode]);
 
   // partName 변경 감지하여 자동 채우기 (추가 안전장치)
+  // 주의: editData를 직접 의존성으로 사용하면 무한 루프 발생 가능
+  // 대신 partName만 추출하여 의존성으로 사용
   useEffect(() => {
     if (!isEditMode) return;
     
-    Object.keys(editData).forEach(projectId => {
-      const projectData = editData[projectId];
-      if (projectData?.partName) {
-        const allParts = partsRef.current;
-        if (allParts.length > 0) {
-          const selectedPart = allParts.find(p => 
-            p.partName === projectData.partName || 
-            p.partName.trim() === projectData.partName.trim()
-          );
-          
-          if (selectedPart && (
-            !projectData.partNumber || 
-            !projectData.customerName || 
-            !projectData.material
-          )) {
-            console.log('🔄 [useEffect] Auto-filling missing fields for project:', projectId);
-            setEditData(prev => ({
+    const partNames = Object.keys(editData).map(projectId => ({
+      projectId,
+      partName: editData[projectId]?.partName
+    })).filter(item => item.partName);
+    
+    partNames.forEach(({ projectId, partName }) => {
+      if (!partName) return;
+      
+      const allParts = partsRef.current;
+      if (allParts.length === 0) return;
+      
+      // 정규화된 값으로 매칭
+      const normalizedInput = normalize(partName);
+      const selectedPart = allParts.find(p => 
+        normalize(p.partName) === normalizedInput
+      );
+      
+      if (selectedPart) {
+        const currentData = editData[projectId];
+        const needsUpdate = !currentData?.partNumber || 
+                           !currentData?.customerName || 
+                           !currentData?.material;
+        
+        if (needsUpdate) {
+          console.log('🔄 [useEffect] Auto-filling missing fields for project:', projectId);
+          setEditData(prev => {
+            const current = prev[projectId] || {};
+            // 이미 모든 필드가 있으면 업데이트하지 않음 (무한 루프 방지)
+            if (current.partNumber && current.customerName && current.material) {
+              return prev;
+            }
+            return {
               ...prev,
               [projectId]: {
-                ...prev[projectId],
-                partNumber: selectedPart.partNumber || prev[projectId]?.partNumber || '',
-                customerName: selectedPart.customerName || prev[projectId]?.customerName || '',
-                material: selectedPart.material || prev[projectId]?.material || ''
+                ...current,
+                partNumber: selectedPart.partNumber || current.partNumber || '',
+                customerName: selectedPart.customerName || current.customerName || '',
+                material: selectedPart.material || current.material || ''
               }
-            }));
-          }
+            };
+          });
         }
       }
     });
-  }, [editData, isEditMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, JSON.stringify(Object.keys(editData).map(id => editData[id]?.partName))]);
 
   useEffect(() => {
     if (!projects || !Array.isArray(projects)) {
@@ -657,6 +675,16 @@ ${JSON.stringify(sampleData, null, 2)}
     }));
   }, []);
 
+  // 문자열 정규화 함수 (BOM 제거, 공백 정규화, 대문자 변환)
+  const normalize = (v: string | undefined | null): string => {
+    if (!v) return '';
+    return v.toString()
+      .replace(/\uFEFF/g, '') // BOM 제거
+      .replace(/\s+/g, ' ')    // 여러 공백을 하나로
+      .trim()                  // 앞뒤 공백 제거
+      .toUpperCase();          // 대문자 변환
+  };
+
   // 부품명 업데이트 핸들러 (자동 채우기 포함)
   const handlePartNameUpdate = useCallback((projectId: string, newPartName: string) => {
     if (!newPartName || newPartName.trim() === '') {
@@ -680,11 +708,17 @@ ${JSON.stringify(sampleData, null, 2)}
       partNumber: p.partNumber
     })));
     
-    // 정확한 매칭 시도
-    let selectedPart = allParts.find(p => {
-      const exactMatch = p.partName === newPartName;
-      const trimmedMatch = p.partName.trim() === newPartName.trim();
-      return exactMatch || trimmedMatch;
+    // 정규화된 값으로 매칭 시도
+    const normalizedInput = normalize(newPartName);
+    console.log('🔍 [handlePartNameUpdate] Normalized input:', normalizedInput);
+    
+    const selectedPart = allParts.find(p => {
+      const normalizedPartName = normalize(p.partName);
+      const match = normalizedPartName === normalizedInput;
+      if (!match && allParts.indexOf(p) < 3) {
+        console.log(`  - Comparing: "${normalizedPartName}" === "${normalizedInput}"?`, match);
+      }
+      return match;
     });
     
     if (selectedPart) {
