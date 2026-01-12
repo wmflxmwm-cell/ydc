@@ -45,8 +45,18 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
     try {
       const partsData = await partService.getAll();
       console.log('Loaded parts:', partsData);
+      console.log('Parts count:', partsData.length);
+      if (partsData.length > 0) {
+        console.log('First part example:', {
+          partName: partsData[0].partName,
+          partNumber: partsData[0].partNumber,
+          customerName: partsData[0].customerName,
+          material: partsData[0].material
+        });
+      }
       setParts(partsData);
       partsRef.current = partsData; // ref에도 저장
+      console.log('partsRef.current updated:', partsRef.current.length);
     } catch (error) {
       console.error('Failed to load parts:', error);
     }
@@ -597,14 +607,6 @@ ${JSON.stringify(sampleData, null, 2)}
   // 프로젝트 정보 업데이트
   const updateProjectInfo = useCallback((projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
     setEditData(prev => {
-      const updated = {
-        ...prev,
-        [projectId]: {
-          ...prev[projectId],
-          [field]: value
-        }
-      };
-      
       // 품목이 변경되면 해당 품목의 정보를 자동으로 설정
       if (field === 'partName' && value) {
         // ref를 사용하여 항상 최신 parts 데이터 참조
@@ -617,20 +619,41 @@ ${JSON.stringify(sampleData, null, 2)}
         console.log('Selected part:', selectedPart);
         
         if (selectedPart) {
-          updated[projectId] = {
-            ...updated[projectId],
-            material: selectedPart.material,
-            partNumber: selectedPart.partNumber,
-            customerName: selectedPart.customerName
+          // partName과 함께 다른 필드들도 한 번에 업데이트
+          const updated = {
+            ...prev,
+            [projectId]: {
+              ...prev[projectId],
+              partName: value,
+              material: selectedPart.material,
+              partNumber: selectedPart.partNumber,
+              customerName: selectedPart.customerName
+            }
           };
           console.log('Updated editData for project:', projectId, updated[projectId]);
+          return updated;
         } else {
           console.warn('Part not found for partName:', value);
           console.warn('Available part names:', currentParts.map(p => p.partName));
+          // 부품을 찾지 못해도 partName은 업데이트
+          return {
+            ...prev,
+            [projectId]: {
+              ...prev[projectId],
+              [field]: value
+            }
+          };
         }
       }
       
-      return updated;
+      // 일반 필드 업데이트
+      return {
+        ...prev,
+        [projectId]: {
+          ...prev[projectId],
+          [field]: value
+        }
+      };
     });
   }, []);
 
