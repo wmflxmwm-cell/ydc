@@ -604,58 +604,65 @@ ${JSON.stringify(sampleData, null, 2)}
     }));
   };
 
-  // 프로젝트 정보 업데이트
-  const updateProjectInfo = useCallback((projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
-    setEditData(prev => {
-      // 품목이 변경되면 해당 품목의 정보를 자동으로 설정
-      if (field === 'partName' && value) {
-        // ref를 사용하여 항상 최신 parts 데이터 참조
-        const currentParts = partsRef.current;
-        console.log('Part name changed to:', value);
-        console.log('Available parts count:', currentParts.length);
-        console.log('Available parts:', currentParts.map(p => p.partName));
-        
-        const selectedPart = currentParts.find(p => p.partName === value);
-        console.log('Selected part:', selectedPart);
-        
-        if (selectedPart) {
-          // partName과 함께 다른 필드들도 한 번에 업데이트
-          const updated = {
-            ...prev,
-            [projectId]: {
-              ...prev[projectId],
-              partName: value,
-              material: selectedPart.material,
-              partNumber: selectedPart.partNumber,
-              customerName: selectedPart.customerName
-            }
-          };
-          console.log('Updated editData for project:', projectId, updated[projectId]);
-          return updated;
-        } else {
-          console.warn('Part not found for partName:', value);
-          console.warn('Available part names:', currentParts.map(p => p.partName));
-          // 부품을 찾지 못해도 partName은 업데이트
-          return {
-            ...prev,
-            [projectId]: {
-              ...prev[projectId],
-              [field]: value
-            }
-          };
-        }
-      }
-      
-      // 일반 필드 업데이트
-      return {
+  // 부품명 변경 핸들러 (자동 채우기 포함)
+  const handlePartNameChange = useCallback((projectId: string, partName: string) => {
+    const currentParts = partsRef.current;
+    console.log('=== Part Name Change Handler ===');
+    console.log('Project ID:', projectId);
+    console.log('Selected partName:', partName);
+    console.log('Available parts count:', currentParts.length);
+    console.log('Available parts:', currentParts.map(p => ({ id: p.id, partName: p.partName })));
+    
+    const selectedPart = currentParts.find(p => p.partName === partName);
+    console.log('Selected part:', selectedPart);
+    
+    if (selectedPart) {
+      setEditData(prev => {
+        const updated = {
+          ...prev,
+          [projectId]: {
+            ...prev[projectId],
+            partName: partName,
+            material: selectedPart.material,
+            partNumber: selectedPart.partNumber,
+            customerName: selectedPart.customerName
+          }
+        };
+        console.log('Updated editData:', updated[projectId]);
+        return updated;
+      });
+    } else {
+      console.warn('Part not found!');
+      console.warn('Looking for:', partName);
+      console.warn('Available:', currentParts.map(p => p.partName));
+      // 부품을 찾지 못해도 partName은 업데이트
+      setEditData(prev => ({
         ...prev,
         [projectId]: {
           ...prev[projectId],
-          [field]: value
+          partName: partName
         }
-      };
-    });
+      }));
+    }
   }, []);
+
+  // 프로젝트 정보 업데이트
+  const updateProjectInfo = useCallback((projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
+    // partName은 별도 핸들러 사용
+    if (field === 'partName') {
+      handlePartNameChange(projectId, value);
+      return;
+    }
+    
+    // 일반 필드 업데이트
+    setEditData(prev => ({
+      ...prev,
+      [projectId]: {
+        ...prev[projectId],
+        [field]: value
+      }
+    }));
+  }, [handlePartNameChange]);
 
   // 엑셀 붙여넣기 처리 (편집 모드에서)
   const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
@@ -1070,7 +1077,10 @@ ${JSON.stringify(sampleData, null, 2)}
                       {isEditMode ? (
                         <select
                           value={editData[project.id]?.partName ?? project.partName}
-                          onChange={(e) => updateProjectInfo(project.id, 'partName', e.target.value)}
+                          onChange={(e) => {
+                            console.log('Select onChange triggered:', e.target.value);
+                            handlePartNameChange(project.id, e.target.value);
+                          }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
                           <option value={project.partName}>{project.partName}</option>
