@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
 import { partService, Part } from '../src/api/services/partService';
@@ -594,7 +594,7 @@ ${JSON.stringify(sampleData, null, 2)}
   };
 
   // 프로젝트 정보 업데이트
-  const updateProjectInfo = (projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
+  const updateProjectInfo = useCallback((projectId: string, field: 'partName' | 'partNumber' | 'customerName' | 'material', value: string) => {
     setEditData(prev => {
       const updated = {
         ...prev,
@@ -629,7 +629,7 @@ ${JSON.stringify(sampleData, null, 2)}
       
       return updated;
     });
-  };
+  }, [parts]);
 
   // 엑셀 붙여넣기 처리 (편집 모드에서)
   const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
