@@ -31,6 +31,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [parts, setParts] = useState<Part[]>([]);
+  const partsRef = useRef<Part[]>([]);
   const [editData, setEditData] = useState<{ 
     [projectId: string]: { 
       [year: number]: number;
