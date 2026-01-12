@@ -1102,21 +1102,41 @@ ${JSON.stringify(sampleData, null, 2)}
                           key={`select-${project.id}`}
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
                             const selectedValue = e.target.value;
                             console.log('🔵🔵🔵 Select onChange triggered! 🔵🔵🔵');
                             console.log('   Project ID:', project.id);
                             console.log('   Selected value:', selectedValue);
-                            console.log('   Event target:', e.target);
-                            console.log('   Current editData partName:', editData[project.id]?.partName);
-                            console.log('   Project partName:', project.partName);
+                            console.log('   Current editData:', editData[project.id]);
                             console.log('   Parts ref count:', partsRef.current.length);
                             
                             // 무조건 handlePartNameChange 호출
                             if (selectedValue) {
                               console.log('   ✅ Calling handlePartNameChange with:', selectedValue);
+                              // 즉시 호출
                               handlePartNameChange(project.id, selectedValue);
+                              
+                              // 추가 확인: partsRef에서 직접 찾아서 즉시 업데이트
+                              const currentParts = partsRef.current.length > 0 ? partsRef.current : parts;
+                              const foundPart = currentParts.find(p => p.partName === selectedValue);
+                              console.log('   🔍 Direct search result:', foundPart);
+                              
+                              if (foundPart) {
+                                console.log('   ✅ Found part, updating immediately');
+                                setEditData(prev => {
+                                  const updated = {
+                                    ...prev,
+                                    [project.id]: {
+                                      ...prev[project.id],
+                                      partName: selectedValue,
+                                      partNumber: foundPart.partNumber,
+                                      customerName: foundPart.customerName,
+                                      material: foundPart.material
+                                    }
+                                  };
+                                  console.log('   📝 Updated editData:', updated[project.id]);
+                                  return updated;
+                                });
+                              }
                             } else {
                               console.log('   ⚠️ Empty value, skipping');
                             }
