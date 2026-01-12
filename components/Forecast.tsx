@@ -1285,16 +1285,17 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <>
-                          <input
-                            type="text"
-                            list={`part-list-${normalizedProjectId}`}
+                          <select
                             value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
                             onChange={(e) => {
-                              // 3️⃣ PROVE THE EVENT ACTUALLY FIRES
-                              console.log('🔥 ONCHANGE FIRED', e.target.value);
-                              const newPartName = e.target.value;
-                              console.log('🔵 INPUT ONCHANGE:', newPartName, 'Project ID:', project.id, 'Type:', typeof project.id);
-                              console.log('🔵 INPUT ONCHANGE Normalized ID:', normalizedProjectId);
+                              const value = e.target.value;
+                              // 🧪 즉시 확인 방법 (5초 컷)
+                              alert('EVENT FIRED: ' + value);
+                              
+                              console.log('🔥 onValueChange fired', value);
+                              const newPartName = value;
+                              console.log('🔵 SELECT ONCHANGE:', newPartName, 'Project ID:', project.id, 'Type:', typeof project.id);
+                              console.log('🔵 SELECT ONCHANGE Normalized ID:', normalizedProjectId);
                               console.log('🔵 [BEFORE] Current editData keys:', Object.keys(editData));
                               console.log('🔵 [BEFORE] editData[project.id]:', JSON.stringify(editData[project.id]));
                               console.log('🔵 [BEFORE] editData[normalizedProjectId]:', JSON.stringify(editData[normalizedProjectId]));
@@ -1303,41 +1304,15 @@ ${JSON.stringify(sampleData, null, 2)}
                               // CRITICAL: 정규화된 projectId 전달
                               handlePartNameUpdate(normalizedProjectId, newPartName);
                             }}
-                            onInput={(e) => {
-                              const target = e.target as HTMLInputElement;
-                              const newPartName = target.value;
-                              console.log('🔵 INPUT ONINPUT:', newPartName, 'Project:', project.id);
-                              
-                              // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
-                              // CRITICAL: 정규화된 projectId 전달
-                              handlePartNameUpdate(normalizedProjectId, newPartName);
-                            }}
-                            onBlur={(e) => {
-                              const newPartName = e.target.value;
-                              console.log('🔵 INPUT ONBLUR:', newPartName, 'Project:', project.id);
-                              
-                              // blur 시에도 자동 채우기 처리
-                              // CRITICAL: 정규화된 projectId 전달
-                              handlePartNameUpdate(normalizedProjectId, newPartName);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === 'Tab') {
-                                const target = e.target as HTMLInputElement;
-                                const newPartName = target.value;
-                                console.log('🔵 INPUT KEYDOWN (Enter/Tab):', newPartName);
-                                // CRITICAL: 정규화된 projectId 전달
-                                handlePartNameUpdate(normalizedProjectId, newPartName);
-                              }
-                            }}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
-                          />
-                          <datalist id={`part-list-${normalizedProjectId}`}>
+                          >
+                            <option value="">품목 선택</option>
                             {parts.map(part => (
                               <option key={part.id} value={part.partName}>
                                 {part.partName}
                               </option>
                             ))}
-                          </datalist>
+                          </select>
                         </>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
