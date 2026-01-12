@@ -41,17 +41,26 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
     } 
   }>({});
 
+  const loadParts = async () => {
+    try {
+      const partsData = await partService.getAll();
+      console.log('Loaded parts:', partsData);
+      setParts(partsData);
+    } catch (error) {
+      console.error('Failed to load parts:', error);
+    }
+  };
+
   useEffect(() => {
-    const loadParts = async () => {
-      try {
-        const partsData = await partService.getAll();
-        setParts(partsData);
-      } catch (error) {
-        console.error('Failed to load parts:', error);
-      }
-    };
     loadParts();
   }, []);
+
+  // 입력 모드로 들어갈 때 parts 데이터 다시 불러오기
+  useEffect(() => {
+    if (isEditMode) {
+      loadParts();
+    }
+  }, [isEditMode]);
 
   useEffect(() => {
     if (!projects || !Array.isArray(projects)) {
@@ -969,11 +978,16 @@ ${JSON.stringify(sampleData, null, 2)}
               ) : filteredProjects.length === 0 && isEditMode ? (
                 <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
-                    <input
-                      type="text"
-                      placeholder="품목명"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold"
-                    />
+                    <select
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                    >
+                      <option value="">품목 선택</option>
+                      {parts.map(part => (
+                        <option key={part.id} value={part.partName}>
+                          {part.partName}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <input
@@ -1018,12 +1032,16 @@ ${JSON.stringify(sampleData, null, 2)}
                           onChange={(e) => updateProjectInfo(project.id, 'partName', e.target.value)}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
-                          <option value="">품목 선택</option>
-                          {parts.map(part => (
-                            <option key={part.id} value={part.partName}>
-                              {part.partName}
-                            </option>
-                          ))}
+                          <option value={project.partName}>{project.partName}</option>
+                          {parts.length > 0 ? (
+                            parts.map(part => (
+                              <option key={part.id} value={part.partName}>
+                                {part.partName}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>부품 데이터 로딩 중...</option>
+                          )}
                         </select>
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
