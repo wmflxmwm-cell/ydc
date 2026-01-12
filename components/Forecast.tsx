@@ -65,16 +65,20 @@ const Forecast: React.FC<ForecastProps> = () => {
       background: 'white', 
       borderRadius: '8px',
       border: '2px solid #e2e8f0',
-      maxWidth: '800px'
+      maxWidth: '1200px'
     }}>
-      <h2 style={{ 
-        fontSize: '24px', 
-        fontWeight: 'bold', 
-        marginBottom: '20px',
-        color: '#1e293b'
-      }}>
-        Forecast (MVP - Clean Rebuild)
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-bold">
+          Forecast <span className="text-slate-400">/ 연간 계획</span>
+        </div>
+
+        <div className="flex gap-2">
+          <button className="px-3 py-1 border rounded">입력</button>
+          <button className="px-3 py-1 bg-indigo-600 text-white rounded">
+            저장
+          </button>
+        </div>
+      </div>
 
       {/* MVP: Visible select */}
       <div style={{ marginBottom: '20px' }}>
