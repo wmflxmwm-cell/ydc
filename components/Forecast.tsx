@@ -5,7 +5,91 @@ import { partService, Part } from '../src/api/services/partService';
 import { TrendingUp, Calendar, Package, Search, RefreshCw, CheckCircle2, Sparkles, Clipboard, Check, Edit, Save, X } from 'lucide-react';
 import { getTranslations } from '../src/utils/translations';
 import { GoogleGenAI } from "@google/genai";
-import * as Select from '@radix-ui/react-select';
+
+// ============================================
+// MVP COMPONENT - MINIMAL, GUARANTEED WORKING
+// ============================================
+interface PartNameSelectMVPProps {
+  parts: Part[];
+  currentValue: string;
+}
+
+const PartNameSelectMVP: React.FC<PartNameSelectMVPProps> = ({ parts, currentValue }) => {
+  // MVP: Use ONLY useState - NO other hooks
+  const [selectedPartName, setSelectedPartName] = useState<string>(currentValue);
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+
+  // MVP: Simple onChange handler
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    console.log('🔥 MVP onChange FIRED:', value);
+    
+    setSelectedPartName(value);
+    
+    // Find matching part
+    const foundPart = parts.find(p => p.partName === value);
+    if (foundPart) {
+      console.log('✅ MVP Found part:', {
+        partName: foundPart.partName,
+        partNumber: foundPart.partNumber,
+        customerName: foundPart.customerName,
+        material: foundPart.material
+      });
+      setSelectedPart(foundPart);
+    } else {
+      console.log('❌ MVP Part not found for:', value);
+      setSelectedPart(null);
+    }
+  };
+
+  return (
+    <div style={{ border: '3px solid blue', padding: '10px', background: '#f0f0f0' }}>
+      <div style={{ marginBottom: '10px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+          품목 선택 (MVP):
+        </label>
+        <select
+          value={selectedPartName}
+          onChange={handleChange}
+          style={{
+            width: '100%',
+            padding: '8px',
+            border: '2px solid #333',
+            borderRadius: '4px',
+            fontSize: '14px',
+            backgroundColor: 'white'
+          }}
+        >
+          <option value="">-- 품목 선택 --</option>
+          {parts.map((part) => (
+            <option key={part.id} value={part.partName}>
+              {part.partName}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* MVP: Visible rendering of selected fields */}
+      {selectedPart && (
+        <div style={{ marginTop: '15px', padding: '10px', background: 'white', border: '1px solid #ccc' }}>
+          <h3 style={{ marginTop: 0, fontSize: '14px', fontWeight: 'bold' }}>선택된 정보:</h3>
+          <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+            <div><strong>품목:</strong> {selectedPart.partName}</div>
+            <div><strong>품번:</strong> {selectedPart.partNumber || '(없음)'}</div>
+            <div><strong>고객사:</strong> {selectedPart.customerName || '(없음)'}</div>
+            <div><strong>재질:</strong> {selectedPart.material || '(없음)'}</div>
+          </div>
+        </div>
+      )}
+
+      {!selectedPart && selectedPartName && (
+        <div style={{ marginTop: '10px', padding: '5px', color: 'red', fontSize: '12px' }}>
+          ⚠️ 매칭되는 부품을 찾을 수 없습니다.
+        </div>
+      )}
+    </div>
+  );
+};
 
 // 4️⃣ ISOLATE INPUT COMPONENTS
 const PartNumberInput = ({ value, onChange }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
@@ -1285,48 +1369,10 @@ ${JSON.stringify(sampleData, null, 2)}
                   <tr key={normalizedProjectId} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
-                        <>
-                          {/* 이벤트는 "보이는 컴포넌트의 최상위"에 달아야 함 */}
-                          <Select.Root
-                            value={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
-                            onValueChange={(value) => {
-                              // 🧪 즉시 확인 방법 (5초 컷)
-                              alert('EVENT FIRED: ' + value);
-                              
-                              console.log('🔥 Radix Select value:', value);
-                              console.log('🔵 SELECT ONVALUECHANGE:', value, 'Project ID:', project.id, 'Type:', typeof project.id);
-                              console.log('🔵 SELECT ONVALUECHANGE Normalized ID:', normalizedProjectId);
-                              console.log('🔵 [BEFORE] Current editData keys:', Object.keys(editData));
-                              console.log('🔵 [BEFORE] editData[project.id]:', JSON.stringify(editData[project.id]));
-                              console.log('🔵 [BEFORE] editData[normalizedProjectId]:', JSON.stringify(editData[normalizedProjectId]));
-                              
-                              // handlePartNameUpdate가 모든 필드를 한 번에 업데이트하도록 함
-                              // CRITICAL: 정규화된 projectId 전달
-                              handlePartNameUpdate(normalizedProjectId, value);
-                            }}
-                          >
-                            <Select.Trigger 
-                              style={{ border: '5px solid red', background: 'yellow' }}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
-                            >
-                              <Select.Value placeholder="품목 선택" />
-                            </Select.Trigger>
-
-                            <Select.Content className="bg-white border border-slate-300 rounded-lg shadow-lg z-50">
-                              <Select.Viewport>
-                                {parts.map((part) => (
-                                  <Select.Item
-                                    key={part.id}
-                                    value={part.partName}
-                                    className="px-3 py-2 cursor-pointer hover:bg-slate-100 focus:bg-slate-100 outline-none"
-                                  >
-                                    <Select.ItemText>{part.partName}</Select.ItemText>
-                                  </Select.Item>
-                                ))}
-                              </Select.Viewport>
-                            </Select.Content>
-                          </Select.Root>
-                        </>
+                        <PartNameSelectMVP 
+                          parts={parts}
+                          currentValue={editData[normalizedProjectId]?.partName ?? project.partName ?? ''}
+                        />
                       ) : (
                         <span className="font-bold text-slate-900">{project.partName}</span>
                       )}
