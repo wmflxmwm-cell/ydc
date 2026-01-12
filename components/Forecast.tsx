@@ -80,6 +80,21 @@ const Forecast: React.FC<ForecastProps> = () => {
         </div>
       </div>
 
+      {/* Table Header */}
+      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,100px)] gap-2 font-semibold text-sm bg-slate-100 p-2">
+        <div>품목</div>
+        <div>품번</div>
+        <div>고객사</div>
+        <div>재질</div>
+        <div>2026</div>
+        <div>2027</div>
+        <div>2028</div>
+        <div>2029</div>
+        <div>2030</div>
+        <div>2031</div>
+        <div>2032</div>
+      </div>
+
       {/* MVP: Visible select */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ 
