@@ -42,6 +42,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part'
   >('dashboard');
+  // Note: 'forecast' tab temporarily disabled during rebuild
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
