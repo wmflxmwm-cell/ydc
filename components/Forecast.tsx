@@ -57,6 +57,10 @@ interface ExcelRow {
 }
 
 const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
+  // 1️⃣ PROVE COMPONENT IS RENDERED
+  console.log('🔥 COMPONENT EXECUTED');
+  console.log('🔥 UNIQUE_RENDER_MARKER_2024_09_17');
+  
   const t = getTranslations();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -899,6 +903,9 @@ ${JSON.stringify(sampleData, null, 2)}
     }
   };
 
+  // 2️⃣ PROVE JSX BRANCH IS RENDERED
+  console.log('🔥 JSX RENDERED');
+  
   return (
     <div className="space-y-6">
       {/* 헤더 및 필터 */}
