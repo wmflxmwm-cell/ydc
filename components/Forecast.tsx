@@ -1099,56 +1099,43 @@ ${JSON.stringify(sampleData, null, 2)}
                     <td className="px-6 py-4 text-sm sticky left-0 bg-white z-10">
                       {isEditMode ? (
                         <select
-                          key={`select-${project.id}`}
                           value={editData[project.id]?.partName ?? project.partName}
                           onChange={(e) => {
                             const selectedValue = e.target.value;
-                            console.log('🔵🔵🔵 Select onChange triggered! 🔵🔵🔵');
-                            console.log('   Project ID:', project.id);
-                            console.log('   Selected value:', selectedValue);
-                            console.log('   Current editData:', editData[project.id]);
-                            console.log('   Parts ref count:', partsRef.current.length);
+                            console.log('🔵 Select onChange - Project:', project.id, 'Value:', selectedValue);
                             
-                            // 무조건 handlePartNameChange 호출
-                            if (selectedValue) {
-                              console.log('   ✅ Calling handlePartNameChange with:', selectedValue);
-                              // 즉시 호출
-                              handlePartNameChange(project.id, selectedValue);
-                              
-                              // 추가 확인: partsRef에서 직접 찾아서 즉시 업데이트
-                              const currentParts = partsRef.current.length > 0 ? partsRef.current : parts;
-                              const foundPart = currentParts.find(p => p.partName === selectedValue);
-                              console.log('   🔍 Direct search result:', foundPart);
-                              
-                              if (foundPart) {
-                                console.log('   ✅ Found part, updating immediately');
-                                setEditData(prev => {
-                                  const updated = {
-                                    ...prev,
-                                    [project.id]: {
-                                      ...prev[project.id],
-                                      partName: selectedValue,
-                                      partNumber: foundPart.partNumber,
-                                      customerName: foundPart.customerName,
-                                      material: foundPart.material
-                                    }
-                                  };
-                                  console.log('   📝 Updated editData:', updated[project.id]);
-                                  return updated;
-                                });
-                              }
+                            // partsRef에서 직접 찾기
+                            const currentParts = partsRef.current.length > 0 ? partsRef.current : parts;
+                            const foundPart = currentParts.find(p => p.partName === selectedValue);
+                            
+                            console.log('🔵 Found part:', foundPart);
+                            
+                            if (foundPart) {
+                              // 즉시 상태 업데이트
+                              setEditData(prev => {
+                                const updated = {
+                                  ...prev,
+                                  [project.id]: {
+                                    ...prev[project.id],
+                                    partName: foundPart.partName,
+                                    partNumber: foundPart.partNumber,
+                                    customerName: foundPart.customerName,
+                                    material: foundPart.material
+                                  }
+                                };
+                                console.log('🔵 Updated editData:', updated[project.id]);
+                                return updated;
+                              });
                             } else {
-                              console.log('   ⚠️ Empty value, skipping');
+                              // 부품을 찾지 못한 경우 partName만 업데이트
+                              setEditData(prev => ({
+                                ...prev,
+                                [project.id]: {
+                                  ...prev[project.id],
+                                  partName: selectedValue
+                                }
+                              }));
                             }
-                          }}
-                          onMouseDown={(e) => {
-                            console.log('🟢 Select onMouseDown triggered');
-                            console.log('   Project ID:', project.id);
-                            console.log('   isEditMode:', isEditMode);
-                            console.log('   parts.length:', parts.length);
-                          }}
-                          onMouseUp={(e) => {
-                            console.log('🟢 Select onMouseUp triggered');
                           }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                         >
