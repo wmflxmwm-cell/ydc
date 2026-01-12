@@ -622,6 +622,55 @@ ${JSON.stringify(sampleData, null, 2)}
     }));
   }, []);
 
+  // 부품명 업데이트 핸들러 (자동 채우기 포함)
+  const handlePartNameUpdate = useCallback((projectId: string, newPartName: string) => {
+    if (!newPartName || newPartName.trim() === '') {
+      return;
+    }
+
+    const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+    console.log('🔍 Searching for part:', newPartName);
+    console.log('🔍 Available parts:', allParts.length);
+    
+    // 정확한 매칭 시도
+    let selectedPart = allParts.find(p => p.partName === newPartName);
+    
+    // 정확한 매칭 실패 시 공백 제거 후 매칭
+    if (!selectedPart) {
+      const trimmedName = newPartName.trim();
+      selectedPart = allParts.find(p => p.partName.trim() === trimmedName);
+    }
+    
+    if (selectedPart) {
+      console.log('✅ Found part:', selectedPart);
+      setEditData(prev => {
+        const currentProjectData = prev[projectId] || {};
+        return {
+          ...prev,
+          [projectId]: {
+            ...currentProjectData,
+            partName: selectedPart!.partName,
+            partNumber: selectedPart!.partNumber || '',
+            customerName: selectedPart!.customerName || '',
+            material: selectedPart!.material || ''
+          }
+        };
+      });
+    } else {
+      console.log('❌ Part not found, updating partName only');
+      setEditData(prev => {
+        const currentProjectData = prev[projectId] || {};
+        return {
+          ...prev,
+          [projectId]: {
+            ...currentProjectData,
+            partName: newPartName
+          }
+        };
+      });
+    }
+  }, [parts]);
+
   // 엑셀 붙여넣기 처리 (편집 모드에서)
   const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
     const text = e.clipboardData.getData('text');
@@ -1041,61 +1090,18 @@ ${JSON.stringify(sampleData, null, 2)}
                             onChange={(e) => {
                               const newPartName = e.target.value;
                               console.log('🔵 INPUT ONCHANGE:', newPartName);
-                              
-                              const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
-                              const selectedPart = allParts.find(p => p.partName === newPartName);
-                              
-                              if (selectedPart) {
-                                console.log('✅ Found part:', selectedPart);
-                                setEditData(prev => {
-                                  const currentProjectData = prev[project.id] || {};
-                                  return {
-                                    ...prev,
-                                    [project.id]: {
-                                      ...currentProjectData,
-                                      partName: selectedPart.partName,
-                                      partNumber: selectedPart.partNumber || '',
-                                      customerName: selectedPart.customerName || '',
-                                      material: selectedPart.material || ''
-                                    }
-                                  };
-                                });
-                              } else {
-                                setEditData(prev => {
-                                  const currentProjectData = prev[project.id] || {};
-                                  return {
-                                    ...prev,
-                                    [project.id]: {
-                                      ...currentProjectData,
-                                      partName: newPartName
-                                    }
-                                  };
-                                });
-                              }
+                              handlePartNameUpdate(project.id, newPartName);
                             }}
-                            onSelect={(e) => {
+                            onInput={(e) => {
                               const target = e.target as HTMLInputElement;
                               const newPartName = target.value;
-                              console.log('🔵 INPUT ONSELECT:', newPartName);
-                              
-                              const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
-                              const selectedPart = allParts.find(p => p.partName === newPartName);
-                              
-                              if (selectedPart) {
-                                setEditData(prev => {
-                                  const currentProjectData = prev[project.id] || {};
-                                  return {
-                                    ...prev,
-                                    [project.id]: {
-                                      ...currentProjectData,
-                                      partName: selectedPart.partName,
-                                      partNumber: selectedPart.partNumber || '',
-                                      customerName: selectedPart.customerName || '',
-                                      material: selectedPart.material || ''
-                                    }
-                                  };
-                                });
-                              }
+                              console.log('🔵 INPUT ONINPUT:', newPartName);
+                              handlePartNameUpdate(project.id, newPartName);
+                            }}
+                            onBlur={(e) => {
+                              const newPartName = e.target.value;
+                              console.log('🔵 INPUT ONBLUR:', newPartName);
+                              handlePartNameUpdate(project.id, newPartName);
                             }}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
                           />
