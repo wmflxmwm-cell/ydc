@@ -1035,7 +1035,16 @@ ${JSON.stringify(sampleData, null, 2)}
                         <select
                           key={`part-select-${project.id}-${parts.length}`}
                           value={editData[project.id]?.partName ?? project.partName ?? ''}
+                          onClick={(e) => {
+                            console.log('🟢 SELECT CLICKED!');
+                            e.stopPropagation();
+                          }}
+                          onMouseDown={(e) => {
+                            console.log('🟢 SELECT MOUSEDOWN!');
+                            e.stopPropagation();
+                          }}
                           onChange={(e) => {
+                            e.stopPropagation();
                             const newPartName = e.target.value;
                             console.log('🔵🔵🔵 SELECT ONCHANGE CALLED!');
                             console.log('Project ID:', project.id);
@@ -1096,7 +1105,31 @@ ${JSON.stringify(sampleData, null, 2)}
                               });
                             }
                           }}
+                          onInput={(e) => {
+                            console.log('🟡 SELECT ONINPUT!');
+                            const target = e.target as HTMLSelectElement;
+                            const newPartName = target.value;
+                            const allParts = partsRef.current.length > 0 ? partsRef.current : (parts.length > 0 ? parts : []);
+                            const selectedPart = allParts.find(p => p.partName === newPartName);
+                            
+                            if (selectedPart) {
+                              setEditData(prev => {
+                                const currentProjectData = prev[project.id] || {};
+                                return {
+                                  ...prev,
+                                  [project.id]: {
+                                    ...currentProjectData,
+                                    partName: selectedPart.partName,
+                                    partNumber: selectedPart.partNumber || '',
+                                    customerName: selectedPart.customerName || '',
+                                    material: selectedPart.material || ''
+                                  }
+                                };
+                              });
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-bold bg-white"
+                          style={{ pointerEvents: 'auto', zIndex: 1000 }}
                         >
                           <option value="">-- 품목 선택 --</option>
                           {parts.length > 0 ? (
