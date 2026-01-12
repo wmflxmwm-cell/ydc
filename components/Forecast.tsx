@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Project } from '../types';
 import { projectService } from '../src/api/services/projectService';
 import { partService, Part } from '../src/api/services/partService';
@@ -46,6 +46,7 @@ const Forecast: React.FC<Props> = ({ projects, onProjectsUpdate }) => {
       const partsData = await partService.getAll();
       console.log('Loaded parts:', partsData);
       setParts(partsData);
+      partsRef.current = partsData; // ref에도 저장
     } catch (error) {
       console.error('Failed to load parts:', error);
     }
@@ -606,11 +607,13 @@ ${JSON.stringify(sampleData, null, 2)}
       
       // 품목이 변경되면 해당 품목의 정보를 자동으로 설정
       if (field === 'partName' && value) {
+        // ref를 사용하여 항상 최신 parts 데이터 참조
+        const currentParts = partsRef.current;
         console.log('Part name changed to:', value);
-        console.log('Available parts count:', parts.length);
-        console.log('Available parts:', parts.map(p => p.partName));
+        console.log('Available parts count:', currentParts.length);
+        console.log('Available parts:', currentParts.map(p => p.partName));
         
-        const selectedPart = parts.find(p => p.partName === value);
+        const selectedPart = currentParts.find(p => p.partName === value);
         console.log('Selected part:', selectedPart);
         
         if (selectedPart) {
@@ -623,13 +626,13 @@ ${JSON.stringify(sampleData, null, 2)}
           console.log('Updated editData for project:', projectId, updated[projectId]);
         } else {
           console.warn('Part not found for partName:', value);
-          console.warn('Available part names:', parts.map(p => p.partName));
+          console.warn('Available part names:', currentParts.map(p => p.partName));
         }
       }
       
       return updated;
     });
-  }, [parts]);
+  }, []);
 
   // 엑셀 붙여넣기 처리 (편집 모드에서)
   const handlePasteInEditMode = (e: React.ClipboardEvent<HTMLTableElement>) => {
