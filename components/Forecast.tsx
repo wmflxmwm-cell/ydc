@@ -652,6 +652,7 @@ ${JSON.stringify(sampleData, null, 2)}
         customerName: selectedPart.customerName,
         material: selectedPart.material
       });
+      console.log('🔧 Updating editData for project:', projectId);
       setEditData(prev => {
         const currentProjectData = prev[projectId] || {};
         const updated = {
@@ -665,8 +666,16 @@ ${JSON.stringify(sampleData, null, 2)}
           }
         };
         console.log('✅ Updated editData:', updated[projectId]);
+        console.log('🔧 partNumber will be:', updated[projectId].partNumber);
+        console.log('🔧 customerName will be:', updated[projectId].customerName);
+        console.log('🔧 material will be:', updated[projectId].material);
         return updated;
       });
+      
+      // 강제 리렌더링 확인을 위한 추가 로그
+      setTimeout(() => {
+        console.log('🔍 After update - checking editData state...');
+      }, 100);
     } else {
       console.log('❌ Part not found for:', newPartName);
       console.log('❌ Available part names (first 5):', allParts.slice(0, 5).map(p => p.partName));
