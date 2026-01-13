@@ -12,6 +12,8 @@ interface Props {
 
 const SampleSchedule: React.FC<Props> = ({ user }) => {
   const t = getTranslations();
+  
+  // EXPLICIT STATE DECLARATIONS - All state variables listed at top
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [items, setItems] = useState<SampleSchedule[]>([]);
@@ -19,6 +21,11 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   
   // 등록 폼 상태
   const [showForm, setShowForm] = useState(false);
+  
+  // CRITICAL FIX: Explicitly declare editingItem state
+  // This prevents ReferenceError: editingItem is not defined
+  const [editingItem, setEditingItem] = useState<SampleSchedule | null>(null);
+  
   const [formData, setFormData] = useState<{
     partId: string;
     partName: string;
@@ -88,17 +95,32 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleAddScheduleToItem = async (itemId: string, partNumber: string) => {
+    console.log('[handleAddScheduleToItem] called', { itemId, partNumber });
+    
+    // Guard: Validate parameters
+    if (!itemId || !partNumber) {
+      console.warn('[handleAddScheduleToItem] Missing required parameters', { itemId, partNumber });
+      alert('필수 파라미터가 없습니다.');
+      return;
+    }
+    
     // 품목 정보 찾기
     const part = parts.find(p => p.partNumber === partNumber);
     if (!part) {
+      console.warn('[handleAddScheduleToItem] Part not found', { partNumber });
       alert('품목 정보를 찾을 수 없습니다.');
       return;
     }
 
     // 해당 품목의 후공정 중 아직 추가되지 않은 후공정 찾기
     const item = items.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item) {
+      console.warn('[handleAddScheduleToItem] Item not found', { itemId });
+      alert('항목을 찾을 수 없습니다.');
+      return;
+    }
 
     const existingPostProcessingIds = item.schedules.map(s => s.postProcessingId);
     const availablePostProcessings = part.postProcessings.filter(ppId => !existingPostProcessingIds.includes(ppId));
@@ -219,11 +241,38 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleCompleteSchedule = async (itemId: string, scheduleIndex: number) => {
+    console.log('[handleCompleteSchedule] called', { itemId, scheduleIndex });
+    
+    // Guard: Validate parameters
+    if (!itemId || scheduleIndex === undefined || scheduleIndex < 0) {
+      console.warn('[handleCompleteSchedule] Invalid parameters', { itemId, scheduleIndex });
+      alert('필수 파라미터가 올바르지 않습니다.');
+      return;
+    }
+    
     const item = items.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item) {
+      console.warn('[handleCompleteSchedule] Item not found', { itemId });
+      alert('항목을 찾을 수 없습니다.');
+      return;
+    }
+    
+    // Guard: Validate scheduleIndex is within bounds
+    if (scheduleIndex >= item.schedules.length) {
+      console.warn('[handleCompleteSchedule] scheduleIndex out of bounds', { scheduleIndex, schedulesLength: item.schedules.length });
+      alert('일정 인덱스가 올바르지 않습니다.');
+      return;
+    }
 
     const schedule = item.schedules[scheduleIndex];
+    if (!schedule) {
+      console.warn('[handleCompleteSchedule] Schedule not found', { scheduleIndex });
+      alert('일정을 찾을 수 없습니다.');
+      return;
+    }
+    
     if (!schedule.completedDate) {
       alert('완료 일자를 먼저 입력하세요.');
       return;
@@ -256,19 +305,31 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against undefined state
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('[handleSubmit] called');
     e.preventDefault();
+    
+    // Guard: Validate formData exists
+    if (!formData) {
+      console.warn('[handleSubmit] formData is missing');
+      alert('폼 데이터가 없습니다.');
+      return;
+    }
     
     if (!formData.partId || !formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
       alert('품목, 수량, 납기 요청일을 모두 입력하세요.');
       return;
     }
 
-    // 수정 모드인 경우
+    // 수정 모드인 경우 - Guard: Check editingItem exists
     if (editingItem) {
+      console.log('[handleSubmit] Editing mode, calling handleUpdateItem');
       await handleUpdateItem(e);
       return;
     }
+    
+    console.log('[handleSubmit] Create mode');
 
     // 품목 정보에서 후공정 목록 가져오기
     const selectedPart = parts.find(p => p.id === formData.partId);
@@ -351,7 +412,17 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleDelete = async (id: string) => {
+    console.log('[handleDelete] called', { id });
+    
+    // Guard: Validate id exists
+    if (!id) {
+      console.warn('[handleDelete] id is missing');
+      alert('삭제할 항목 ID가 없습니다.');
+      return;
+    }
+    
     if (!confirm('이 항목을 삭제하시겠습니까?')) {
       return;
     }
@@ -359,13 +430,31 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     try {
       await sampleScheduleService.delete(id);
       setItems(prev => prev.filter(item => item.id !== id));
+      console.log('[handleDelete] Successfully deleted item:', id);
     } catch (error) {
-      console.error('Failed to delete sample schedule:', error);
+      console.error('[handleDelete] Failed to delete sample schedule:', error);
       alert('샘플 일정 삭제에 실패했습니다.');
     }
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleEditItem = (item: SampleSchedule) => {
+    console.log('[handleEditItem] called', { itemId: item?.id });
+    
+    // Guard: Validate item exists
+    if (!item) {
+      console.warn('[handleEditItem] item is missing');
+      alert('편집할 항목이 없습니다.');
+      return;
+    }
+    
+    // Guard: Validate item has required fields
+    if (!item.id || !item.partNumber) {
+      console.warn('[handleEditItem] item missing required fields', item);
+      alert('항목 정보가 올바르지 않습니다.');
+      return;
+    }
+    
     setEditingItem(item);
     setFormData({
       partId: parts.find(p => p.partNumber === item.partNumber)?.id || '',
@@ -381,11 +470,34 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       schedules: []
     });
     setShowForm(true);
+    console.log('[handleEditItem] Form loaded for editing');
   };
 
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against undefined state
   const handleUpdateItem = async (e: React.FormEvent) => {
+    console.log('[handleUpdateItem] called');
     e.preventDefault();
-    if (!editingItem) return;
+    
+    // Guard: Validate editingItem exists
+    if (!editingItem) {
+      console.warn('[handleUpdateItem] editingItem is missing');
+      alert('편집할 항목이 선택되지 않았습니다.');
+      return;
+    }
+    
+    // Guard: Validate editingItem has id
+    if (!editingItem.id) {
+      console.warn('[handleUpdateItem] editingItem.id is missing');
+      alert('항목 ID가 없습니다.');
+      return;
+    }
+    
+    // Guard: Validate formData exists
+    if (!formData) {
+      console.warn('[handleUpdateItem] formData is missing');
+      alert('폼 데이터가 없습니다.');
+      return;
+    }
 
     if (!formData.partId || !formData.partName.trim() || !formData.partNumber.trim() || formData.quantity <= 0 || !formData.requestDate) {
       alert('품목, 수량, 납기 요청일을 모두 입력하세요.');
@@ -407,6 +519,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         schedules: editingItem.schedules
       });
       
+      console.log('[handleUpdateItem] Successfully updated item:', editingItem.id);
       await fetchData();
       setShowForm(false);
       setEditingItem(null);

@@ -149,12 +149,19 @@ const Forecast: React.FC<ForecastProps> = () => {
     }));
   };
 
-  // MVP: Handle save button - Freeze currentInputRow and add to savedRows
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against undefined state
   const handleSave = () => {
-    console.log('🔥 MVP handleSave FIRED');
+    console.log('[handleSave] called');
+    
+    // Guard: Validate currentInputRow exists
+    if (!currentInputRow) {
+      console.warn('[handleSave] currentInputRow is missing');
+      alert('입력 데이터가 없습니다.');
+      return;
+    }
     
     // Validate that at least partName is filled
-    if (!currentInputRow.partName.trim()) {
+    if (!currentInputRow.partName || !currentInputRow.partName.trim()) {
       alert('품목을 선택해주세요.');
       return;
     }
@@ -162,14 +169,18 @@ const Forecast: React.FC<ForecastProps> = () => {
     // Create a copy of currentInputRow to add to savedRows
     const rowToSave: ForecastRow = {
       partName: currentInputRow.partName,
-      partNumber: currentInputRow.partNumber,
-      customerName: currentInputRow.customerName,
-      material: currentInputRow.material,
-      forecast: { ...currentInputRow.forecast } // Deep copy forecast object
+      partNumber: currentInputRow.partNumber ?? '',
+      customerName: currentInputRow.customerName ?? '',
+      material: currentInputRow.material ?? '',
+      forecast: currentInputRow.forecast ? { ...currentInputRow.forecast } : {} // Deep copy forecast object
     };
     
     // Add to savedRows
-    setSavedRows(prev => [...prev, rowToSave]);
+    setSavedRows(prev => {
+      const updated = [...prev, rowToSave];
+      console.log('[handleSave] Row added. Total saved rows:', updated.length);
+      return updated;
+    });
     
     // Reset currentInputRow to empty
     setCurrentInputRow({
@@ -180,37 +191,64 @@ const Forecast: React.FC<ForecastProps> = () => {
       forecast: {}
     });
     
-    console.log('✅ MVP: Row saved. Total saved rows:', savedRows.length + 1);
-    console.log('📦 SAVE PAYLOAD:', rowToSave);
+    console.log('✅ [handleSave] Row saved successfully');
+    console.log('📦 [handleSave] SAVE PAYLOAD:', rowToSave);
     
     // Show visible feedback
-    alert(`저장 완료!\n품목: ${rowToSave.partName}\n총 ${savedRows.length + 1}개의 행이 저장되었습니다.`);
+    setSavedRows(prev => {
+      alert(`저장 완료!\n품목: ${rowToSave.partName}\n총 ${prev.length + 1}개의 행이 저장되었습니다.`);
+      return prev;
+    });
     
     // TODO: API / SQL 연동
     // await forecastService.save(rowToSave);
   };
 
-  // MVP: Handle edit button - Load saved row back to currentInputRow
+  // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleEdit = (savedRowIndex: number) => {
-    console.log('🔥 MVP handleEdit FIRED:', savedRowIndex);
+    console.log('[handleEdit] called', { savedRowIndex });
+    
+    // Guard: Validate savedRowIndex is valid
+    if (savedRowIndex === undefined || savedRowIndex < 0) {
+      console.warn('[handleEdit] Invalid savedRowIndex', { savedRowIndex });
+      alert('편집할 행 인덱스가 올바르지 않습니다.');
+      return;
+    }
+    
+    // Guard: Validate savedRows exists and has the index
+    if (!savedRows || savedRowIndex >= savedRows.length) {
+      console.warn('[handleEdit] savedRowIndex out of bounds', { savedRowIndex, savedRowsLength: savedRows?.length });
+      alert('편집할 행을 찾을 수 없습니다.');
+      return;
+    }
     
     // Get the row to edit
     const rowToEdit = savedRows[savedRowIndex];
     
+    // Guard: Validate rowToEdit exists
+    if (!rowToEdit) {
+      console.warn('[handleEdit] rowToEdit is missing', { savedRowIndex });
+      alert('편집할 행 데이터가 없습니다.');
+      return;
+    }
+    
     // Load it into currentInputRow
     setCurrentInputRow({
-      partName: rowToEdit.partName,
-      partNumber: rowToEdit.partNumber,
-      customerName: rowToEdit.customerName,
-      material: rowToEdit.material,
-      forecast: { ...rowToEdit.forecast } // Deep copy
+      partName: rowToEdit.partName ?? '',
+      partNumber: rowToEdit.partNumber ?? '',
+      customerName: rowToEdit.customerName ?? '',
+      material: rowToEdit.material ?? '',
+      forecast: rowToEdit.forecast ? { ...rowToEdit.forecast } : {} // Deep copy
     });
     
     // Remove from savedRows
-    setSavedRows(prev => prev.filter((_, index) => index !== savedRowIndex));
+    setSavedRows(prev => {
+      const filtered = prev.filter((_, index) => index !== savedRowIndex);
+      console.log('[handleEdit] Row removed from savedRows. Remaining:', filtered.length);
+      return filtered;
+    });
     
-    console.log('✅ MVP: Row loaded for editing:', rowToEdit);
-    console.log('📊 Remaining saved rows:', savedRows.length - 1);
+    console.log('✅ [handleEdit] Row loaded for editing:', rowToEdit);
   };
 
   return (
@@ -229,14 +267,14 @@ const Forecast: React.FC<ForecastProps> = () => {
         </div>
 
         <div className="flex gap-2">
-          <button
+              <button
             className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
             onClick={handleSave}
             type="button"
           >
             저장
-          </button>
-        </div>
+              </button>
+            </div>
           </div>
 
       {/* Table Header */}
@@ -262,7 +300,7 @@ const Forecast: React.FC<ForecastProps> = () => {
         <div>2031</div>
         <div>2032</div>
         <div>수정</div>
-      </div>
+            </div>
 
       {/* TOP: Current Input Row (Editable) */}
       <div 
@@ -309,7 +347,7 @@ const Forecast: React.FC<ForecastProps> = () => {
 
         {/* 연도별 Forecast */}
         {years.map(year => (
-          <input
+            <input
             key={year}
             type="number"
             className="border px-2 py-1 text-right"
@@ -336,24 +374,24 @@ const Forecast: React.FC<ForecastProps> = () => {
           }}
         >
           {/* 품목 - Read-only */}
-          <input 
+                        <input
             className="border px-2 py-1 bg-slate-50" 
             value={row.partName ?? ''} 
             readOnly 
           />
 
           {/* 품번 / 고객사 / 재질 - Read-only */}
-          <input 
+                        <input
             className="border px-2 py-1 bg-slate-50" 
             value={row.partNumber ?? ''} 
             readOnly 
           />
-          <input 
+                        <input
             className="border px-2 py-1 bg-slate-50" 
             value={row.customerName ?? ''} 
             readOnly 
           />
-          <input 
+                        <input
             className="border px-2 py-1 bg-slate-50" 
             value={row.material ?? ''} 
             readOnly 
@@ -361,9 +399,9 @@ const Forecast: React.FC<ForecastProps> = () => {
 
           {/* 연도별 Forecast - Read-only */}
           {years.map(year => (
-            <input
+                            <input
               key={year}
-              type="number"
+                              type="number"
               className="border px-2 py-1 text-right bg-slate-50"
               value={row.forecast[year] ?? ''}
               readOnly
@@ -389,7 +427,7 @@ const Forecast: React.FC<ForecastProps> = () => {
           fontStyle: 'italic'
         }}>
           부품 데이터를 불러오는 중...
-        </div>
+      </div>
       )}
     </div>
   );
