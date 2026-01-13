@@ -12,6 +12,7 @@ import {
   Calendar,
   Package,
   Languages,
+  Wrench,
 } from 'lucide-react';
 
 import { Project, Gate, Issue } from './types';
@@ -28,6 +29,7 @@ import SettingsManagement from './components/SettingsManagement';
 import Forecast from './components/Forecast';
 import SampleSchedule from './components/SampleSchedule';
 import PartRegistration from './components/PartRegistration';
+import MoldManagement from './components/MoldManagement';
 import Login from './components/Login';
 import { getLanguage, getTranslations } from './src/utils/translations';
 
@@ -40,7 +42,7 @@ interface UserSession {
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part'
+    'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part' | 'mold'
   >('dashboard');
   // Note: 'forecast' tab temporarily disabled during rebuild
 
@@ -328,6 +330,16 @@ const App: React.FC = () => {
             <span className="font-medium text-sm">{t.app.sidebar.part}</span>
           </button>
 
+          <button
+            onClick={() => setActiveTab('mold')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'mold' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Wrench className="w-5 h-5" />
+            <span className="font-medium text-sm">증작금형 관리</span>
+          </button>
+
           {user.role === 'MANAGER' && (
             <>
               <button
@@ -411,6 +423,7 @@ const App: React.FC = () => {
               {activeTab === 'forecast' && t.app.forecast}
               {activeTab === 'sample' && t.app.sample}
               {activeTab === 'part' && t.app.part}
+              {activeTab === 'mold' && '증작금형 관리'}
               {activeTab === 'users' && t.app.users}
               {activeTab === 'settings' && t.app.settings}
             </h1>
@@ -478,6 +491,10 @@ const App: React.FC = () => {
 
           <div style={{ display: activeTab === 'part' ? 'block' : 'none' }}>
             <PartRegistration user={user} />
+          </div>
+
+          <div style={{ display: activeTab === 'mold' ? 'block' : 'none' }}>
+            <MoldManagement user={user} />
           </div>
 
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
