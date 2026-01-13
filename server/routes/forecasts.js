@@ -34,20 +34,27 @@ router.post('/', async (req, res) => {
         await client.query('BEGIN');
         const { partName, partNumber, customerName, material, forecast } = req.body;
 
+        // Validation: partName is required
+        if (!partName || typeof partName !== 'string' || partName.trim() === '') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'partName is required' });
+        }
+
         // Check if forecast exists for this partName
         const existing = await client.query(
             'SELECT id FROM forecasts WHERE part_name = $1',
-            [partName]
+            [partName.trim()]
         );
 
+        // Safely extract volume values from forecast object
         const volumes = {
-            volume2026: forecast?.[2026] ?? null,
-            volume2027: forecast?.[2027] ?? null,
-            volume2028: forecast?.[2028] ?? null,
-            volume2029: forecast?.[2029] ?? null,
-            volume2030: forecast?.[2030] ?? null,
-            volume2031: forecast?.[2031] ?? null,
-            volume2032: forecast?.[2032] ?? null
+            volume2026: (forecast && typeof forecast[2026] === 'number') ? forecast[2026] : null,
+            volume2027: (forecast && typeof forecast[2027] === 'number') ? forecast[2027] : null,
+            volume2028: (forecast && typeof forecast[2028] === 'number') ? forecast[2028] : null,
+            volume2029: (forecast && typeof forecast[2029] === 'number') ? forecast[2029] : null,
+            volume2030: (forecast && typeof forecast[2030] === 'number') ? forecast[2030] : null,
+            volume2031: (forecast && typeof forecast[2031] === 'number') ? forecast[2031] : null,
+            volume2032: (forecast && typeof forecast[2032] === 'number') ? forecast[2032] : null
         };
 
         if (existing.rows.length > 0) {
@@ -68,9 +75,9 @@ router.post('/', async (req, res) => {
                     created_at = CURRENT_TIMESTAMP
                 WHERE id = $11`,
                 [
-                    partNumber || '',
-                    customerName || '',
-                    material || '',
+                    (partNumber && typeof partNumber === 'string') ? partNumber.trim() : '',
+                    (customerName && typeof customerName === 'string') ? customerName.trim() : '',
+                    (material && typeof material === 'string') ? material.trim() : '',
                     volumes.volume2026,
                     volumes.volume2027,
                     volumes.volume2028,
@@ -94,10 +101,10 @@ router.post('/', async (req, res) => {
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)`,
                 [
                     id,
-                    partName,
-                    partNumber || '',
-                    customerName || '',
-                    material || '',
+                    partName.trim(),
+                    (partNumber && typeof partNumber === 'string') ? partNumber.trim() : '',
+                    (customerName && typeof customerName === 'string') ? customerName.trim() : '',
+                    (material && typeof material === 'string') ? material.trim() : '',
                     volumes.volume2026,
                     volumes.volume2027,
                     volumes.volume2028,
