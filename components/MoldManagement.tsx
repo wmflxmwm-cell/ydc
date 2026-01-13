@@ -143,7 +143,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     try {
       // Create new project
       const newProject: Partial<Project> = {
-        customerName: editingRow.customer,
+        customerName: '', // Will be set later or from part selection
         partName: editingRow.project,
         partNumber: '', // Will be set from part selection if needed
         carModel: '',
