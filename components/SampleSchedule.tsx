@@ -170,11 +170,10 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         // Find ETA schedule for completion date
         const etaSchedule = item.schedules.find(s => s.postProcessingId === 'ETA');
         
-        // Get all schedule names and completion dates
+        // Get all schedule names and completion dates (only completed dates, no planned dates)
         const scheduleDetails = item.schedules.map(s => ({
           name: getPostProcessingName(s.postProcessingId),
-          completedDate: s.completedDate || '',
-          plannedDate: s.plannedDate || ''
+          completedDate: s.completedDate || ''
         }));
 
         // Build row data
@@ -190,15 +189,13 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           'ETA 완료일': etaSchedule?.completedDate || '',
         };
 
-        // Add each schedule's completion date
+        // Add each schedule's completion date only (no planned dates)
         scheduleDetails.forEach((detail, idx) => {
           if (idx === 0) {
             row['일정명'] = detail.name;
-            row['계획일정'] = detail.plannedDate;
             row['완료일자'] = detail.completedDate;
           } else {
             row[`일정명_${idx + 1}`] = detail.name;
-            row[`계획일정_${idx + 1}`] = detail.plannedDate;
             row[`완료일자_${idx + 1}`] = detail.completedDate;
           }
         });
