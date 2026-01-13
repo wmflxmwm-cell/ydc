@@ -494,7 +494,11 @@ const App: React.FC = () => {
           </div>
 
           <div style={{ display: activeTab === 'mold' ? 'block' : 'none' }}>
-            <MoldManagement user={user} projects={projects} />
+            <MoldManagement 
+              user={user} 
+              projects={projects} 
+              onNavigateToRegistration={() => setActiveTab('registration')}
+            />
           </div>
 
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>

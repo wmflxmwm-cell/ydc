@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wrench, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
 import { projectService, Project } from '../src/api/services/projectService';
 import { ProjectType, ProjectStatus } from '../types';
 
 interface Props {
   user?: { id: string; name: string; role: string };
   projects?: Project[]; // Projects passed from App.tsx
+  onNavigateToRegistration?: () => void; // Navigate to registration
 }
 
 type MoldProjectData = {
@@ -26,7 +27,7 @@ type MoldProjectData = {
   projectId: string;
 };
 
-const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
+const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavigateToRegistration }) => {
   // State declarations
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +118,28 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
     return filtered;
   }, [moldData, selectedCustomer, selectedProject, selectedStatus]);
 
-  // KPI Calculations
+  // KPI Calculations - Grouped by part name (품목별)
+  const kpisByPart = useMemo(() => {
+    const partGroups = new Map<string, { forecast: number; 재고: number; count: number }>();
+    
+    filteredData.forEach(d => {
+      const existing = partGroups.get(d.project) || { forecast: 0, 재고: 0, count: 0 };
+      partGroups.set(d.project, {
+        forecast: existing.forecast + d.forecast,
+        재고: existing.재고 + d.재고,
+        count: existing.count + 1
+      });
+    });
+    
+    return Array.from(partGroups.entries()).map(([partName, data]) => ({
+      partName,
+      forecast: data.forecast,
+      재고: data.재고,
+      count: data.count
+    })).sort((a, b) => a.partName.localeCompare(b.partName));
+  }, [filteredData]);
+
+  // Overall KPI Calculations
   const kpis = useMemo(() => {
     const totalForecast = filteredData.reduce((sum, d) => sum + d.forecast, 0);
     const total재고 = filteredData.reduce((sum, d) => sum + d.재고, 0);
@@ -175,11 +197,25 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
     }}>
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Wrench className="w-6 h-6 text-indigo-600" />
-          <h1 className="text-2xl font-bold text-slate-900">증작금형 관리 대시보드</h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <Wrench className="w-6 h-6 text-indigo-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">증작금형 관리 대시보드</h1>
+              <p className="text-slate-600 text-sm">Looker Studio 스타일 대시보드</p>
+            </div>
+          </div>
+          {onNavigateToRegistration && (
+            <button
+              onClick={onNavigateToRegistration}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
+              type="button"
+            >
+              <Plus size={18} />
+              증작금형 등록
+            </button>
+          )}
         </div>
-        <p className="text-slate-600 text-sm">Looker Studio 스타일 대시보드</p>
       </div>
 
       {/* A. 상단: 컨트롤(Filter) 및 핵심 지표 (KPI) */}
@@ -228,11 +264,48 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
           </div>
         </div>
 
-        {/* KPI Scorecards */}
+        {/* KPI Scorecards - 품목별 */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-slate-900 mb-3">품목별 지표</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {kpisByPart.length === 0 ? (
+              <div className="col-span-full bg-white rounded-lg p-6 shadow-sm border border-slate-200 text-center text-slate-500">
+                <p>품목별 데이터가 없습니다.</p>
+              </div>
+            ) : (
+              kpisByPart.map((kpi, index) => (
+                <div key={kpi.partName} className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-slate-900">{kpi.partName}</span>
+                    <span className="text-xs text-slate-500">({kpi.count}건)</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs font-semibold text-slate-600">잔여 Forecast</span>
+                      </div>
+                      <p className="text-xl font-bold text-slate-900">{kpi.forecast.toLocaleString()}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-green-600" />
+                        <span className="text-xs font-semibold text-slate-600">현재 재고</span>
+                      </div>
+                      <p className="text-xl font-bold text-slate-900">{kpi.재고.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Overall KPI Scorecards */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-slate-600">총 잔여 Forecast</span>
+              <span className="text-sm font-semibold text-slate-600">전체 총 잔여 Forecast</span>
               <TrendingUp className="w-5 h-5 text-indigo-600" />
             </div>
             <p className="text-3xl font-bold text-slate-900">{kpis.totalForecast.toLocaleString()}</p>
@@ -241,7 +314,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
 
           <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-slate-600">현재 총 재고</span>
+              <span className="text-sm font-semibold text-slate-600">전체 현재 총 재고</span>
               <Package className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-3xl font-bold text-slate-900">{kpis.total재고.toLocaleString()}</p>
