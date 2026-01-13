@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
 import { projectService } from '../src/api/services/projectService';
+import { partService, Part } from '../src/api/services/partService';
 import { ProjectType, ProjectStatus, Project } from '../types';
 
 interface Props {
@@ -31,6 +32,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   // State declarations
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [parts, setParts] = useState<Part[]>([]);
   
   // Filter states
   const [selectedCustomer, setSelectedCustomer] = useState<string>('전체');
@@ -80,6 +82,19 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   useEffect(() => {
     loadProjects();
   }, [propsProjects]);
+
+  // Load parts for dropdown
+  useEffect(() => {
+    const loadParts = async () => {
+      try {
+        const partsData = await partService.getAll();
+        setParts(partsData);
+      } catch (error) {
+        console.error('❌ MoldManagement: Failed to load parts:', error);
+      }
+    };
+    loadParts();
+  }, []);
 
   // Handle register mode toggle
   const handleStartRegister = () => {
@@ -486,7 +501,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">품목</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">구분</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">요청일</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 border-b">재고</th>
@@ -502,15 +517,21 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
                 {/* Editable row (register mode) - 맨 위에 표시 */}
                 {isRegisterMode && (
                   <tr className="border-b bg-blue-50 hover:bg-blue-100">
-                    {/* 품목 (Project) - 입력 가능 */}
+                    {/* 품목 (Project) - 드롭다운 */}
                     <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="text"
+                      <select
                         value={editingRow.project || ''}
                         onChange={(e) => setEditingRow(prev => ({ ...prev, project: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="품목"
-                      />
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        disabled={parts.length === 0}
+                      >
+                        <option value="">품목 선택</option>
+                        {parts.map((part) => (
+                          <option key={part.partName} value={part.partName}>
+                            {part.partName}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     {/* 차수 (구분) - 입력 가능 */}
                     <td className="px-4 py-3 text-sm border-b">
