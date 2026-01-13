@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
 import { projectService } from '../src/api/services/projectService';
 import { partService, Part } from '../src/api/services/partService';
-import { settingsService, Customer } from '../src/api/services/settingsService';
 import { ProjectType, ProjectStatus, Project } from '../types';
 
 interface Props {
@@ -85,22 +84,18 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     loadProjects();
   }, [propsProjects]);
 
-  // Load parts and customers for dropdown
+  // Load parts for dropdown
   useEffect(() => {
-    const loadData = async () => {
+    const loadParts = async () => {
       try {
-        const [partsData, customersData] = await Promise.all([
-          partService.getAll(),
-          settingsService.getCustomers()
-        ]);
+        const partsData = await partService.getAll();
         setParts(partsData);
-        setCustomers(customersData);
-        console.log('✅ Loaded parts:', partsData.length, 'customers:', customersData.length);
+        console.log('✅ Loaded parts:', partsData.length);
       } catch (error) {
-        console.error('❌ MoldManagement: Failed to load data:', error);
+        console.error('❌ MoldManagement: Failed to load parts:', error);
       }
     };
-    loadData();
+    loadParts();
   }, []);
 
   // Handle register mode toggle
@@ -163,26 +158,6 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     }
 
     try {
-      // Find selected part to get customerName and partNumber
-      const selectedPart = parts.find(p => p.partName === editingRow.project);
-      console.log('🔍 Selected part:', selectedPart);
-      
-      // Get customer name from part - resolve ID to actual name if needed
-      let customerName = '미지정';
-      if (selectedPart?.customerName) {
-        // Check if customerName is an ID (starts with 'customer-')
-        if (selectedPart.customerName.startsWith('customer-')) {
-          // Find customer by ID
-          const customer = customers.find(c => c.id === selectedPart.customerName);
-          customerName = customer?.name || selectedPart.customerName;
-        } else {
-          // Already a name
-          customerName = selectedPart.customerName;
-        }
-      }
-      console.log('👤 Resolved customerName:', customerName);
-
-      // Create new project
       // Helper function to convert empty string to null
       const toNullIfEmpty = (value: string | null | undefined): string | null => {
         if (value === null || value === undefined || value === '') {
@@ -191,14 +166,15 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         return value;
       };
 
+      // Create new project - only use what user entered, no auto-fetch from parts
       const newProject: Partial<Project> = {
-        customerName: customerName,
+        customerName: '미지정', // Default value
         partName: editingRow.project,
-        partNumber: selectedPart?.partNumber || '',
+        partNumber: '', // Empty - user can fill later if needed
         carModel: toNullIfEmpty(''),
         moldCavity: 2,
         sopDate: toNullIfEmpty('') || new Date().toISOString().split('T')[0], // Default to today if empty
-        material: selectedPart?.material || 'ALDC12',
+        material: 'ALDC12', // Default value
         status: editingRow.status || ProjectStatus.IN_PROGRESS,
         type: ProjectType.INCREMENTAL_MOLD,
         developmentPhase: toNullIfEmpty(editingRow.구분 || ''),
