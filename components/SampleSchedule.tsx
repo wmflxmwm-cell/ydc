@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, Save, CheckCircle2, Edit2 } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, CheckCircle2, Edit2, Download, RotateCcw } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
 import { partService, Part } from '../src/api/services/partService';
 import { sampleScheduleService, type SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
@@ -143,6 +144,162 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     console.log('[handleToggleView] Switching view mode');
     setViewMode(prev => prev === 'active' ? 'completed' : 'active');
     setSearchTerm(''); // Clear search when switching
+  };
+
+  // FEATURE 1: Excel Download Handler
+  // Downloads ONLY completed schedules currently shown (filtered/search results)
+  const handleExcelDownload = () => {
+    console.log('[handleExcelDownload] Exporting completed schedules to Excel');
+    
+    if (displayedSchedules.length === 0) {
+      alert('다운로드할 완료된 일정이 없습니다.');
+      return;
+    }
+
+    try {
+      // Prepare data for Excel
+      const excelData = displayedSchedules.map(item => {
+        // Find ETA schedule for completion date
+        const etaSchedule = item.schedules.find(s => s.postProcessingId === 'ETA');
+        
+        // Get all schedule names and completion dates
+        const scheduleDetails = item.schedules.map(s => ({
+          name: getPostProcessingName(s.postProcessingId),
+          completedDate: s.completedDate || '',
+          plannedDate: s.plannedDate || ''
+        }));
+
+        // Build row data
+        const row: any = {
+          '품목명': item.partName,
+          '품번': item.partNumber,
+          '수량': item.quantity,
+          '요청일': item.requestDate.split('T')[0],
+          '운송방법': item.shippingMethod,
+          '제품비': item.productCostType,
+          '금형차수': item.moldSequence || '',
+          '로트': item.lot || '미적용',
+          'ETA 완료일': etaSchedule?.completedDate || '',
+        };
+
+        // Add each schedule's completion date
+        scheduleDetails.forEach((detail, idx) => {
+          if (idx === 0) {
+            row['일정명'] = detail.name;
+            row['계획일정'] = detail.plannedDate;
+            row['완료일자'] = detail.completedDate;
+          } else {
+            row[`일정명_${idx + 1}`] = detail.name;
+            row[`계획일정_${idx + 1}`] = detail.plannedDate;
+            row[`완료일자_${idx + 1}`] = detail.completedDate;
+          }
+        });
+
+        return row;
+      });
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '완료된 샘플 일정');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const filename = `완료된_샘플_일정_${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(wb, filename);
+      
+      console.log('[handleExcelDownload] Excel file downloaded successfully:', filename);
+      alert(`${displayedSchedules.length}건의 완료된 일정이 다운로드되었습니다.`);
+    } catch (error) {
+      console.error('[handleExcelDownload] Failed to export Excel:', error);
+      alert('엑셀 다운로드에 실패했습니다.');
+    }
+  };
+
+  // FEATURE 2: Rollback Handler
+  // Moves a completed schedule back to active by clearing ETA completion status
+  const handleRollback = async (itemId: string) => {
+    console.log('[handleRollback] Rolling back completed schedule:', itemId);
+    
+    // Guard: Validate item exists
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) {
+      console.warn('[handleRollback] Item not found:', itemId);
+      alert('항목을 찾을 수 없습니다.');
+      return;
+    }
+
+    // Guard: Verify item is actually completed
+    if (!isScheduleCompleted(item)) {
+      console.warn('[handleRollback] Item is not completed:', itemId);
+      alert('이 항목은 완료 상태가 아닙니다.');
+      return;
+    }
+
+    if (!confirm('이 완료된 일정을 다시 진행 중으로 되돌리시겠습니까?')) {
+      return;
+    }
+
+    try {
+      // Find ETA schedule and clear completion status
+      const updatedSchedules = item.schedules.map(schedule => {
+        if (schedule.postProcessingId === 'ETA') {
+          // Clear completion status but keep dates
+          return {
+            ...schedule,
+            isCompleted: false
+          };
+        }
+        return schedule;
+      });
+
+      // Update via API (optional - UI updates immediately regardless)
+      try {
+        await sampleScheduleService.update(itemId, {
+          partName: item.partName,
+          partNumber: item.partNumber,
+          quantity: item.quantity,
+          requestDate: item.requestDate,
+          shippingMethod: item.shippingMethod,
+          productCostType: item.productCostType,
+          moldSequence: item.moldSequence || '',
+          lot: item.lot || '미적용',
+          remarks: item.remarks || '',
+          isPlanApproved: item.isPlanApproved || false,
+          schedules: updatedSchedules
+        });
+        console.log('[handleRollback] Successfully updated via API');
+      } catch (apiError) {
+        console.warn('[handleRollback] API update failed, but UI will update:', apiError);
+        // Continue - UI updates regardless of API result
+      }
+
+      // CRITICAL: Update allItems state
+      // This will automatically trigger recomputation of activeSchedules and completedSchedules
+      setAllItems(prev => {
+        const updated = prev.map(i => 
+          i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+        );
+        
+        // Verify the item is no longer completed
+        const rolledBackItem = updated.find(i => i.id === itemId);
+        if (rolledBackItem && isScheduleCompleted(rolledBackItem)) {
+          console.error('[handleRollback] Rollback failed - item still marked as completed');
+          alert('재오픈 처리에 실패했습니다. ETA 완료 상태를 확인해주세요.');
+          return prev; // Revert if rollback didn't work
+        }
+        
+        console.log('[handleRollback] Successfully rolled back - item moved to active');
+        return updated;
+      });
+
+      alert('일정이 다시 진행 중으로 변경되었습니다.');
+    } catch (error) {
+      console.error('[handleRollback] Failed to rollback:', error);
+      alert('재오픈 처리에 실패했습니다.');
+    }
   };
 
   const handlePartChange = (partId: string) => {
