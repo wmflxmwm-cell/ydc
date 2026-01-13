@@ -99,6 +99,25 @@ const initDb = async () => {
       );
     `);
 
+        // Forecasts Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS forecasts (
+        id VARCHAR(50) PRIMARY KEY,
+        part_name VARCHAR(100) NOT NULL UNIQUE,
+        part_number VARCHAR(100),
+        customer_name VARCHAR(100),
+        material VARCHAR(100),
+        volume_2026 INTEGER,
+        volume_2027 INTEGER,
+        volume_2028 INTEGER,
+        volume_2029 INTEGER,
+        volume_2030 INTEGER,
+        volume_2031 INTEGER,
+        volume_2032 INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
         // Add new columns if they don't exist (for existing databases)
         const alterQueries = [
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS mold_sequence VARCHAR(50)',

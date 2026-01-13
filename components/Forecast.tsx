@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { partService, Part } from '../src/api/services/partService';
 import { settingsService, Customer, Material } from '../src/api/services/settingsService';
+import { forecastService, ForecastRow as ForecastRowType } from '../src/api/services/forecastService';
 
 // ============================================
 // PHASE 2: CLEAN MVP REBUILD
@@ -47,30 +48,45 @@ const Forecast: React.FC<ForecastProps> = () => {
     forecast: {}
   });
 
-  // Load savedRows from localStorage on mount
-  const [savedRows, setSavedRows] = useState<ForecastRow[]>(() => {
-    try {
-      const saved = localStorage.getItem('forecast_savedRows');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('✅ Loaded savedRows from localStorage:', parsed.length);
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Failed to load savedRows from localStorage:', error);
-    }
-    return [];
-  });
+  // Load savedRows from server on mount
+  const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
+  const [isLoadingForecasts, setIsLoadingForecasts] = useState(true);
 
-  // Save savedRows to localStorage whenever it changes
+  // Load forecasts from server
   useEffect(() => {
-    try {
-      localStorage.setItem('forecast_savedRows', JSON.stringify(savedRows));
-      console.log('💾 Saved savedRows to localStorage:', savedRows.length);
-    } catch (error) {
-      console.error('Failed to save savedRows to localStorage:', error);
-    }
-  }, [savedRows]);
+    const loadForecasts = async () => {
+      try {
+        setIsLoadingForecasts(true);
+        const forecasts = await forecastService.getAll();
+        console.log('✅ Loaded forecasts from server:', forecasts.length);
+        // Transform to ForecastRow format
+        const transformed: ForecastRow[] = forecasts.map(f => ({
+          partName: f.partName,
+          partNumber: f.partNumber,
+          customerName: f.customerName,
+          material: f.material,
+          forecast: f.forecast
+        }));
+        setSavedRows(transformed);
+      } catch (error) {
+        console.error('Failed to load forecasts from server:', error);
+        // Fallback to localStorage if server fails
+        try {
+          const saved = localStorage.getItem('forecast_savedRows');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            console.log('✅ Loaded savedRows from localStorage (fallback):', parsed.length);
+            setSavedRows(parsed);
+          }
+        } catch (localError) {
+          console.error('Failed to load from localStorage:', localError);
+        }
+      } finally {
+        setIsLoadingForecasts(false);
+      }
+    };
+    loadForecasts();
+  }, []);
 
   // MVP: Load parts, customers, and materials on mount
   // CRITICAL: Load parts FIRST, then customers/materials in background
@@ -208,33 +224,32 @@ const Forecast: React.FC<ForecastProps> = () => {
       forecast: currentInputRow.forecast ? { ...currentInputRow.forecast } : {} // Deep copy forecast object
     };
     
-    // Add to savedRows
-    setSavedRows(prev => {
-      const updated = [...prev, rowToSave];
-      console.log('[handleSave] Row added. Total saved rows:', updated.length);
-      return updated;
-    });
-    
-    // Reset currentInputRow to empty
-    setCurrentInputRow({
-      partName: '',
-      partNumber: '',
-      customerName: '',
-      material: '',
-      forecast: {}
-    });
-    
-    console.log('✅ [handleSave] Row saved successfully');
-    console.log('📦 [handleSave] SAVE PAYLOAD:', rowToSave);
-    
-    // Show visible feedback
-    setSavedRows(prev => {
-      alert(`저장 완료!\n품목: ${rowToSave.partName}\n총 ${prev.length + 1}개의 행이 저장되었습니다.`);
-      return prev;
-    });
-    
-    // TODO: API / SQL 연동
-    // await forecastService.save(rowToSave);
+    // Save to server
+    try {
+      await forecastService.save(rowToSave);
+      console.log('✅ [handleSave] Row saved to server:', rowToSave);
+      
+      // Update local state
+      setSavedRows(prev => {
+        const updated = [...prev, rowToSave];
+        console.log('[handleSave] Row added. Total saved rows:', updated.length);
+        return updated;
+      });
+
+      // Reset currentInputRow to empty
+      setCurrentInputRow({
+        partName: '',
+        partNumber: '',
+        customerName: '',
+        material: '',
+        forecast: {}
+      });
+
+      alert(`저장 완료!\n품목: ${rowToSave.partName}\n서버에 저장되었습니다.`);
+    } catch (error) {
+      console.error('❌ [handleSave] Failed to save to server:', error);
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input

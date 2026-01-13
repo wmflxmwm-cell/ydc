@@ -1,0 +1,133 @@
+const express = require('express');
+const { pool } = require('../db');
+const router = express.Router();
+
+// Get all forecasts
+router.get('/', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM forecasts ORDER BY created_at DESC');
+        const forecasts = result.rows.map(row => ({
+            id: row.id,
+            partName: row.part_name,
+            partNumber: row.part_number,
+            customerName: row.customer_name,
+            material: row.material,
+            volume2026: row.volume_2026,
+            volume2027: row.volume_2027,
+            volume2028: row.volume_2028,
+            volume2029: row.volume_2029,
+            volume2030: row.volume_2030,
+            volume2031: row.volume_2031,
+            volume2032: row.volume_2032,
+            createdAt: row.created_at
+        }));
+        res.json(forecasts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create or update forecast
+router.post('/', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const { partName, partNumber, customerName, material, forecast } = req.body;
+
+        // Check if forecast exists for this partName
+        const existing = await client.query(
+            'SELECT id FROM forecasts WHERE part_name = $1',
+            [partName]
+        );
+
+        const volumes = {
+            volume2026: forecast?.[2026] ?? null,
+            volume2027: forecast?.[2027] ?? null,
+            volume2028: forecast?.[2028] ?? null,
+            volume2029: forecast?.[2029] ?? null,
+            volume2030: forecast?.[2030] ?? null,
+            volume2031: forecast?.[2031] ?? null,
+            volume2032: forecast?.[2032] ?? null
+        };
+
+        if (existing.rows.length > 0) {
+            // Update existing forecast
+            const id = existing.rows[0].id;
+            await client.query(
+                `UPDATE forecasts SET
+                    part_number = $1,
+                    customer_name = $2,
+                    material = $3,
+                    volume_2026 = $4,
+                    volume_2027 = $5,
+                    volume_2028 = $6,
+                    volume_2029 = $7,
+                    volume_2030 = $8,
+                    volume_2031 = $9,
+                    volume_2032 = $10,
+                    created_at = CURRENT_TIMESTAMP
+                WHERE id = $11`,
+                [
+                    partNumber || '',
+                    customerName || '',
+                    material || '',
+                    volumes.volume2026,
+                    volumes.volume2027,
+                    volumes.volume2028,
+                    volumes.volume2029,
+                    volumes.volume2030,
+                    volumes.volume2031,
+                    volumes.volume2032,
+                    id
+                ]
+            );
+            await client.query('COMMIT');
+            res.json({ id, ...req.body, message: 'Forecast updated' });
+        } else {
+            // Create new forecast
+            const id = `forecast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            await client.query(
+                `INSERT INTO forecasts (
+                    id, part_name, part_number, customer_name, material,
+                    volume_2026, volume_2027, volume_2028, volume_2029,
+                    volume_2030, volume_2031, volume_2032, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)`,
+                [
+                    id,
+                    partName,
+                    partNumber || '',
+                    customerName || '',
+                    material || '',
+                    volumes.volume2026,
+                    volumes.volume2027,
+                    volumes.volume2028,
+                    volumes.volume2029,
+                    volumes.volume2030,
+                    volumes.volume2031,
+                    volumes.volume2032
+                ]
+            );
+            await client.query('COMMIT');
+            res.json({ id, ...req.body, message: 'Forecast created' });
+        }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Forecast save error:', err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// Delete forecast
+router.delete('/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM forecasts WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Forecast deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+module.exports = router;
+
