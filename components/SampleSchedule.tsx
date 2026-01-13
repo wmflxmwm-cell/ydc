@@ -648,7 +648,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
-  const getPostProcessingName = (id: string) => {
+  // Remove duplicate - already defined above
+  // const getPostProcessingName = (id: string) => {
     // 특수 항목 처리
     if (id === 'MOLD') return '금형';
     if (id === 'LOADING') return '로딩';
