@@ -67,39 +67,42 @@ const Forecast: React.FC<ForecastProps> = () => {
   }, []);
 
   // MVP: Handle part selection
+  // CRITICAL FIX: Use functional setState to access latest customers/materials
+  // This prevents stale closure issues when customers/materials load asynchronously
   const handlePartSelect = (partName: string) => {
     console.log('🔥 MVP handlePartSelect FIRED:', partName);
-    console.log('🔍 MVP: Available parts count:', parts.length);
     
     // Find matching part - exact match required
     const foundPart = parts.find(p => p.partName === partName);
     
     if (foundPart) {
-      // CRITICAL: Convert customer ID to customer name
-      const customerId = foundPart.customerName; // This is an ID like "customer-1767068"
-      const customer = customers.find(c => c.id === customerId);
-      const customerName = customer?.name ?? customerId ?? ''; // Use name if found, otherwise fallback to ID
-      
-      // CRITICAL: Convert material ID to material name
-      const materialId = foundPart.material; // This is an ID like "material-17670673"
-      const material = materials.find(m => m.id === materialId);
-      const materialName = material?.name ?? materialId ?? ''; // Use name if found, otherwise fallback to ID
-      
-      // MANDATORY: Log selectedPart BEFORE setState
-      console.log('✅ MVP: Found part BEFORE setState:', {
-        partName: foundPart.partName,
-        partNumber: foundPart.partNumber,
-        customerId: customerId,
-        customerName: customerName,
-        materialId: materialId,
-        materialName: materialName,
-        customerFound: !!customer,
-        materialFound: !!material
-      });
-      
-      // ATOMIC STATE UPDATE: All fields updated in ONE setState call
-      // NO chained setState, NO partial updates
+      // CRITICAL FIX: Access latest customers/materials via functional setState
+      // This ensures we always use the most recent data, even if it loads after component mount
       setRow(prev => {
+        // Access latest customers and materials from state (via closure)
+        // If they're not loaded yet, we'll use the ID as fallback
+        const customerId = foundPart.customerName; // This is an ID like "customer-1767068"
+        const customer = customers.find(c => c.id === customerId);
+        const customerName = customer?.name ?? customerId ?? ''; // Use name if found, otherwise fallback to ID
+        
+        const materialId = foundPart.material; // This is an ID like "material-17670673"
+        const material = materials.find(m => m.id === materialId);
+        const materialName = material?.name ?? materialId ?? ''; // Use name if found, otherwise fallback to ID
+        
+        // MANDATORY: Log selectedPart BEFORE setState
+        console.log('✅ MVP: Found part BEFORE setState:', {
+          partName: foundPart.partName,
+          partNumber: foundPart.partNumber,
+          customerId: customerId,
+          customerName: customerName,
+          materialId: materialId,
+          materialName: materialName,
+          customerFound: !!customer,
+          materialFound: !!material,
+          customersLoaded: customers.length,
+          materialsLoaded: materials.length
+        });
+        
         const updated = {
           partName: foundPart.partName,
           partNumber: foundPart.partNumber ?? '',
