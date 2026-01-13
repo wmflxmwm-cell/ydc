@@ -222,9 +222,10 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
   };
 
   // MVP: Update forecast value - ONLY affects currentInputRow
-  const updateForecast = (year: number, value: number) => {
+  const updateForecast = (year: number, value: number | string) => {
     // Ensure value is properly converted to number
-    const numValue = value === '' || value === null || value === undefined ? 0 : Number(value);
+    // Handle both number and string inputs (from input field)
+    const numValue = (value === '' || value === null || value === undefined) ? 0 : Number(value);
     const finalValue = isNaN(numValue) ? 0 : numValue;
     
     console.log('🔥 MVP updateForecast FIRED:', { year, inputValue: value, convertedValue: finalValue });
