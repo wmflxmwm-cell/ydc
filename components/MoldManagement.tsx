@@ -198,17 +198,17 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
       const newProject: Partial<Project> = {
         ...payload,
         // Optional date fields - convert empty to null
-        feasibilityReviewPlan: toNullIfEmpty(payload.feasibilityReviewPlan),
-        feasibilityReviewActual: toNullIfEmpty(payload.feasibilityReviewActual),
-        moldOrderPlan: toNullIfEmpty(payload.moldOrderPlan),
-        moldOrderActual: toNullIfEmpty(payload.moldOrderActual),
-        moldDeliveryPlan: toNullIfEmpty(payload.moldDeliveryPlan),
-        moldDeliveryActual: toNullIfEmpty(payload.moldDeliveryActual),
-        istrSubmissionPlan: toNullIfEmpty(payload.istrSubmissionPlan),
-        istrSubmissionActual: toNullIfEmpty(payload.istrSubmissionActual),
-        ydcVnPpapPlan: toNullIfEmpty(payload.ydcVnPpapPlan),
-        ydcVnPpapActual: toNullIfEmpty(payload.ydcVnPpapActual),
-        volume2026: payload.volume2026 > 0 ? payload.volume2026 : null,
+        feasibilityReviewPlan: toNullIfEmpty(formData.feasibilityReviewPlan),
+        feasibilityReviewActual: toNullIfEmpty(formData.feasibilityReviewActual),
+        moldOrderPlan: toNullIfEmpty(formData.moldOrderPlan),
+        moldOrderActual: toNullIfEmpty(formData.moldOrderActual),
+        moldDeliveryPlan: toNullIfEmpty(formData.moldDeliveryPlan),
+        moldDeliveryActual: toNullIfEmpty(formData.moldDeliveryActual),
+        istrSubmissionPlan: toNullIfEmpty(formData.istrSubmissionPlan),
+        istrSubmissionActual: toNullIfEmpty(formData.istrSubmissionActual),
+        ydcVnPpapPlan: toNullIfEmpty(formData.ydcVnPpapPlan),
+        ydcVnPpapActual: toNullIfEmpty(formData.ydcVnPpapActual),
+        volume2026: formData.volume2026 > 0 ? formData.volume2026 : null,
       };
 
       console.log('📤 Creating project with data:', JSON.stringify(newProject, null, 2));
