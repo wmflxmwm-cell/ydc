@@ -91,7 +91,100 @@ router.post('/', async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const project = req.body;
+        const rawProject = req.body;
+
+        // Validation: Required fields
+        const requiredFields = ['customerName', 'partName', 'status', 'type', 'material', 'sopDate', 'carModel'];
+        const missingFields = requiredFields.filter(field => !rawProject[field] || rawProject[field] === null);
+        if (missingFields.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ 
+                error: 'Missing required fields', 
+                missingFields,
+                received: Object.keys(rawProject)
+            });
+        }
+
+        // Sanitize payload: Convert null/empty to appropriate defaults
+        const sanitizeString = (val) => {
+            if (val === null || val === undefined) return '';
+            return String(val).trim();
+        };
+
+        const sanitizeDate = (val) => {
+            if (!val || val === null || val === '') return null;
+            const date = new Date(val);
+            return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
+        };
+
+        const sanitizeNumber = (val, defaultValue = null) => {
+            if (val === null || val === undefined || val === '') return defaultValue;
+            const num = Number(val);
+            return isNaN(num) ? defaultValue : num;
+        };
+
+        const project = {
+            customerName: sanitizeString(rawProject.customerName),
+            partName: sanitizeString(rawProject.partName),
+            partNumber: sanitizeString(rawProject.partNumber || ''),
+            carModel: sanitizeString(rawProject.carModel || ''),
+            moldCavity: sanitizeNumber(rawProject.moldCavity, 2),
+            sopDate: sanitizeDate(rawProject.sopDate),
+            status: sanitizeString(rawProject.status),
+            type: sanitizeString(rawProject.type),
+            material: sanitizeString(rawProject.material),
+            developmentPhase: sanitizeString(rawProject.developmentPhase || ''),
+            // Optional date fields
+            fotDate: sanitizeDate(rawProject.fotDate),
+            faiDate: sanitizeDate(rawProject.faiDate),
+            p1Date: sanitizeDate(rawProject.p1Date),
+            p2Date: sanitizeDate(rawProject.p2Date),
+            runAtRateDate: sanitizeDate(rawProject.runAtRateDate),
+            ppapDate: sanitizeDate(rawProject.ppapDate),
+            customerSopDate: sanitizeDate(rawProject.customerSopDate),
+            // Volume fields
+            volume2026: sanitizeNumber(rawProject.volume2026),
+            volume2027: sanitizeNumber(rawProject.volume2027),
+            volume2028: sanitizeNumber(rawProject.volume2028),
+            volume2029: sanitizeNumber(rawProject.volume2029),
+            volume2030: sanitizeNumber(rawProject.volume2030),
+            volume2031: sanitizeNumber(rawProject.volume2031),
+            volume2032: sanitizeNumber(rawProject.volume2032),
+            // 증작 금형 fields
+            feasibilityReviewPlan: sanitizeDate(rawProject.feasibilityReviewPlan),
+            feasibilityReviewActual: sanitizeDate(rawProject.feasibilityReviewActual),
+            moldOrderPlan: sanitizeDate(rawProject.moldOrderPlan),
+            moldOrderActual: sanitizeDate(rawProject.moldOrderActual),
+            moldDeliveryPlan: sanitizeDate(rawProject.moldDeliveryPlan),
+            moldDeliveryActual: sanitizeDate(rawProject.moldDeliveryActual),
+            istrSubmissionPlan: sanitizeDate(rawProject.istrSubmissionPlan),
+            istrSubmissionActual: sanitizeDate(rawProject.istrSubmissionActual),
+            ydcVnPpapPlan: sanitizeDate(rawProject.ydcVnPpapPlan),
+            ydcVnPpapActual: sanitizeDate(rawProject.ydcVnPpapActual),
+            ppapKrSubmissionPlan: sanitizeDate(rawProject.ppapKrSubmissionPlan),
+            ppapKrSubmissionActual: sanitizeDate(rawProject.ppapKrSubmissionActual),
+            ppapCustomerApprovalPlan: sanitizeDate(rawProject.ppapCustomerApprovalPlan),
+            ppapCustomerApprovalActual: sanitizeDate(rawProject.ppapCustomerApprovalActual),
+            ydcVnSopPlan: sanitizeDate(rawProject.ydcVnSopPlan),
+            ydcVnSopActual: sanitizeDate(rawProject.ydcVnSopActual),
+            customerSopPlan: sanitizeDate(rawProject.customerSopPlan),
+            customerSopActual: sanitizeDate(rawProject.customerSopActual),
+            deliverySchedulePlan: sanitizeDate(rawProject.deliverySchedulePlan),
+            deliveryScheduleActual: sanitizeDate(rawProject.deliveryScheduleActual),
+        };
+
+        // Validate enum values
+        const validStatuses = ['진행중', '완료', '대기'];
+        const validTypes = ['신규 개발', '증작 금형'];
+        if (!validStatuses.includes(project.status)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+        }
+        if (!validTypes.includes(project.type)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` });
+        }
+
         const id = uuidv4();
 
         await client.query(
@@ -115,15 +208,15 @@ router.post('/', async (req, res) => {
                 $40, $41, $42, $43, $44, $45
             )`,
             [
-                id, project.customerName, project.carModel, project.partName, project.partNumber, project.moldCavity, project.sopDate || null, project.status, project.type, project.material,
-                project.fotDate || null, project.faiDate || null, project.p1Date || null, project.p2Date || null, project.runAtRateDate || null, project.ppapDate || null, project.customerSopDate || null,
-                project.volume2026 || null, project.volume2027 || null, project.volume2028 || null, project.volume2029 || null, project.volume2030 || null, project.volume2031 || null, project.volume2032 || null,
-                project.developmentPhase || null, project.feasibilityReviewPlan || null, project.feasibilityReviewActual || null,
-                project.moldOrderPlan || null, project.moldOrderActual || null, project.moldDeliveryPlan || null, project.moldDeliveryActual || null,
-                project.istrSubmissionPlan || null, project.istrSubmissionActual || null, project.ydcVnPpapPlan || null, project.ydcVnPpapActual || null,
-                project.ppapKrSubmissionPlan || null, project.ppapKrSubmissionActual || null, project.ppapCustomerApprovalPlan || null, project.ppapCustomerApprovalActual || null,
-                project.ydcVnSopPlan || null, project.ydcVnSopActual || null, project.customerSopPlan || null, project.customerSopActual || null,
-                project.deliverySchedulePlan || null, project.deliveryScheduleActual || null
+                id, project.customerName, project.carModel, project.partName, project.partNumber, project.moldCavity, project.sopDate, project.status, project.type, project.material,
+                project.fotDate, project.faiDate, project.p1Date, project.p2Date, project.runAtRateDate, project.ppapDate, project.customerSopDate,
+                project.volume2026, project.volume2027, project.volume2028, project.volume2029, project.volume2030, project.volume2031, project.volume2032,
+                project.developmentPhase, project.feasibilityReviewPlan, project.feasibilityReviewActual,
+                project.moldOrderPlan, project.moldOrderActual, project.moldDeliveryPlan, project.moldDeliveryActual,
+                project.istrSubmissionPlan, project.istrSubmissionActual, project.ydcVnPpapPlan, project.ydcVnPpapActual,
+                project.ppapKrSubmissionPlan, project.ppapKrSubmissionActual, project.ppapCustomerApprovalPlan, project.ppapCustomerApprovalActual,
+                project.ydcVnSopPlan, project.ydcVnSopActual, project.customerSopPlan, project.customerSopActual,
+                project.deliverySchedulePlan, project.deliveryScheduleActual
             ]
         );
 
@@ -140,10 +233,37 @@ router.post('/', async (req, res) => {
 
         // Return created project
         const newProject = { ...project, id, createdAt: new Date().toISOString() };
-        res.json(newProject);
+        res.status(201).json(newProject);
     } catch (err) {
         await client.query('ROLLBACK');
-        res.status(500).json({ error: err.message });
+        console.error('POST /projects error:', err);
+        
+        // Handle specific database errors
+        if (err.code === '23502') { // NOT NULL violation
+            const field = err.column || 'unknown';
+            return res.status(400).json({ 
+                error: `NOT NULL constraint violation`, 
+                field,
+                message: err.message 
+            });
+        }
+        if (err.code === '23505') { // UNIQUE violation
+            return res.status(409).json({ 
+                error: 'Duplicate entry', 
+                message: err.message 
+            });
+        }
+        if (err.code === '23503') { // FOREIGN KEY violation
+            return res.status(400).json({ 
+                error: 'Foreign key constraint violation', 
+                message: err.message 
+            });
+        }
+        
+        res.status(500).json({ 
+            error: 'Internal server error',
+            message: process.env.NODE_ENV === 'development' ? err.message : 'Failed to create project'
+        });
     } finally {
         client.release();
     }
