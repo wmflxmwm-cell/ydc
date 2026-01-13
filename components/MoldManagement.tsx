@@ -33,7 +33,6 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [parts, setParts] = useState<Part[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   
   // Filter states
   const [selectedCustomer, setSelectedCustomer] = useState<string>('전체');
