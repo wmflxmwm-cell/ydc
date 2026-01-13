@@ -1180,14 +1180,28 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                             <Edit2 size={18} />
                           </button>
                         )}
-                        {(user.role === '개발팀' || user.role === 'MANAGER') && (
+                        {/* 조회 모드: 재오픈 버튼만 표시 */}
+                        {viewMode === 'completed' ? (
                           <button
-                            onClick={() => handleDelete(item.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="삭제"
+                            onClick={() => handleRollback(item.id)}
+                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                            title="완료된 일정을 다시 진행 중으로 되돌립니다"
+                            type="button"
                           >
-                            <Trash2 size={18} />
+                            <RotateCcw size={18} />
                           </button>
+                        ) : (
+                          /* 진행 중 모드: 삭제 버튼 표시 */
+                          (user.role === '개발팀' || user.role === 'MANAGER') && (
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="삭제"
+                              type="button"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>
