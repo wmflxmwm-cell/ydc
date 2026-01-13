@@ -487,64 +487,9 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
           </div>
         </div>
 
-        {/* KPI Scorecards - 품목별 */}
+        {/* 진행 중 프로젝트 수 */}
         <div className="mb-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-3">품목별 지표</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {kpisByPart.length === 0 ? (
-              <div className="col-span-full bg-white rounded-lg p-6 shadow-sm border border-slate-200 text-center text-slate-500">
-                <p>품목별 데이터가 없습니다.</p>
-              </div>
-            ) : (
-              kpisByPart.map((kpi, index) => (
-                <div key={kpi.partName} className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-slate-900">{kpi.partName}</span>
-                    <span className="text-xs text-slate-500">({kpi.count}건)</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-indigo-600" />
-                        <span className="text-xs font-semibold text-slate-600">잔여 Forecast</span>
-                      </div>
-                      <p className="text-xl font-bold text-slate-900">{kpi.forecast.toLocaleString()}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-green-600" />
-                        <span className="text-xs font-semibold text-slate-600">현재 재고</span>
-                      </div>
-                      <p className="text-xl font-bold text-slate-900">{kpi.재고.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Overall KPI Scorecards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-slate-600">전체 총 잔여 Forecast</span>
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900">{kpis.totalForecast.toLocaleString()}</p>
-            <p className="text-xs text-slate-500 mt-1">전체 물량 합계</p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-slate-600">전체 현재 총 재고</span>
-              <Package className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900">{kpis.total재고.toLocaleString()}</p>
-            <p className="text-xs text-slate-500 mt-1">베트남 재고 합계</p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 inline-block">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-slate-600">진행 중 프로젝트 수</span>
               <AlertTriangle className="w-5 h-5 text-orange-600" />
