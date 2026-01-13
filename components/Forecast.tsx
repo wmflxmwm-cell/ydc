@@ -47,7 +47,30 @@ const Forecast: React.FC<ForecastProps> = () => {
     forecast: {}
   });
 
-  const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
+  // Load savedRows from localStorage on mount
+  const [savedRows, setSavedRows] = useState<ForecastRow[]>(() => {
+    try {
+      const saved = localStorage.getItem('forecast_savedRows');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Loaded savedRows from localStorage:', parsed.length);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('Failed to load savedRows from localStorage:', error);
+    }
+    return [];
+  });
+
+  // Save savedRows to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('forecast_savedRows', JSON.stringify(savedRows));
+      console.log('💾 Saved savedRows to localStorage:', savedRows.length);
+    } catch (error) {
+      console.error('Failed to save savedRows to localStorage:', error);
+    }
+  }, [savedRows]);
 
   // MVP: Load parts, customers, and materials on mount
   // CRITICAL: Load parts FIRST, then customers/materials in background
