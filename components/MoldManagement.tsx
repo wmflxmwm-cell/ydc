@@ -183,28 +183,36 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
       console.log('👤 Resolved customerName:', customerName);
 
       // Create new project
+      // Helper function to convert empty string to null
+      const toNullIfEmpty = (value: string | null | undefined): string | null => {
+        if (value === null || value === undefined || value === '') {
+          return null;
+        }
+        return value;
+      };
+
       const newProject: Partial<Project> = {
         customerName: customerName,
         partName: editingRow.project,
         partNumber: selectedPart?.partNumber || '',
-        carModel: '',
+        carModel: toNullIfEmpty(''),
         moldCavity: 2,
-        sopDate: '',
+        sopDate: toNullIfEmpty('') || new Date().toISOString().split('T')[0], // Default to today if empty
         material: selectedPart?.material || 'ALDC12',
         status: editingRow.status || ProjectStatus.IN_PROGRESS,
         type: ProjectType.INCREMENTAL_MOLD,
-        developmentPhase: editingRow.구분 || '',
+        developmentPhase: toNullIfEmpty(editingRow.구분 || ''),
         // Remove createdAt - server will set it automatically
-        feasibilityReviewPlan: editingRow.타당성_계획 || null,
-        feasibilityReviewActual: editingRow.타당성_실적 || null,
-        moldOrderPlan: editingRow.금형발주_계획 || null,
-        moldOrderActual: editingRow.금형발주_실적 || null,
-        moldDeliveryPlan: editingRow.금형입고_계획 || null,
-        moldDeliveryActual: editingRow.금형입고_실적 || null,
-        istrSubmissionPlan: editingRow.istrSubmissionPlan || null,
-        istrSubmissionActual: editingRow.istrSubmissionActual || null,
-        ydcVnPpapPlan: editingRow.ydcVnPpapPlan || null,
-        ydcVnPpapActual: editingRow.ydcVnPpapActual || null,
+        feasibilityReviewPlan: toNullIfEmpty(editingRow.타당성_계획),
+        feasibilityReviewActual: toNullIfEmpty(editingRow.타당성_실적),
+        moldOrderPlan: toNullIfEmpty(editingRow.금형발주_계획),
+        moldOrderActual: toNullIfEmpty(editingRow.금형발주_실적),
+        moldDeliveryPlan: toNullIfEmpty(editingRow.금형입고_계획),
+        moldDeliveryActual: toNullIfEmpty(editingRow.금형입고_실적),
+        istrSubmissionPlan: toNullIfEmpty(editingRow.istrSubmissionPlan),
+        istrSubmissionActual: toNullIfEmpty(editingRow.istrSubmissionActual),
+        ydcVnPpapPlan: toNullIfEmpty(editingRow.ydcVnPpapPlan),
+        ydcVnPpapActual: toNullIfEmpty(editingRow.ydcVnPpapActual),
         volume2026: editingRow.forecast > 0 ? editingRow.forecast : null,
       };
 
