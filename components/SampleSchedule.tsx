@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, Save, CheckCircle2, Edit2 } from 'lucide-react';
 import { settingsService, PostProcessing } from '../src/api/services/settingsService';
 import { partService, Part } from '../src/api/services/partService';
-import { sampleScheduleService, SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
+import { sampleScheduleService, type SampleSchedule, ScheduleItem } from '../src/api/services/sampleScheduleService';
 import { getTranslations, getLanguage } from '../src/utils/translations';
 import { translatePostProcessingName } from '../src/utils/postProcessingTranslations';
 
@@ -58,13 +58,9 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     schedules: []
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   // CENTRALIZED: Completion detection logic
   // A schedule is considered COMPLETED when ETA is completed
-  const isScheduleCompleted = (schedule: SampleSchedule): boolean => {
+  const isScheduleCompleted = React.useCallback((schedule: SampleSchedule): boolean => {
     // Find ETA schedule item
     const etaSchedule = schedule.schedules.find(s => s.postProcessingId === 'ETA');
     
@@ -76,7 +72,11 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     // Alternative: All required schedules are completed
     // For now, we use ETA completion as the primary indicator
     return false;
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -97,14 +97,27 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // Helper: Get post processing name (must be defined before useMemo)
+  const getPostProcessingName = React.useCallback((id: string) => {
+    if (id === 'MOLD') return '금형';
+    if (id === 'LOADING') return '로딩';
+    if (id === 'ETD') return 'ETD';
+    if (id === 'ETA') return 'ETA';
+    
+    const postProcessing = postProcessings.find(p => p.id === id);
+    if (!postProcessing) return '';
+    const currentLanguage = getLanguage();
+    return translatePostProcessingName(postProcessing.name, currentLanguage);
+  }, [postProcessings]);
+
   // Computed: Separate active and completed schedules
   const activeSchedules = React.useMemo(() => {
     return allItems.filter(item => !isScheduleCompleted(item));
-  }, [allItems]);
+  }, [allItems, isScheduleCompleted]);
 
   const completedSchedules = React.useMemo(() => {
     return allItems.filter(item => isScheduleCompleted(item));
-  }, [allItems]);
+  }, [allItems, isScheduleCompleted]);
 
   // Computed: Filtered schedules based on view mode and search
   const displayedSchedules = React.useMemo(() => {
@@ -118,9 +131,12 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     return schedules.filter(item => 
       item.partName.toLowerCase().includes(term) ||
       item.partNumber.toLowerCase().includes(term) ||
-      item.schedules.some(s => getPostProcessingName(s.postProcessingId).toLowerCase().includes(term))
+      item.schedules.some(s => {
+        const name = getPostProcessingName(s.postProcessingId);
+        return name.toLowerCase().includes(term);
+      })
     );
-  }, [viewMode, activeSchedules, completedSchedules, searchTerm]);
+  }, [viewMode, activeSchedules, completedSchedules, searchTerm, getPostProcessingName]);
 
   // Handler: Toggle view mode
   const handleToggleView = () => {
@@ -149,69 +165,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
-  // CENTRALIZED: Completion detection logic
-  // A schedule is considered COMPLETED when ETA is completed
-  const isScheduleCompleted = (schedule: SampleSchedule): boolean => {
-    // Find ETA schedule item
-    const etaSchedule = schedule.schedules.find(s => s.postProcessingId === 'ETA');
-    
-    // If ETA exists and is completed, the entire schedule is completed
-    if (etaSchedule && etaSchedule.isCompleted) {
-      return true;
-    }
-    
-    // Alternative: All required schedules are completed
-    // For now, we use ETA completion as the primary indicator
-    return false;
-  };
-
-  // Computed: Separate active and completed schedules
-  const activeSchedules = React.useMemo(() => {
-    return allItems.filter(item => !isScheduleCompleted(item));
-  }, [allItems]);
-
-  const completedSchedules = React.useMemo(() => {
-    return allItems.filter(item => isScheduleCompleted(item));
-  }, [allItems]);
-
-  // Computed: Filtered schedules based on view mode and search
-  const displayedSchedules = React.useMemo(() => {
-    const schedules = viewMode === 'active' ? activeSchedules : completedSchedules;
-    
-    if (!searchTerm.trim()) {
-      return schedules;
-    }
-    
-    const term = searchTerm.toLowerCase();
-    return schedules.filter(item => 
-      item.partName.toLowerCase().includes(term) ||
-      item.partNumber.toLowerCase().includes(term) ||
-      item.schedules.some(s => {
-        const name = getPostProcessingName(s.postProcessingId);
-        return name.toLowerCase().includes(term);
-      })
-    );
-  }, [viewMode, activeSchedules, completedSchedules, searchTerm]);
-
-  // Handler: Toggle view mode
-  const handleToggleView = () => {
-    console.log('[handleToggleView] Switching view mode');
-    setViewMode(prev => prev === 'active' ? 'completed' : 'active');
-    setSearchTerm(''); // Clear search when switching
-  };
-
-  // Helper: Get post processing name (moved before use)
-  const getPostProcessingName = (id: string) => {
-    if (id === 'MOLD') return '금형';
-    if (id === 'LOADING') return '로딩';
-    if (id === 'ETD') return 'ETD';
-    if (id === 'ETA') return 'ETA';
-    
-    const postProcessing = postProcessings.find(p => p.id === id);
-    if (!postProcessing) return '';
-    const currentLanguage = getLanguage();
-    return translatePostProcessingName(postProcessing.name, currentLanguage);
-  };
 
   // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleAddScheduleToItem = async (itemId: string, partNumber: string) => {
@@ -434,9 +387,22 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           lot: item.lot || '',
           schedules: updatedSchedules
         });
-        setItems(prev => prev.map(i => 
-          i.id === itemId ? { ...i, schedules: updatedSchedules } : i
-        ));
+        setAllItems(prev => {
+          const updated = prev.map(i => 
+            i.id === itemId ? { ...i, schedules: updatedSchedules } : i
+          );
+          
+          // CRITICAL: Check if schedule became completed after update
+          const updatedItem = updated.find(i => i.id === itemId);
+          if (updatedItem && isScheduleCompleted(updatedItem)) {
+            const wasActive = !isScheduleCompleted(prev.find(i => i.id === itemId)!);
+            if (wasActive) {
+              console.log('[handleUpdateSchedule] Schedule completed - moved to completed list');
+            }
+          }
+          
+          return updated;
+        });
       } catch (error) {
         console.error('Failed to complete schedule:', error);
         alert('완료 처리에 실패했습니다.');
@@ -879,7 +845,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
+                displayedSchedules.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-2 py-4 text-sm" style={{ width: '10%' }}>
                       <div className="space-y-1.5">
@@ -940,7 +906,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
                                       isPlanApproved: true,
                                       schedules: item.schedules
                                     });
-                                    setItems(prev => prev.map(i =>
+                                    setAllItems(prev => prev.map(i =>
                                       i.id === item.id ? { ...i, isPlanApproved: true } : i
                                     ));
                                   } catch (error) {
