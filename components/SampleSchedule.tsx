@@ -648,19 +648,6 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
-  // Remove duplicate - already defined above
-  // const getPostProcessingName = (id: string) => {
-    // 특수 항목 처리
-    if (id === 'MOLD') return '금형';
-    if (id === 'LOADING') return '로딩';
-    if (id === 'ETD') return 'ETD';
-    if (id === 'ETA') return 'ETA';
-    
-    const postProcessing = postProcessings.find(p => p.id === id);
-    if (!postProcessing) return '';
-    const currentLanguage = getLanguage();
-    return translatePostProcessingName(postProcessing.name, currentLanguage);
-  };
 
   return (
     <div className="space-y-6">
@@ -839,7 +826,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
+              {displayedSchedules.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="px-6 py-12 text-center text-slate-400">
                     <p className="font-bold">등록된 샘플 일정이 없습니다.</p>
