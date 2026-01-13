@@ -157,7 +157,32 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     }
 
     try {
-      // Helper function to convert empty string to null
+      // Build payload using standardized function
+      const formData = {
+        customerName: '미지정',
+        partName: editingRow.project,
+        partNumber: '',
+        carModel: '',
+        moldCavity: 2,
+        developmentPhase: editingRow.구분 || '',
+        material: 'ALDC12',
+        status: editingRow.status || ProjectStatus.IN_PROGRESS,
+        type: ProjectType.INCREMENTAL_MOLD,
+        sopDate: editingRow.요청일 || new Date().toISOString().split('T')[0],
+        feasibilityReviewPlan: editingRow.타당성_계획 || '',
+        feasibilityReviewActual: editingRow.타당성_실적 || '',
+        moldOrderPlan: editingRow.금형발주_계획 || '',
+        moldOrderActual: editingRow.금형발주_실적 || '',
+        moldDeliveryPlan: editingRow.금형입고_계획 || '',
+        moldDeliveryActual: editingRow.금형입고_실적 || '',
+        istrSubmissionPlan: editingRow.istrSubmissionPlan || '',
+        istrSubmissionActual: editingRow.istrSubmissionActual || '',
+        ydcVnPpapPlan: editingRow.ydcVnPpapPlan || '',
+        ydcVnPpapActual: editingRow.ydcVnPpapActual || '',
+        volume2026: editingRow.forecast || 0,
+      };
+
+      // Helper function to convert empty string to null for optional fields
       const toNullIfEmpty = (value: string | null | undefined): string | null => {
         if (value === null || value === undefined || value === '') {
           return null;
@@ -165,30 +190,30 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         return value;
       };
 
-      // Create new project - only use what user entered, no auto-fetch from parts
+      // Create new project - sanitize optional fields to null
       const newProject: Partial<Project> = {
-        customerName: '미지정', // Default value
-        partName: editingRow.project,
-        partNumber: '', // Empty - user can fill later if needed
-        carModel: '', // Empty string instead of null (NOT NULL constraint)
-        moldCavity: 2,
-        sopDate: new Date().toISOString().split('T')[0], // Default to today (NOT NULL constraint)
-        material: 'ALDC12', // Default value
-        status: editingRow.status || ProjectStatus.IN_PROGRESS,
-        type: ProjectType.INCREMENTAL_MOLD,
-        developmentPhase: editingRow.구분 || '',
-        // Remove createdAt - server will set it automatically
-        feasibilityReviewPlan: toNullIfEmpty(editingRow.타당성_계획),
-        feasibilityReviewActual: toNullIfEmpty(editingRow.타당성_실적),
-        moldOrderPlan: toNullIfEmpty(editingRow.금형발주_계획),
-        moldOrderActual: toNullIfEmpty(editingRow.금형발주_실적),
-        moldDeliveryPlan: toNullIfEmpty(editingRow.금형입고_계획),
-        moldDeliveryActual: toNullIfEmpty(editingRow.금형입고_실적),
-        istrSubmissionPlan: toNullIfEmpty(editingRow.istrSubmissionPlan),
-        istrSubmissionActual: toNullIfEmpty(editingRow.istrSubmissionActual),
-        ydcVnPpapPlan: toNullIfEmpty(editingRow.ydcVnPpapPlan),
-        ydcVnPpapActual: toNullIfEmpty(editingRow.ydcVnPpapActual),
-        volume2026: editingRow.forecast > 0 ? editingRow.forecast : null,
+        customerName: formData.customerName,
+        partName: formData.partName,
+        partNumber: formData.partNumber,
+        carModel: formData.carModel,
+        moldCavity: formData.moldCavity,
+        sopDate: formData.sopDate,
+        material: formData.material,
+        status: formData.status,
+        type: formData.type,
+        developmentPhase: formData.developmentPhase,
+        // Optional date fields - convert empty to null
+        feasibilityReviewPlan: toNullIfEmpty(formData.feasibilityReviewPlan),
+        feasibilityReviewActual: toNullIfEmpty(formData.feasibilityReviewActual),
+        moldOrderPlan: toNullIfEmpty(formData.moldOrderPlan),
+        moldOrderActual: toNullIfEmpty(formData.moldOrderActual),
+        moldDeliveryPlan: toNullIfEmpty(formData.moldDeliveryPlan),
+        moldDeliveryActual: toNullIfEmpty(formData.moldDeliveryActual),
+        istrSubmissionPlan: toNullIfEmpty(formData.istrSubmissionPlan),
+        istrSubmissionActual: toNullIfEmpty(formData.istrSubmissionActual),
+        ydcVnPpapPlan: toNullIfEmpty(formData.ydcVnPpapPlan),
+        ydcVnPpapActual: toNullIfEmpty(formData.ydcVnPpapActual),
+        volume2026: formData.volume2026 > 0 ? formData.volume2026 : null,
       };
 
       console.log('📤 Creating project with data:', JSON.stringify(newProject, null, 2));
