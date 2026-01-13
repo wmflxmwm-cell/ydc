@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
-import { projectService, Project } from '../src/api/services/projectService';
-import { ProjectType, ProjectStatus } from '../types';
+import { projectService } from '../src/api/services/projectService';
+import { ProjectType, ProjectStatus, Project } from '../types';
 
 interface Props {
   user?: { id: string; name: string; role: string };
   projects?: Project[]; // Projects passed from App.tsx
-  onNavigateToRegistration?: () => void; // Navigate to registration
+  onProjectsUpdate?: () => void; // Callback to refresh projects
 }
 
 type MoldProjectData = {
@@ -27,7 +27,7 @@ type MoldProjectData = {
   projectId: string;
 };
 
-const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavigateToRegistration }) => {
+const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProjectsUpdate }) => {
   // State declarations
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,25 +37,152 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavi
   const [selectedProject, setSelectedProject] = useState<string>('전체');
   const [selectedStatus, setSelectedStatus] = useState<string>('전체');
 
+  // Register mode state (인라인 편집)
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [editingRow, setEditingRow] = useState<Partial<MoldProjectData>>({
+    customer: '',
+    project: '',
+    구분: '',
+    요청일: new Date().toISOString().split('T')[0],
+    forecast: 0,
+    재고: 0,
+    타당성_계획: '',
+    타당성_실적: '',
+    금형발주_계획: '',
+    금형발주_실적: '',
+    금형입고_계획: '',
+    금형입고_실적: '',
+    istrSubmissionPlan: '',
+    istrSubmissionActual: '',
+    ydcVnPpapPlan: '',
+    ydcVnPpapActual: '',
+    이슈내용: '',
+    status: ProjectStatus.IN_PROGRESS
+  });
+
   // Load projects
-  useEffect(() => {
-    const loadProjects = async () => {
-      setIsLoading(true);
-      try {
-        if (propsProjects && propsProjects.length > 0) {
-          setProjects(propsProjects);
-        } else {
-          const projectsData = await projectService.getAll();
-          setProjects(projectsData);
-        }
-      } catch (error) {
-        console.error('❌ MoldManagement: Failed to load projects:', error);
-      } finally {
-        setIsLoading(false);
+  const loadProjects = async () => {
+    setIsLoading(true);
+    try {
+      if (propsProjects && propsProjects.length > 0) {
+        setProjects(propsProjects);
+      } else {
+        const projectsData = await projectService.getAll();
+        setProjects(projectsData);
       }
-    };
+    } catch (error) {
+      console.error('❌ MoldManagement: Failed to load projects:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadProjects();
   }, [propsProjects]);
+
+  // Handle register mode toggle
+  const handleStartRegister = () => {
+    setIsRegisterMode(true);
+    // Reset editing row to defaults
+    setEditingRow({
+      customer: '',
+      project: '',
+      구분: '',
+      요청일: new Date().toISOString().split('T')[0],
+      forecast: 0,
+      재고: 0,
+      타당성_계획: '',
+      타당성_실적: '',
+      금형발주_계획: '',
+      금형발주_실적: '',
+      금형입고_계획: '',
+      금형입고_실적: '',
+      istrSubmissionPlan: '',
+      istrSubmissionActual: '',
+      ydcVnPpapPlan: '',
+      ydcVnPpapActual: '',
+      이슈내용: '',
+      status: ProjectStatus.IN_PROGRESS
+    });
+  };
+
+  // Handle cancel register
+  const handleCancelRegister = () => {
+    setIsRegisterMode(false);
+    setEditingRow({
+      customer: '',
+      project: '',
+      구분: '',
+      요청일: new Date().toISOString().split('T')[0],
+      forecast: 0,
+      재고: 0,
+      타당성_계획: '',
+      타당성_실적: '',
+      금형발주_계획: '',
+      금형발주_실적: '',
+      금형입고_계획: '',
+      금형입고_실적: '',
+      istrSubmissionPlan: '',
+      istrSubmissionActual: '',
+      ydcVnPpapPlan: '',
+      ydcVnPpapActual: '',
+      이슈내용: '',
+      status: ProjectStatus.IN_PROGRESS
+    });
+  };
+
+  // Handle save register
+  const handleSaveRegister = async () => {
+    // Validate required fields
+    if (!editingRow.customer || !editingRow.project) {
+      alert('고객사와 프로젝트는 필수 입력 항목입니다.');
+      return;
+    }
+
+    try {
+      // Create new project
+      const newProject: Partial<Project> = {
+        customerName: editingRow.customer,
+        partName: editingRow.project,
+        partNumber: '', // Will be set from part selection if needed
+        carModel: '',
+        moldCavity: 2,
+        sopDate: '',
+        material: 'ALDC12',
+        status: editingRow.status || ProjectStatus.IN_PROGRESS,
+        type: ProjectType.INCREMENTAL_MOLD,
+        developmentPhase: editingRow.구분 || '',
+        createdAt: editingRow.요청일 || new Date().toISOString().split('T')[0],
+        feasibilityReviewPlan: editingRow.타당성_계획 || '',
+        feasibilityReviewActual: editingRow.타당성_실적 || '',
+        moldOrderPlan: editingRow.금형발주_계획 || '',
+        moldOrderActual: editingRow.금형발주_실적 || '',
+        moldDeliveryPlan: editingRow.금형입고_계획 || '',
+        moldDeliveryActual: editingRow.금형입고_실적 || '',
+        istrSubmissionPlan: editingRow.istrSubmissionPlan || '',
+        istrSubmissionActual: editingRow.istrSubmissionActual || '',
+        ydcVnPpapPlan: editingRow.ydcVnPpapPlan || '',
+        ydcVnPpapActual: editingRow.ydcVnPpapActual || '',
+        volume2026: editingRow.forecast > 0 ? editingRow.forecast : undefined,
+      };
+
+      await projectService.create(newProject as any);
+      
+      // Refresh projects
+      await loadProjects();
+      if (onProjectsUpdate) {
+        onProjectsUpdate();
+      }
+
+      // Exit register mode
+      setIsRegisterMode(false);
+      alert('증작금형 프로젝트가 등록되었습니다.');
+    } catch (error) {
+      console.error('Failed to save project:', error);
+      alert('프로젝트 등록에 실패했습니다.');
+    }
+  };
 
   // Filter projects to only INCREMENTAL_MOLD type
   const moldProjects = useMemo(() => {
@@ -205,15 +332,32 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavi
               <p className="text-slate-600 text-sm">Looker Studio 스타일 대시보드</p>
             </div>
           </div>
-          {onNavigateToRegistration && (
+          {!isRegisterMode ? (
             <button
-              onClick={onNavigateToRegistration}
+              onClick={handleStartRegister}
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
               type="button"
             >
               <Plus size={18} />
               증작금형 등록
             </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveRegister}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg"
+                type="button"
+              >
+                저장
+              </button>
+              <button
+                onClick={handleCancelRegister}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-slate-600 text-white hover:bg-slate-700 shadow-lg"
+                type="button"
+              >
+                취소
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -355,7 +499,104 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavi
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((row, index) => {
+                {/* Editable row (register mode) - 맨 위에 표시 */}
+                {isRegisterMode && (
+                  <tr className="border-b bg-blue-50 hover:bg-blue-100">
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="text"
+                        value={editingRow.project || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, project: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="프로젝트"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="text"
+                        value={editingRow.구분 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 구분: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="구분"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="date"
+                        value={editingRow.요청일 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 요청일: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right border-b">
+                      <input
+                        type="number"
+                        value={editingRow.재고 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 재고: Number(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right border-b">
+                      <input
+                        type="number"
+                        value={editingRow.forecast || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, forecast: Number(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="date"
+                        value={editingRow.타당성_계획 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 타당성_계획: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="date"
+                        value={editingRow.타당성_실적 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 타당성_실적: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="date"
+                        value={editingRow.금형발주_계획 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 금형발주_계획: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <input
+                        type="date"
+                        value={editingRow.금형발주_실적 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 금형발주_실적: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-sm border-b">
+                      <textarea
+                        value={editingRow.이슈내용 || ''}
+                        onChange={(e) => setEditingRow(prev => ({ ...prev, 이슈내용: e.target.value }))}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        rows={2}
+                        placeholder="이슈내용"
+                      />
+                    </td>
+                  </tr>
+                )}
+                {filteredData.length === 0 && !isRegisterMode ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                      <p className="font-bold">등록된 증작금형 프로젝트가 없습니다.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((row, index) => {
                   const 재고Color = get재고Color(row.재고, max재고);
                   const forecastBarWidth = (row.forecast / maxForecast) * 100;
                   const 타당성지연 = getDelayStatus(row.타당성_계획, row.타당성_실적);
@@ -476,6 +717,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onNavi
           </div>
         </div>
       )}
+
     </div>
   );
 };
