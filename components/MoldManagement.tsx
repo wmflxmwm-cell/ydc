@@ -135,8 +135,8 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   // Handle save register
   const handleSaveRegister = async () => {
     // Validate required fields
-    if (!editingRow.customer || !editingRow.project) {
-      alert('고객사와 프로젝트는 필수 입력 항목입니다.');
+    if (!editingRow.project) {
+      alert('품목은 필수 입력 항목입니다.');
       return;
     }
 
