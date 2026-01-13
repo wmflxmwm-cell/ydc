@@ -201,9 +201,22 @@ const Forecast: React.FC<ForecastProps> = () => {
         </select>
 
         {/* 품번 / 고객사 / 재질 */}
-        <input className="border px-2 py-1" value={row.partNumber} readOnly />
-        <input className="border px-2 py-1" value={row.customerName} readOnly />
-        <input className="border px-2 py-1" value={row.material} readOnly />
+        {/* MANDATORY: Controlled inputs with explicit null handling - single source of truth */}
+        <input 
+          className="border px-2 py-1" 
+          value={row.partNumber ?? ''} 
+          readOnly 
+        />
+        <input 
+          className="border px-2 py-1" 
+          value={row.customerName ?? ''} 
+          readOnly 
+        />
+        <input 
+          className="border px-2 py-1" 
+          value={row.material ?? ''} 
+          readOnly 
+        />
 
         {/* 연도별 Forecast */}
         {years.map(year => (
