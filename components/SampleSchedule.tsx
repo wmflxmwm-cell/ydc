@@ -16,7 +16,13 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   // EXPLICIT STATE DECLARATIONS - All state variables listed at top
   const [postProcessings, setPostProcessings] = useState<PostProcessing[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
-  const [items, setItems] = useState<SampleSchedule[]>([]);
+  
+  // CRITICAL: Separate state for active and completed schedules
+  // This prevents mixing completed and active schedules in one list
+  const [allItems, setAllItems] = useState<SampleSchedule[]>([]);
+  const [viewMode, setViewMode] = useState<'active' | 'completed'>('active');
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
   
   // 등록 폼 상태
@@ -56,6 +62,22 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     fetchData();
   }, []);
 
+  // CENTRALIZED: Completion detection logic
+  // A schedule is considered COMPLETED when ETA is completed
+  const isScheduleCompleted = (schedule: SampleSchedule): boolean => {
+    // Find ETA schedule item
+    const etaSchedule = schedule.schedules.find(s => s.postProcessingId === 'ETA');
+    
+    // If ETA exists and is completed, the entire schedule is completed
+    if (etaSchedule && etaSchedule.isCompleted) {
+      return true;
+    }
+    
+    // Alternative: All required schedules are completed
+    // For now, we use ETA completion as the primary indicator
+    return false;
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -65,7 +87,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         partService.getAll()
       ]);
       setPostProcessings(postProcessingsData);
-      setItems(schedulesData);
+      setAllItems(schedulesData); // Store all items
       setParts(partsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -73,6 +95,38 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Computed: Separate active and completed schedules
+  const activeSchedules = React.useMemo(() => {
+    return allItems.filter(item => !isScheduleCompleted(item));
+  }, [allItems]);
+
+  const completedSchedules = React.useMemo(() => {
+    return allItems.filter(item => isScheduleCompleted(item));
+  }, [allItems]);
+
+  // Computed: Filtered schedules based on view mode and search
+  const displayedSchedules = React.useMemo(() => {
+    const schedules = viewMode === 'active' ? activeSchedules : completedSchedules;
+    
+    if (!searchTerm.trim()) {
+      return schedules;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    return schedules.filter(item => 
+      item.partName.toLowerCase().includes(term) ||
+      item.partNumber.toLowerCase().includes(term) ||
+      item.schedules.some(s => getPostProcessingName(s.postProcessingId).toLowerCase().includes(term))
+    );
+  }, [viewMode, activeSchedules, completedSchedules, searchTerm]);
+
+  // Handler: Toggle view mode
+  const handleToggleView = () => {
+    console.log('[handleToggleView] Switching view mode');
+    setViewMode(prev => prev === 'active' ? 'completed' : 'active');
+    setSearchTerm(''); // Clear search when switching
   };
 
   const handlePartChange = (partId: string) => {
@@ -95,6 +149,70 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
   };
 
+  // CENTRALIZED: Completion detection logic
+  // A schedule is considered COMPLETED when ETA is completed
+  const isScheduleCompleted = (schedule: SampleSchedule): boolean => {
+    // Find ETA schedule item
+    const etaSchedule = schedule.schedules.find(s => s.postProcessingId === 'ETA');
+    
+    // If ETA exists and is completed, the entire schedule is completed
+    if (etaSchedule && etaSchedule.isCompleted) {
+      return true;
+    }
+    
+    // Alternative: All required schedules are completed
+    // For now, we use ETA completion as the primary indicator
+    return false;
+  };
+
+  // Computed: Separate active and completed schedules
+  const activeSchedules = React.useMemo(() => {
+    return allItems.filter(item => !isScheduleCompleted(item));
+  }, [allItems]);
+
+  const completedSchedules = React.useMemo(() => {
+    return allItems.filter(item => isScheduleCompleted(item));
+  }, [allItems]);
+
+  // Computed: Filtered schedules based on view mode and search
+  const displayedSchedules = React.useMemo(() => {
+    const schedules = viewMode === 'active' ? activeSchedules : completedSchedules;
+    
+    if (!searchTerm.trim()) {
+      return schedules;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    return schedules.filter(item => 
+      item.partName.toLowerCase().includes(term) ||
+      item.partNumber.toLowerCase().includes(term) ||
+      item.schedules.some(s => {
+        const name = getPostProcessingName(s.postProcessingId);
+        return name.toLowerCase().includes(term);
+      })
+    );
+  }, [viewMode, activeSchedules, completedSchedules, searchTerm]);
+
+  // Handler: Toggle view mode
+  const handleToggleView = () => {
+    console.log('[handleToggleView] Switching view mode');
+    setViewMode(prev => prev === 'active' ? 'completed' : 'active');
+    setSearchTerm(''); // Clear search when switching
+  };
+
+  // Helper: Get post processing name (moved before use)
+  const getPostProcessingName = (id: string) => {
+    if (id === 'MOLD') return '금형';
+    if (id === 'LOADING') return '로딩';
+    if (id === 'ETD') return 'ETD';
+    if (id === 'ETA') return 'ETA';
+    
+    const postProcessing = postProcessings.find(p => p.id === id);
+    if (!postProcessing) return '';
+    const currentLanguage = getLanguage();
+    return translatePostProcessingName(postProcessing.name, currentLanguage);
+  };
+
   // DEFENSIVE HANDLER PATTERN: Log execution and guard against invalid input
   const handleAddScheduleToItem = async (itemId: string, partNumber: string) => {
     console.log('[handleAddScheduleToItem] called', { itemId, partNumber });
@@ -115,7 +233,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
     }
 
     // 해당 품목의 후공정 중 아직 추가되지 않은 후공정 찾기
-    const item = items.find(i => i.id === itemId);
+    const item = allItems.find(i => i.id === itemId);
     if (!item) {
       console.warn('[handleAddScheduleToItem] Item not found', { itemId });
       alert('항목을 찾을 수 없습니다.');
@@ -157,9 +275,16 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
-      setItems(prev => prev.map(i => 
+      setAllItems(prev => prev.map(i => 
         i.id === itemId ? { ...i, schedules: updatedSchedules } : i
       ));
+      
+      // CRITICAL: Check if schedule became completed after this update
+      // If ETA is now completed, it will automatically move to completedSchedules
+      const updatedItem = { ...item, schedules: updatedSchedules };
+      if (isScheduleCompleted(updatedItem) && !isScheduleCompleted(item)) {
+        console.log('[handleAddScheduleToItem] Schedule completed - will move to completed list');
+      }
     } catch (error) {
       console.error('Failed to add schedule:', error);
       alert('후공정 추가에 실패했습니다.');
@@ -171,7 +296,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
 
-    const item = items.find(i => i.id === itemId);
+    const item = allItems.find(i => i.id === itemId);
     if (!item) return;
 
     const updatedSchedules = item.schedules.filter((_, i) => i !== scheduleIndex);
@@ -190,9 +315,16 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
-      setItems(prev => prev.map(i => 
+      setAllItems(prev => prev.map(i => 
         i.id === itemId ? { ...i, schedules: updatedSchedules } : i
       ));
+      
+      // CRITICAL: Check if schedule became completed after this update
+      // If ETA is now completed, it will automatically move to completedSchedules
+      const updatedItem = { ...item, schedules: updatedSchedules };
+      if (isScheduleCompleted(updatedItem) && !isScheduleCompleted(item)) {
+        console.log('[handleAddScheduleToItem] Schedule completed - will move to completed list');
+      }
     } catch (error) {
       console.error('Failed to remove schedule:', error);
       alert('후공정 삭제에 실패했습니다.');
@@ -200,7 +332,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   };
 
   const handleUpdateSchedule = async (itemId: string, scheduleIndex: number, field: keyof ScheduleItem, value: string | number | boolean) => {
-    const item = items.find(i => i.id === itemId);
+    const item = allItems.find(i => i.id === itemId);
     if (!item) return;
 
     // 계획일정 validation: 이전 카드의 계획일정보다 빠른 날짜는 선택 불가
@@ -232,9 +364,16 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         isPlanApproved: item.isPlanApproved || false,
         schedules: updatedSchedules
       });
-      setItems(prev => prev.map(i => 
+      setAllItems(prev => prev.map(i => 
         i.id === itemId ? { ...i, schedules: updatedSchedules } : i
       ));
+      
+      // CRITICAL: Check if schedule became completed after this update
+      // If ETA is now completed, it will automatically move to completedSchedules
+      const updatedItem = { ...item, schedules: updatedSchedules };
+      if (isScheduleCompleted(updatedItem) && !isScheduleCompleted(item)) {
+        console.log('[handleAddScheduleToItem] Schedule completed - will move to completed list');
+      }
     } catch (error) {
       console.error('Failed to update schedule:', error);
       alert('일정 업데이트에 실패했습니다.');
@@ -252,7 +391,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
       return;
     }
     
-    const item = items.find(i => i.id === itemId);
+    const item = allItems.find(i => i.id === itemId);
     if (!item) {
       console.warn('[handleCompleteSchedule] Item not found', { itemId });
       alert('항목을 찾을 수 없습니다.');
@@ -389,7 +528,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
         schedules: autoSchedules
       });
 
-      setItems(prev => [newItem, ...prev]);
+      setAllItems(prev => [newItem, ...prev]);
       
       // 폼 초기화
       setFormData({
@@ -429,7 +568,7 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
 
     try {
       await sampleScheduleService.delete(id);
-      setItems(prev => prev.filter(item => item.id !== id));
+      setAllItems(prev => prev.filter(item => item.id !== id));
       console.log('[handleDelete] Successfully deleted item:', id);
     } catch (error) {
       console.error('[handleDelete] Failed to delete sample schedule:', error);
