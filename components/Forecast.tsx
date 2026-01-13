@@ -56,34 +56,55 @@ const Forecast: React.FC<ForecastProps> = () => {
   const handlePartSelect = (partName: string) => {
     console.log('🔥 MVP handlePartSelect FIRED:', partName);
     console.log('🔍 MVP: Available parts count:', parts.length);
-    console.log('🔍 MVP: First 3 part names:', parts.slice(0, 3).map(p => p.partName));
     
-    // Find matching part - use functional update to avoid stale closure
+    // Find matching part - exact match required
     const foundPart = parts.find(p => p.partName === partName);
+    
     if (foundPart) {
-      console.log('✅ MVP: Found part:', {
+      // MANDATORY: Log selectedPart BEFORE setState
+      console.log('✅ MVP: Found part BEFORE setState:', {
         partName: foundPart.partName,
         partNumber: foundPart.partNumber,
         customerName: foundPart.customerName,
-        material: foundPart.material
+        material: foundPart.material,
+        customerNameType: typeof foundPart.customerName,
+        materialType: typeof foundPart.material,
+        customerNameValue: JSON.stringify(foundPart.customerName),
+        materialValue: JSON.stringify(foundPart.material)
       });
       
-      // FIX 1: Use functional update to ensure all fields update atomically
-      setRow(prev => ({
-        partName: foundPart.partName,
-        partNumber: foundPart.partNumber || '',
-        customerName: foundPart.customerName || '',
-        material: foundPart.material || '',
-        forecast: prev.forecast // Keep existing forecast values using prev
-      }));
+      // ATOMIC STATE UPDATE: All fields updated in ONE setState call
+      // NO chained setState, NO partial updates
+      setRow(prev => {
+        const updated = {
+          partName: foundPart.partName,
+          partNumber: foundPart.partNumber ?? '',
+          customerName: foundPart.customerName ?? '',
+          material: foundPart.material ?? '',
+          forecast: prev.forecast // Keep existing forecast values
+        };
+        
+        // MANDATORY: Log final row AFTER setState (in callback)
+        console.log('✅ MVP: Updated row AFTER setState:', {
+          partName: updated.partName,
+          partNumber: updated.partNumber,
+          customerName: updated.customerName,
+          material: updated.material,
+          customerNameType: typeof updated.customerName,
+          materialType: typeof updated.material
+        });
+        
+        return updated;
+      });
     } else {
       console.log('❌ MVP: Part not found for:', partName);
+      // Clear all fields when no match found
       setRow(prev => ({
         partName: partName,
         partNumber: '',
         customerName: '',
         material: '',
-        forecast: prev.forecast // Keep existing forecast values using prev
+        forecast: prev.forecast
       }));
     }
   };
