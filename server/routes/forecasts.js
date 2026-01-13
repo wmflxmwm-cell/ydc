@@ -104,8 +104,8 @@ router.post('/', async (req, res) => {
                 `INSERT INTO forecasts (
                     id, part_name, part_number, customer_name, material,
                     volume_2026, volume_2027, volume_2028, volume_2029,
-                    volume_2030, volume_2031, volume_2032, user_id, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)`,
+                    volume_2030, volume_2031, volume_2032, user_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     id,
                     partName.trim(),
