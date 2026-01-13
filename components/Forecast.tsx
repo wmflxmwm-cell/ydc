@@ -257,13 +257,35 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
     }
     
     // Create a copy of currentInputRow to add to savedRows
+    // Ensure all forecast values are proper numbers (not strings)
+    const forecastCopy: Record<number, number> = {};
+    if (currentInputRow.forecast) {
+      Object.keys(currentInputRow.forecast).forEach(key => {
+        const year = Number(key);
+        const value = currentInputRow.forecast[year];
+        // Ensure value is a number, not a string
+        const numValue = (value === null || value === undefined || value === '') ? 0 : Number(value);
+        forecastCopy[year] = isNaN(numValue) ? 0 : numValue;
+      });
+    }
+    
     const rowToSave: ForecastRow = {
       partName: currentInputRow.partName,
       partNumber: currentInputRow.partNumber ?? '',
       customerName: currentInputRow.customerName ?? '',
       material: currentInputRow.material ?? '',
-      forecast: currentInputRow.forecast ? { ...currentInputRow.forecast } : {} // Deep copy forecast object
+      forecast: forecastCopy
     };
+    
+    console.log('📦 [handleSave] Row to save:', {
+      partName: rowToSave.partName,
+      forecast: rowToSave.forecast,
+      forecastDetails: Object.entries(rowToSave.forecast).map(([year, value]) => ({
+        year,
+        value,
+        type: typeof value
+      }))
+    });
     
     // Save to server (with user ID)
     try {
