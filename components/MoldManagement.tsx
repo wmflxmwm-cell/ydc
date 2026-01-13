@@ -502,90 +502,57 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
                 {/* Editable row (register mode) - 맨 위에 표시 */}
                 {isRegisterMode && (
                   <tr className="border-b bg-blue-50 hover:bg-blue-100">
+                    {/* 품목 (Project) - 입력 가능 */}
                     <td className="px-4 py-3 text-sm border-b">
                       <input
                         type="text"
                         value={editingRow.project || ''}
                         onChange={(e) => setEditingRow(prev => ({ ...prev, project: e.target.value }))}
                         className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="프로젝트"
+                        placeholder="품목"
                       />
                     </td>
+                    {/* 차수 (구분) - 입력 가능 */}
                     <td className="px-4 py-3 text-sm border-b">
                       <input
                         type="text"
                         value={editingRow.구분 || ''}
                         onChange={(e) => setEditingRow(prev => ({ ...prev, 구분: e.target.value }))}
                         className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="구분"
+                        placeholder="차수"
                       />
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="date"
-                        value={editingRow.요청일 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 요청일: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                    {/* 요청일 - 읽기 전용 (오늘 날짜 자동 설정) */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-500">
+                      {editingRow.요청일 || new Date().toISOString().split('T')[0]}
                     </td>
-                    <td className="px-4 py-3 text-right border-b">
-                      <input
-                        type="number"
-                        value={editingRow.재고 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 재고: Number(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="0"
-                      />
+                    {/* 재고 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-right border-b text-slate-500">
+                      0
                     </td>
-                    <td className="px-4 py-3 text-right border-b">
-                      <input
-                        type="number"
-                        value={editingRow.forecast || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, forecast: Number(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="0"
-                      />
+                    {/* 잔여 Forecast - 읽기 전용 */}
+                    <td className="px-4 py-3 text-right border-b text-slate-500">
+                      0
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="date"
-                        value={editingRow.타당성_계획 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 타당성_계획: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                    {/* 타당성_계획 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-400">
+                      -
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="date"
-                        value={editingRow.타당성_실적 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 타당성_실적: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                    {/* 타당성_실적 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-400">
+                      -
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="date"
-                        value={editingRow.금형발주_계획 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 금형발주_계획: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                    {/* 금형발주_계획 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-400">
+                      -
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <input
-                        type="date"
-                        value={editingRow.금형발주_실적 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 금형발주_실적: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                    {/* 금형발주_실적 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-400">
+                      -
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
-                      <textarea
-                        value={editingRow.이슈내용 || ''}
-                        onChange={(e) => setEditingRow(prev => ({ ...prev, 이슈내용: e.target.value }))}
-                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        rows={2}
-                        placeholder="이슈내용"
-                      />
+                    {/* 이슈내용 - 읽기 전용 */}
+                    <td className="px-4 py-3 text-sm border-b text-slate-400">
+                      -
                     </td>
                   </tr>
                 )}
