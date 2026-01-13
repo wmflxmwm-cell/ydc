@@ -3,6 +3,7 @@ import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
 import { projectService } from '../src/api/services/projectService';
 import { partService, Part } from '../src/api/services/partService';
 import { ProjectType, ProjectStatus, Project } from '../types';
+import { buildProjectPayload } from '../src/utils/buildProjectPayload';
 
 interface Props {
   user?: { id: string; name: string; role: string };
