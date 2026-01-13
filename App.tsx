@@ -494,7 +494,7 @@ const App: React.FC = () => {
           </div>
 
           <div style={{ display: activeTab === 'mold' ? 'block' : 'none' }}>
-            <MoldManagement user={user} />
+            <MoldManagement user={user} projects={projects} />
           </div>
 
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>

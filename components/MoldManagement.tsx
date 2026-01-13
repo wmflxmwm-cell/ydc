@@ -1,399 +1,406 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Wrench } from 'lucide-react';
-import { partService, Part } from '../src/api/services/partService';
-import { settingsService, Customer, Material } from '../src/api/services/settingsService';
-
-type MoldRow = {
-  partName: string;
-  partNumber: string;
-  customerName: string;
-  material: string;
-  forecast: Record<number, number>;
-};
+import React, { useState, useEffect, useMemo } from 'react';
+import { Wrench, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+import { projectService, Project } from '../src/api/services/projectService';
+import { ProjectType, ProjectStatus } from '../types';
 
 interface Props {
   user?: { id: string; name: string; role: string };
+  projects?: Project[]; // Projects passed from App.tsx
 }
 
-const MoldManagement: React.FC<Props> = ({ user }) => {
+type MoldProjectData = {
+  customer: string;
+  project: string;
+  구분: string; // 증작 금형 구분
+  요청일: string;
+  forecast: number; // 총 Forecast 수량
+  재고: number; // 베트남 재고 수량
+  타당성_계획: string;
+  타당성_실적: string;
+  금형발주_계획: string;
+  금형발주_실적: string;
+  금형입고_계획: string;
+  금형입고_실적: string;
+  이슈내용: string;
+  status: ProjectStatus;
+  projectId: string;
+};
+
+const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects }) => {
   // State declarations
-  const [parts, setParts] = useState<Part[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Filter states
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('전체');
+  const [selectedProject, setSelectedProject] = useState<string>('전체');
+  const [selectedStatus, setSelectedStatus] = useState<string>('전체');
 
-  // CRITICAL: Use refs to access latest customers/materials without blocking UI updates
-  const customersRef = useRef<Customer[]>([]);
-  const materialsRef = useRef<Material[]>([]);
-
-  // Separate state for input and saved rows
-  const [currentInputRow, setCurrentInputRow] = useState<MoldRow>({
-    partName: '',
-    partNumber: '',
-    customerName: '',
-    material: '',
-    forecast: {}
-  });
-
-  const [savedRows, setSavedRows] = useState<MoldRow[]>([]);
-
-  // Load parts, customers, and materials on mount
+  // Load projects
   useEffect(() => {
-    const loadData = async () => {
+    const loadProjects = async () => {
+      setIsLoading(true);
       try {
-        // Load parts FIRST - this is required for UI to work
-        const partsData = await partService.getAll();
-        console.log('✅ MoldManagement: Loaded parts:', partsData.length);
-        setParts(partsData);
-
-        // Load customers and materials in background - optional for name conversion
-        try {
-          const [customersData, materialsData] = await Promise.all([
-            settingsService.getCustomers(),
-            settingsService.getMaterials()
-          ]);
-          console.log('✅ MoldManagement: Loaded customers:', customersData.length);
-          console.log('✅ MoldManagement: Loaded materials:', materialsData.length);
-          setCustomers(customersData);
-          setMaterials(materialsData);
-          customersRef.current = customersData;
-          materialsRef.current = materialsData;
-        } catch (settingsError) {
-          console.warn('⚠️ MoldManagement: Failed to load customers/materials (UI will still work):', settingsError);
+        if (propsProjects && propsProjects.length > 0) {
+          setProjects(propsProjects);
+        } else {
+          const projectsData = await projectService.getAll();
+          setProjects(projectsData);
         }
       } catch (error) {
-        console.error('❌ MoldManagement: Failed to load parts:', error);
+        console.error('❌ MoldManagement: Failed to load projects:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    loadData();
-  }, []);
+    loadProjects();
+  }, [propsProjects]);
 
-  // FRONTEND-FIRST: Handle part selection - UI updates IMMEDIATELY
-  const handlePartSelect = (partName: string) => {
-    console.log('[MoldManagement handlePartSelect] FIRED - UI update starting immediately:', partName);
-    
-    const foundPart = parts.find(p => p.partName === partName);
-    
-    if (!foundPart) {
-      console.warn('[MoldManagement handlePartSelect] Part not found in local state:', partName);
-      setCurrentInputRow(prev => ({
-        partName: partName,
-        partNumber: '',
-        customerName: '',
-        material: '',
-        forecast: prev.forecast
-      }));
-      return;
-    }
+  // Filter projects to only INCREMENTAL_MOLD type
+  const moldProjects = useMemo(() => {
+    return projects.filter(p => p.type === ProjectType.INCREMENTAL_MOLD);
+  }, [projects]);
 
-    const customerId = foundPart.customerName;
-    const materialId = foundPart.material;
-    
-    const customer = customersRef.current.find(c => c.id === customerId);
-    const customerName = customer?.name ?? customerId ?? '';
-    
-    const material = materialsRef.current.find(m => m.id === materialId);
-    const materialName = material?.name ?? materialId ?? '';
-    
-    console.log('[MoldManagement handlePartSelect] Updating UI immediately:', {
-      partName: foundPart.partName,
-      partNumber: foundPart.partNumber,
-      customerName,
-      materialName
-    });
-    
-    setCurrentInputRow(prev => {
-      const updated = {
-        partName: foundPart.partName,
-        partNumber: foundPart.partNumber ?? '',
-        customerName: customerName,
-        material: materialName,
-        forecast: { ...prev.forecast }
+  // Transform projects to MoldProjectData format
+  const moldData = useMemo((): MoldProjectData[] => {
+    return moldProjects.map(project => {
+      // Calculate total forecast (sum of all years)
+      const forecast = [
+        project.volume2026 ?? 0,
+        project.volume2027 ?? 0,
+        project.volume2028 ?? 0,
+        project.volume2029 ?? 0,
+        project.volume2030 ?? 0,
+        project.volume2031 ?? 0,
+        project.volume2032 ?? 0
+      ].reduce((sum, vol) => sum + vol, 0);
+
+      // 재고는 임시로 0으로 설정 (실제 데이터가 있으면 연결)
+      const 재고 = 0;
+
+      return {
+        customer: project.customerName,
+        project: project.partName,
+        구분: project.developmentPhase ?? '',
+        요청일: project.createdAt,
+        forecast,
+        재고,
+        타당성_계획: project.feasibilityReviewPlan ?? '',
+        타당성_실적: project.feasibilityReviewActual ?? '',
+        금형발주_계획: project.moldOrderPlan ?? '',
+        금형발주_실적: project.moldOrderActual ?? '',
+        금형입고_계획: project.moldDeliveryPlan ?? '',
+        금형입고_실적: project.moldDeliveryActual ?? '',
+        이슈내용: '', // 이슈는 별도로 연결 필요
+        status: project.status,
+        projectId: project.id
       };
-      
-      console.log('[MoldManagement handlePartSelect] State updated - React will re-render:', updated);
-      return updated;
     });
-    
-    console.log('[MoldManagement handlePartSelect] UI update complete - no backend dependency');
-  };
+  }, [moldProjects]);
 
-  // Update forecast value
-  const updateForecast = (year: number, value: number) => {
-    console.log('[MoldManagement updateForecast] FIRED:', { year, value });
-    setCurrentInputRow(prev => ({
-      ...prev,
-      forecast: {
-        ...prev.forecast,
-        [year]: value
-      }
-    }));
-  };
-
-  // Handle save button
-  const handleSave = () => {
-    console.log('[MoldManagement handleSave] called');
+  // Apply filters
+  const filteredData = useMemo(() => {
+    let filtered = moldData;
     
-    if (!currentInputRow) {
-      console.warn('[MoldManagement handleSave] currentInputRow is missing');
-      alert('입력 데이터가 없습니다.');
-      return;
+    if (selectedCustomer !== '전체') {
+      filtered = filtered.filter(d => d.customer === selectedCustomer);
     }
     
-    if (!currentInputRow.partName || !currentInputRow.partName.trim()) {
-      alert('품목을 선택해주세요.');
-      return;
+    if (selectedProject !== '전체') {
+      filtered = filtered.filter(d => d.project === selectedProject);
     }
     
-    const rowToSave: MoldRow = {
-      partName: currentInputRow.partName,
-      partNumber: currentInputRow.partNumber ?? '',
-      customerName: currentInputRow.customerName ?? '',
-      material: currentInputRow.material ?? '',
-      forecast: currentInputRow.forecast ? { ...currentInputRow.forecast } : {}
+    if (selectedStatus !== '전체') {
+      filtered = filtered.filter(d => d.status === selectedStatus);
+    }
+    
+    return filtered;
+  }, [moldData, selectedCustomer, selectedProject, selectedStatus]);
+
+  // KPI Calculations
+  const kpis = useMemo(() => {
+    const totalForecast = filteredData.reduce((sum, d) => sum + d.forecast, 0);
+    const total재고 = filteredData.reduce((sum, d) => sum + d.재고, 0);
+    const inProgressCount = filteredData.filter(d => d.status === ProjectStatus.IN_PROGRESS).length;
+    
+    return {
+      totalForecast,
+      total재고,
+      inProgressCount
     };
-    
-    setSavedRows(prev => {
-      const updated = [...prev, rowToSave];
-      console.log('[MoldManagement handleSave] Row added. Total saved rows:', updated.length);
-      return updated;
-    });
-    
-    setCurrentInputRow({
-      partName: '',
-      partNumber: '',
-      customerName: '',
-      material: '',
-      forecast: {}
-    });
-    
-    console.log('✅ [MoldManagement handleSave] Row saved successfully');
-    console.log('📦 [MoldManagement handleSave] SAVE PAYLOAD:', rowToSave);
-    
-    setSavedRows(prev => {
-      alert(`저장 완료!\n품목: ${rowToSave.partName}\n총 ${prev.length + 1}개의 행이 저장되었습니다.`);
-      return prev;
-    });
+  }, [filteredData]);
+
+  // Get unique customers and projects for filters
+  const uniqueCustomers = useMemo(() => {
+    return Array.from(new Set(moldData.map(d => d.customer))).sort();
+  }, [moldData]);
+
+  const uniqueProjects = useMemo(() => {
+    return Array.from(new Set(moldData.map(d => d.project))).sort();
+  }, [moldData]);
+
+  // Calculate delay status
+  const getDelayStatus = (plan: string, actual: string): '정상' | '지연' => {
+    if (!plan || !actual) return '정상';
+    const planDate = new Date(plan);
+    const actualDate = new Date(actual);
+    return actualDate > planDate ? '지연' : '정상';
   };
 
-  // Handle edit button
-  const handleEdit = (savedRowIndex: number) => {
-    console.log('[MoldManagement handleEdit] called', { savedRowIndex });
-    
-    if (savedRowIndex === undefined || savedRowIndex < 0) {
-      console.warn('[MoldManagement handleEdit] Invalid savedRowIndex', { savedRowIndex });
-      alert('편집할 행 인덱스가 올바르지 않습니다.');
-      return;
-    }
-    
-    if (!savedRows || savedRowIndex >= savedRows.length) {
-      console.warn('[MoldManagement handleEdit] savedRowIndex out of bounds', { savedRowIndex, savedRowsLength: savedRows?.length });
-      alert('편집할 행을 찾을 수 없습니다.');
-      return;
-    }
-    
-    const rowToEdit = savedRows[savedRowIndex];
-    
-    if (!rowToEdit) {
-      console.warn('[MoldManagement handleEdit] rowToEdit is missing', { savedRowIndex });
-      alert('편집할 행 데이터가 없습니다.');
-      return;
-    }
-    
-    setCurrentInputRow({
-      partName: rowToEdit.partName ?? '',
-      partNumber: rowToEdit.partNumber ?? '',
-      customerName: rowToEdit.customerName ?? '',
-      material: rowToEdit.material ?? '',
-      forecast: rowToEdit.forecast ? { ...rowToEdit.forecast } : {}
-    });
-    
-    setSavedRows(prev => {
-      const filtered = prev.filter((_, index) => index !== savedRowIndex);
-      console.log('[MoldManagement handleEdit] Row removed from savedRows. Remaining:', filtered.length);
-      return filtered;
-    });
-    
-    console.log('✅ [MoldManagement handleEdit] Row loaded for editing:', rowToEdit);
+  // Get heatmap color for 재고
+  const get재고Color = (재고: number, max재고: number): string => {
+    if (max재고 === 0) return '#e5e7eb'; // gray if no data
+    const ratio = 재고 / max재고;
+    if (ratio < 0.3) return '#ef4444'; // red (low)
+    if (ratio < 0.6) return '#f59e0b'; // orange (medium)
+    return '#10b981'; // green (high)
   };
+
+  // Get max 재고 for normalization
+  const max재고 = useMemo(() => {
+    return Math.max(...filteredData.map(d => d.재고), 1);
+  }, [filteredData]);
+
+  // Get max forecast for bar chart
+  const maxForecast = useMemo(() => {
+    return Math.max(...filteredData.map(d => d.forecast), 1);
+  }, [filteredData]);
 
   return (
     <div style={{ 
       padding: '20px', 
-      background: 'white', 
-      borderRadius: '8px',
-      border: '2px solid #e2e8f0',
-      width: '100%',
-      boxSizing: 'border-box',
-      overflowX: 'auto'
+      background: '#F5F6F7', // Looker Studio style background
+      minHeight: '100vh',
+      fontFamily: 'Noto Sans KR, Roboto, sans-serif'
     }}>
-      <div className="flex justify-between items-center mb-4">
-        <div className="text-lg font-bold flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-indigo-600" />
-          <span>증작금형 관리</span>
-          <span className="text-slate-400">/ Mold Management</span>
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Wrench className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900">증작금형 관리 대시보드</h1>
+        </div>
+        <p className="text-slate-600 text-sm">Looker Studio 스타일 대시보드</p>
+      </div>
+
+      {/* A. 상단: 컨트롤(Filter) 및 핵심 지표 (KPI) */}
+      <div className="mb-6">
+        {/* Filters */}
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Customer</label>
+            <select
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              value={selectedCustomer}
+              onChange={(e) => setSelectedCustomer(e.target.value)}
+            >
+              <option value="전체">전체</option>
+              {uniqueCustomers.map(customer => (
+                <option key={customer} value={customer}>{customer}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Project</label>
+            <select
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+            >
+              <option value="전체">전체</option>
+              {uniqueProjects.map(project => (
+                <option key={project} value={project}>{project}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">진행상태</label>
+            <select
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="전체">전체</option>
+              <option value={ProjectStatus.IN_PROGRESS}>진행중</option>
+              <option value={ProjectStatus.COMPLETED}>완료</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
-            onClick={handleSave}
-            type="button"
-          >
-            저장
-          </button>
+        {/* KPI Scorecards */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-slate-600">총 잔여 Forecast</span>
+              <TrendingUp className="w-5 h-5 text-indigo-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{kpis.totalForecast.toLocaleString()}</p>
+            <p className="text-xs text-slate-500 mt-1">전체 물량 합계</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-slate-600">현재 총 재고</span>
+              <Package className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{kpis.total재고.toLocaleString()}</p>
+            <p className="text-xs text-slate-500 mt-1">베트남 재고 합계</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-slate-600">진행 중 프로젝트 수</span>
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{kpis.inProgressCount}</p>
+            <p className="text-xs text-slate-500 mt-1">카운트(Project)</p>
+          </div>
         </div>
       </div>
 
-      {/* Table Header */}
-      <div 
-        className="grid gap-2 font-semibold text-sm bg-slate-100 p-2"
-        style={{
-          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
-          minWidth: 'fit-content',
-          width: '100%'
-        }}
-      >
-        <div>품목</div>
-        <div>품번</div>
-        <div>고객사</div>
-        <div>재질</div>
-        <div>2026</div>
-        <div>2027</div>
-        <div>2028</div>
-        <div>2029</div>
-        <div>2030</div>
-        <div>2031</div>
-        <div>2032</div>
-        <div>수정</div>
-      </div>
-
-      {/* TOP: Current Input Row (Editable) */}
-      <div 
-        className="grid gap-2 p-2 border-b-2 border-indigo-300 bg-indigo-50"
-        style={{
-          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
-          minWidth: 'fit-content',
-          width: '100%'
-        }}
-      >
-        {/* 품목 */}
-        <select
-          className="border px-2 py-1"
-          value={currentInputRow.partName}
-          onChange={(e) => {
-            console.log('[MoldManagement SELECT onChange] Event fired:', e.target.value);
-            handlePartSelect(e.target.value);
-          }}
-          disabled={parts.length === 0}
-        >
-          <option value="">선택</option>
-          {parts.map(p => (
-            <option key={p.id} value={p.partName}>
-              {p.partName}
-            </option>
-          ))}
-        </select>
-
-        {/* 품번 / 고객사 / 재질 */}
-        <input 
-          className="border px-2 py-1" 
-          value={currentInputRow.partNumber ?? ''} 
-          readOnly 
-        />
-        <input 
-          className="border px-2 py-1" 
-          value={currentInputRow.customerName ?? ''} 
-          readOnly 
-        />
-        <input 
-          className="border px-2 py-1" 
-          value={currentInputRow.material ?? ''} 
-          readOnly 
-        />
-
-        {/* 연도별 Forecast */}
-        {years.map(year => (
-          <input
-            key={year}
-            type="number"
-            className="border px-2 py-1 text-right"
-            value={currentInputRow.forecast[year] ?? ''}
-            onChange={(e) =>
-              updateForecast(year, Number(e.target.value))
-            }
-          />
-        ))}
-
-        {/* Empty cell for "수정" column in input row */}
-        <div></div>
-      </div>
-
-      {/* BELOW: Saved Rows (Fixed, Read-only) */}
-      {savedRows.map((row, savedRowIndex) => (
-        <div 
-          key={savedRowIndex}
-          className="grid gap-2 p-2 border-b bg-white"
-          style={{
-            gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
-            minWidth: 'fit-content',
-            width: '100%'
-          }}
-        >
-          {/* 품목 - Read-only */}
-          <input 
-            className="border px-2 py-1 bg-slate-50" 
-            value={row.partName ?? ''} 
-            readOnly 
-          />
-
-          {/* 품번 / 고객사 / 재질 - Read-only */}
-          <input 
-            className="border px-2 py-1 bg-slate-50" 
-            value={row.partNumber ?? ''} 
-            readOnly 
-          />
-          <input 
-            className="border px-2 py-1 bg-slate-50" 
-            value={row.customerName ?? ''} 
-            readOnly 
-          />
-          <input 
-            className="border px-2 py-1 bg-slate-50" 
-            value={row.material ?? ''} 
-            readOnly 
-          />
-
-          {/* 연도별 Forecast - Read-only */}
-          {years.map(year => (
-            <input
-              key={year}
-              type="number"
-              className="border px-2 py-1 text-right bg-slate-50"
-              value={row.forecast[year] ?? ''}
-              readOnly
-            />
-          ))}
-
-          {/* 수정 버튼 */}
-          <button
-            className="px-2 py-1 text-xs border rounded hover:bg-slate-100 transition-colors"
-            onClick={() => handleEdit(savedRowIndex)}
-            type="button"
-          >
-            수정
-          </button>
+      {/* B. 중단: 일정 현황 테이블 (메인) */}
+      <div className="mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-[#2C3E50] text-white px-6 py-4">
+            <h2 className="text-lg font-bold">일정 현황 테이블</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">구분</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">요청일</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 border-b">재고</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 border-b">잔여 Forecast</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">타당성_계획</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">타당성_실적</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">금형발주_계획</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">금형발주_실적</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 border-b">이슈내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((row, index) => {
+                  const 재고Color = get재고Color(row.재고, max재고);
+                  const forecastBarWidth = (row.forecast / maxForecast) * 100;
+                  const 타당성지연 = getDelayStatus(row.타당성_계획, row.타당성_실적);
+                  const 금형발주지연 = getDelayStatus(row.금형발주_계획, row.금형발주_실적);
+                  
+                  return (
+                    <tr 
+                      key={row.projectId}
+                      className={`border-b hover:bg-slate-50 ${
+                        타당성지연 === '지연' || 금형발주지연 === '지연' 
+                          ? 'bg-red-50' 
+                          : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-sm text-slate-900">{row.project}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{row.구분}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{row.요청일}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div 
+                          className="inline-block px-3 py-1 rounded text-sm font-semibold text-white"
+                          style={{ backgroundColor: 재고Color }}
+                        >
+                          {row.재고.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="flex-1 max-w-[200px]">
+                            <div className="h-6 bg-slate-200 rounded overflow-hidden">
+                              <div 
+                                className="h-full bg-indigo-600 flex items-center justify-end pr-2"
+                                style={{ width: `${forecastBarWidth}%` }}
+                              >
+                                <span className="text-xs font-semibold text-white">
+                                  {row.forecast.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{row.타당성_계획 || '-'}</td>
+                      <td className={`px-4 py-3 text-sm font-semibold ${
+                        타당성지연 === '지연' ? 'text-red-600' : 'text-slate-700'
+                      }`}>
+                        {row.타당성_실적 || '-'}
+                        {타당성지연 === '지연' && <span className="ml-2 text-xs">⚠️ 지연</span>}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{row.금형발주_계획 || '-'}</td>
+                      <td className={`px-4 py-3 text-sm font-semibold ${
+                        금형발주지연 === '지연' ? 'text-red-600' : 'text-slate-700'
+                      }`}>
+                        {row.금형발주_실적 || '-'}
+                        {금형발주지연 === '지연' && <span className="ml-2 text-xs">⚠️ 지연</span>}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{row.이슈내용 || '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      ))}
+      </div>
 
-      {parts.length === 0 && (
-        <div style={{ 
-          padding: '12px', 
-          color: '#64748b', 
-          fontSize: '14px',
-          fontStyle: 'italic'
-        }}>
-          부품 데이터를 불러오는 중...
+      {/* C. 하단: 일정 지연 경고 */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-[#2C3E50] text-white px-6 py-4">
+          <h2 className="text-lg font-bold">일정 지연 경고</h2>
+        </div>
+        <div className="p-6">
+          {filteredData.filter(row => {
+            const 타당성지연 = getDelayStatus(row.타당성_계획, row.타당성_실적);
+            const 금형발주지연 = getDelayStatus(row.금형발주_계획, row.금형발주_실적);
+            return 타당성지연 === '지연' || 금형발주지연 === '지연';
+          }).length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <p className="text-lg font-semibold">지연된 일정이 없습니다.</p>
+              <p className="text-sm mt-2">모든 프로젝트가 계획대로 진행 중입니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredData.map(row => {
+                const 타당성지연 = getDelayStatus(row.타당성_계획, row.타당성_실적);
+                const 금형발주지연 = getDelayStatus(row.금형발주_계획, row.금형발주_실적);
+                
+                if (타당성지연 === '정상' && 금형발주지연 === '정상') return null;
+                
+                return (
+                  <div 
+                    key={row.projectId}
+                    className="bg-red-50 border-l-4 border-red-500 p-4 rounded"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-red-900">{row.project}</p>
+                        <p className="text-sm text-red-700 mt-1">
+                          {타당성지연 === '지연' && `타당성 검토 지연 (계획: ${row.타당성_계획}, 실적: ${row.타당성_실적})`}
+                          {타당성지연 === '지연' && 금형발주지연 === '지연' && ' / '}
+                          {금형발주지연 === '지연' && `금형발주 지연 (계획: ${row.금형발주_계획}, 실적: ${row.금형발주_실적})`}
+                        </p>
+                      </div>
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-sm text-slate-600">데이터를 불러오는 중...</p>
+          </div>
         </div>
       )}
     </div>
