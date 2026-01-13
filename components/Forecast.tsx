@@ -11,6 +11,14 @@ import { partService, Part } from '../src/api/services/partService';
 // - NO editData, NO projectId logic yet
 // ============================================
 
+type ForecastRow = {
+  partName: string;
+  partNumber: string;
+  customerName: string;
+  material: string;
+  forecast: Record<number, number>;
+};
+
 interface ForecastProps {
   projects?: any[]; // Not used in MVP
   onProjectsUpdate?: () => void; // Not used in MVP
@@ -22,12 +30,12 @@ const Forecast: React.FC<ForecastProps> = () => {
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
   
   // Row data structure
-  const [row, setRow] = useState({
+  const [row, setRow] = useState<ForecastRow>({
     partName: '',
     partNumber: '',
     customerName: '',
     material: '',
-    forecast: {} as { [year: number]: number }
+    forecast: {}
   });
 
   // MVP: Load parts on mount
@@ -87,6 +95,13 @@ const Forecast: React.FC<ForecastProps> = () => {
         [year]: value
       }
     }));
+  };
+
+  // MVP: Handle save
+  const handleSave = () => {
+    const forecastRows = [row]; // Currently single row, can be extended to array
+    console.log('SAVE PAYLOAD:', forecastRows);
+    // API / SQL 연동
   };
 
   return (
