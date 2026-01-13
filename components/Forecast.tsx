@@ -62,6 +62,7 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
         // First, try to load from server (all forecasts, visible to all users)
         const forecasts = await forecastService.getAll();
         console.log('✅ Loaded forecasts from server:', forecasts.length);
+        console.log('📊 Forecast data:', forecasts);
         
         // Transform to ForecastRow format
         let serverRows: ForecastRow[] = forecasts.map(f => ({

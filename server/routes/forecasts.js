@@ -41,25 +41,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'partName is required' });
         }
 
-        // Get user_id from request (optional, for tracking who created it)
+        // Get user_id from request (optional, for tracking who created/updated it)
         const userId = req.body.userId || req.query.userId || req.headers['x-user-id'] || null;
 
-        // Check if forecast exists for this partName (any user)
-        // Note: We allow multiple users to have forecasts for the same partName
-        // But we check if the current user already has one to update it
-        let existingQuery = 'SELECT id FROM forecasts WHERE part_name = $1';
-        const existingParams = [partName.trim()];
-        
-        if (userId) {
-            // If userId provided, check if this user already has a forecast for this part
-            existingQuery += ' AND user_id = $2';
-            existingParams.push(userId);
-        } else {
-            // If no userId, check for any forecast with this partName (no user_id)
-            existingQuery += ' AND user_id IS NULL';
-        }
-        
-        const existing = await client.query(existingQuery, existingParams);
+        // Check if forecast exists for this partName (regardless of user)
+        // All users share the same forecast data for each partName
+        const existing = await client.query(
+            'SELECT id FROM forecasts WHERE part_name = $1 LIMIT 1',
+            [partName.trim()]
+        );
 
         // Safely extract volume values from forecast object
         const volumes = {
