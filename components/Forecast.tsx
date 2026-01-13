@@ -119,7 +119,10 @@ const Forecast: React.FC<ForecastProps> = () => {
 
         <div className="flex gap-2">
           <button className="px-3 py-1 border rounded">입력</button>
-          <button className="px-3 py-1 bg-indigo-600 text-white rounded">
+          <button 
+            className="px-3 py-1 bg-indigo-600 text-white rounded"
+            onClick={handleSave}
+          >
             저장
           </button>
         </div>
