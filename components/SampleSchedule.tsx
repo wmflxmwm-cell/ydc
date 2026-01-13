@@ -1014,6 +1014,19 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
           </div>
         )}
 
+        {/* 검색 필드 (조회 모드에서만 표시) */}
+        {viewMode === 'completed' && !showForm && (
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="품목명, 일정명으로 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+        )}
+
         {/* 목록 */}
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
