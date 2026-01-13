@@ -52,15 +52,24 @@ router.post('/', async (req, res) => {
         );
 
         // Safely extract volume values from forecast object
-        const volumes = {
-            volume2026: (forecast && typeof forecast[2026] === 'number') ? forecast[2026] : null,
-            volume2027: (forecast && typeof forecast[2027] === 'number') ? forecast[2027] : null,
-            volume2028: (forecast && typeof forecast[2028] === 'number') ? forecast[2028] : null,
-            volume2029: (forecast && typeof forecast[2029] === 'number') ? forecast[2029] : null,
-            volume2030: (forecast && typeof forecast[2030] === 'number') ? forecast[2030] : null,
-            volume2031: (forecast && typeof forecast[2031] === 'number') ? forecast[2031] : null,
-            volume2032: (forecast && typeof forecast[2032] === 'number') ? forecast[2032] : null
+        // Convert to number if it's a string or number, otherwise null
+        const toNumber = (val) => {
+            if (val === null || val === undefined || val === '') return null;
+            const num = typeof val === 'number' ? val : Number(val);
+            return isNaN(num) ? null : num;
         };
+        
+        const volumes = {
+            volume2026: toNumber(forecast?.[2026]),
+            volume2027: toNumber(forecast?.[2027]),
+            volume2028: toNumber(forecast?.[2028]),
+            volume2029: toNumber(forecast?.[2029]),
+            volume2030: toNumber(forecast?.[2030]),
+            volume2031: toNumber(forecast?.[2031]),
+            volume2032: toNumber(forecast?.[2032])
+        };
+        
+        console.log('📊 Extracted volumes:', volumes);
 
         if (existing.rows.length > 0) {
             // Update existing forecast
