@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Wrench, TrendingUp, Package, AlertTriangle, Plus } from 'lucide-react';
 import { projectService } from '../src/api/services/projectService';
 import { partService, Part } from '../src/api/services/partService';
+import { settingsService, Customer } from '../src/api/services/settingsService';
 import { ProjectType, ProjectStatus, Project } from '../types';
 
 interface Props {
@@ -33,6 +34,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [parts, setParts] = useState<Part[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   
   // Filter states
   const [selectedCustomer, setSelectedCustomer] = useState<string>('전체');
@@ -83,17 +85,22 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     loadProjects();
   }, [propsProjects]);
 
-  // Load parts for dropdown
+  // Load parts and customers for dropdown
   useEffect(() => {
-    const loadParts = async () => {
+    const loadData = async () => {
       try {
-        const partsData = await partService.getAll();
+        const [partsData, customersData] = await Promise.all([
+          partService.getAll(),
+          settingsService.getCustomers()
+        ]);
         setParts(partsData);
+        setCustomers(customersData);
+        console.log('✅ Loaded parts:', partsData.length, 'customers:', customersData.length);
       } catch (error) {
-        console.error('❌ MoldManagement: Failed to load parts:', error);
+        console.error('❌ MoldManagement: Failed to load data:', error);
       }
     };
-    loadParts();
+    loadData();
   }, []);
 
   // Handle register mode toggle
@@ -158,18 +165,26 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     try {
       // Find selected part to get customerName and partNumber
       const selectedPart = parts.find(p => p.partName === editingRow.project);
+      console.log('🔍 Selected part:', selectedPart);
       
-      // Get customer name from part or use default
-      let customerName = '';
+      // Get customer name from part - resolve ID to actual name if needed
+      let customerName = '미지정';
       if (selectedPart?.customerName) {
-        // If customerName is an ID, we need to resolve it
-        // For now, use the ID directly or try to find customer name
-        customerName = selectedPart.customerName;
+        // Check if customerName is an ID (starts with 'customer-')
+        if (selectedPart.customerName.startsWith('customer-')) {
+          // Find customer by ID
+          const customer = customers.find(c => c.id === selectedPart.customerName);
+          customerName = customer?.name || selectedPart.customerName;
+        } else {
+          // Already a name
+          customerName = selectedPart.customerName;
+        }
       }
+      console.log('👤 Resolved customerName:', customerName);
 
       // Create new project
       const newProject: Partial<Project> = {
-        customerName: customerName || '미지정', // Default to '미지정' if empty
+        customerName: customerName,
         partName: editingRow.project,
         partNumber: selectedPart?.partNumber || '',
         carModel: '',
@@ -193,8 +208,9 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         volume2026: editingRow.forecast > 0 ? editingRow.forecast : null,
       };
 
-      console.log('📤 Creating project:', newProject);
-      await projectService.create(newProject as any);
+      console.log('📤 Creating project with data:', JSON.stringify(newProject, null, 2));
+      const createdProject = await projectService.create(newProject as any);
+      console.log('✅ Project created successfully:', createdProject);
       
       // Refresh projects
       await loadProjects();
@@ -204,10 +220,39 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
 
       // Exit register mode
       setIsRegisterMode(false);
+      // Reset editing row
+      setEditingRow({
+        customer: '',
+        project: '',
+        구분: '',
+        요청일: new Date().toISOString().split('T')[0],
+        forecast: 0,
+        재고: 0,
+        타당성_계획: '',
+        타당성_실적: '',
+        금형발주_계획: '',
+        금형발주_실적: '',
+        금형입고_계획: '',
+        금형입고_실적: '',
+        istrSubmissionPlan: '',
+        istrSubmissionActual: '',
+        ydcVnPpapPlan: '',
+        ydcVnPpapActual: '',
+        이슈내용: '',
+        status: ProjectStatus.IN_PROGRESS
+      });
       alert('증작금형 프로젝트가 등록되었습니다.');
-    } catch (error) {
-      console.error('Failed to save project:', error);
-      alert('프로젝트 등록에 실패했습니다.');
+    } catch (error: any) {
+      console.error('❌ Failed to save project:', error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error data:', error?.response?.data);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Full error:', JSON.stringify(error, null, 2));
+      
+      const errorMessage = error?.response?.data?.error || error?.message || '알 수 없는 오류';
+      const errorDetails = error?.response?.data ? JSON.stringify(error.response.data, null, 2) : '';
+      
+      alert(`프로젝트 등록에 실패했습니다.\n\n에러: ${errorMessage}\n\n자세한 내용은 브라우저 콘솔을 확인하세요.`);
     }
   };
 
