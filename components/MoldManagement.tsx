@@ -272,15 +272,30 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
       const currentYear = new Date().getFullYear();
       
       // Calculate forecast from current year onwards (including current year)
-      const forecast = [
-        currentYear <= 2026 ? (project.volume2026 ?? 0) : 0,
-        currentYear <= 2027 ? (project.volume2027 ?? 0) : 0,
-        currentYear <= 2028 ? (project.volume2028 ?? 0) : 0,
-        currentYear <= 2029 ? (project.volume2029 ?? 0) : 0,
-        currentYear <= 2030 ? (project.volume2030 ?? 0) : 0,
-        currentYear <= 2031 ? (project.volume2031 ?? 0) : 0,
-        currentYear <= 2032 ? (project.volume2032 ?? 0) : 0
-      ].reduce((sum, vol) => sum + vol, 0);
+      // Always include all future years from 2026 to 2032
+      const forecast = (
+        (project.volume2026 ?? 0) +
+        (project.volume2027 ?? 0) +
+        (project.volume2028 ?? 0) +
+        (project.volume2029 ?? 0) +
+        (project.volume2030 ?? 0) +
+        (project.volume2031 ?? 0) +
+        (project.volume2032 ?? 0)
+      );
+      
+      // Debug log
+      if (forecast > 0) {
+        console.log(`📊 Forecast for ${project.partName}:`, {
+          volume2026: project.volume2026 ?? 0,
+          volume2027: project.volume2027 ?? 0,
+          volume2028: project.volume2028 ?? 0,
+          volume2029: project.volume2029 ?? 0,
+          volume2030: project.volume2030 ?? 0,
+          volume2031: project.volume2031 ?? 0,
+          volume2032: project.volume2032 ?? 0,
+          total: forecast
+        });
+      }
 
       // 재고는 임시로 0으로 설정 (실제 데이터가 있으면 연결)
       const 재고 = 0;
