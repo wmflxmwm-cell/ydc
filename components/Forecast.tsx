@@ -32,14 +32,17 @@ const Forecast: React.FC<ForecastProps> = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
 
-  // Row data structure - Changed to array to support multiple rows
-  const [rows, setRows] = useState<ForecastRow[]>([{
+  // CRITICAL: Separate state for input and saved rows
+  // This prevents stale data issues and ensures clear data flow
+  const [currentInputRow, setCurrentInputRow] = useState<ForecastRow>({
     partName: '',
     partNumber: '',
     customerName: '',
     material: '',
     forecast: {}
-  }]);
+  });
+
+  const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
 
   // MVP: Load parts, customers, and materials on mount
   useEffect(() => {
@@ -66,11 +69,11 @@ const Forecast: React.FC<ForecastProps> = () => {
     loadData();
   }, []);
 
-  // MVP: Handle part selection
+  // MVP: Handle part selection - ONLY affects currentInputRow
   // CRITICAL FIX: Use functional setState to access latest customers/materials
   // This prevents stale closure issues when customers/materials load asynchronously
-  const handlePartSelect = (rowIndex: number, partName: string) => {
-    console.log('🔥 MVP handlePartSelect FIRED:', { rowIndex, partName });
+  const handlePartSelect = (partName: string) => {
+    console.log('🔥 MVP handlePartSelect FIRED:', partName);
     
     // Find matching part - exact match required
     const foundPart = parts.find(p => p.partName === partName);
@@ -78,10 +81,7 @@ const Forecast: React.FC<ForecastProps> = () => {
     if (foundPart) {
       // CRITICAL FIX: Access latest customers/materials via functional setState
       // This ensures we always use the most recent data, even if it loads after component mount
-      setRows(prev => {
-        const updatedRows = [...prev];
-        const currentRow = updatedRows[rowIndex];
-        
+      setCurrentInputRow(prev => {
         // Access latest customers and materials from state (via closure)
         // If they're not loaded yet, we'll use the ID as fallback
         const customerId = foundPart.customerName; // This is an ID like "customer-1767068"
@@ -94,7 +94,6 @@ const Forecast: React.FC<ForecastProps> = () => {
         
         // MANDATORY: Log selectedPart BEFORE setState
         console.log('✅ MVP: Found part BEFORE setState:', {
-          rowIndex,
           partName: foundPart.partName,
           partNumber: foundPart.partNumber,
           customerId: customerId,
@@ -107,82 +106,111 @@ const Forecast: React.FC<ForecastProps> = () => {
           materialsLoaded: materials.length
         });
         
-        updatedRows[rowIndex] = {
+        const updated = {
           partName: foundPart.partName,
           partNumber: foundPart.partNumber ?? '',
           customerName: customerName, // Use converted name, not ID
           material: materialName, // Use converted name, not ID
-          forecast: currentRow.forecast // Keep existing forecast values
+          forecast: prev.forecast // Keep existing forecast values
         };
         
         // MANDATORY: Log final row AFTER setState (in callback)
-        console.log('✅ MVP: Updated row AFTER setState:', {
-          rowIndex,
-          partName: updatedRows[rowIndex].partName,
-          partNumber: updatedRows[rowIndex].partNumber,
-          customerName: updatedRows[rowIndex].customerName,
-          material: updatedRows[rowIndex].material
+        console.log('✅ MVP: Updated currentInputRow AFTER setState:', {
+          partName: updated.partName,
+          partNumber: updated.partNumber,
+          customerName: updated.customerName,
+          material: updated.material
         });
         
-        return updatedRows;
+        return updated;
       });
     } else {
       console.log('❌ MVP: Part not found for:', partName);
       // Clear all fields when no match found
-      setRows(prev => {
-        const updatedRows = [...prev];
-        updatedRows[rowIndex] = {
-          partName: partName,
-          partNumber: '',
-          customerName: '',
-          material: '',
-          forecast: updatedRows[rowIndex].forecast
-        };
-        return updatedRows;
-      });
+      setCurrentInputRow(prev => ({
+        partName: partName,
+        partNumber: '',
+        customerName: '',
+        material: '',
+        forecast: prev.forecast
+      }));
     }
   };
 
-  // MVP: Update forecast value
-  const updateForecast = (rowIndex: number, year: number, value: number) => {
-    console.log('🔥 MVP updateForecast FIRED:', { rowIndex, year, value });
-    setRows(prev => {
-      const updatedRows = [...prev];
-      updatedRows[rowIndex] = {
-        ...updatedRows[rowIndex],
-        forecast: {
-          ...updatedRows[rowIndex].forecast,
-          [year]: value
-        }
-      };
-      return updatedRows;
-    });
+  // MVP: Update forecast value - ONLY affects currentInputRow
+  const updateForecast = (year: number, value: number) => {
+    console.log('🔥 MVP updateForecast FIRED:', { year, value });
+    setCurrentInputRow(prev => ({
+      ...prev,
+      forecast: {
+        ...prev.forecast,
+        [year]: value
+      }
+    }));
   };
 
-  // MVP: Handle input button - Add new empty row
-  const handleInput = () => {
-    console.log('🔥 MVP handleInput FIRED: Adding new row');
-    setRows(prev => [...prev, {
+  // MVP: Handle save button - Freeze currentInputRow and add to savedRows
+  const handleSave = () => {
+    console.log('🔥 MVP handleSave FIRED');
+    
+    // Validate that at least partName is filled
+    if (!currentInputRow.partName.trim()) {
+      alert('품목을 선택해주세요.');
+      return;
+    }
+    
+    // Create a copy of currentInputRow to add to savedRows
+    const rowToSave: ForecastRow = {
+      partName: currentInputRow.partName,
+      partNumber: currentInputRow.partNumber,
+      customerName: currentInputRow.customerName,
+      material: currentInputRow.material,
+      forecast: { ...currentInputRow.forecast } // Deep copy forecast object
+    };
+    
+    // Add to savedRows
+    setSavedRows(prev => [...prev, rowToSave]);
+    
+    // Reset currentInputRow to empty
+    setCurrentInputRow({
       partName: '',
       partNumber: '',
       customerName: '',
       material: '',
       forecast: {}
-    }]);
-    console.log('✅ MVP: New row added. Total rows:', rows.length + 1);
-  };
-
-  // MVP: Handle save button - Log current forecast state
-  const handleSave = () => {
-    console.log('🔥 MVP handleSave FIRED');
-    console.log('📦 SAVE PAYLOAD:', rows);
-    console.log('📊 Total rows to save:', rows.length);
+    });
     
-    // Show visible feedback to user
-    alert(`저장 완료!\n총 ${rows.length}개의 행이 저장되었습니다.\n콘솔을 확인하세요.`);
+    console.log('✅ MVP: Row saved. Total saved rows:', savedRows.length + 1);
+    console.log('📦 SAVE PAYLOAD:', rowToSave);
+    
+    // Show visible feedback
+    alert(`저장 완료!\n품목: ${rowToSave.partName}\n총 ${savedRows.length + 1}개의 행이 저장되었습니다.`);
     
     // TODO: API / SQL 연동
-    // await forecastService.save(rows);
+    // await forecastService.save(rowToSave);
+  };
+
+  // MVP: Handle edit button - Load saved row back to currentInputRow
+  const handleEdit = (savedRowIndex: number) => {
+    console.log('🔥 MVP handleEdit FIRED:', savedRowIndex);
+    
+    // Get the row to edit
+    const rowToEdit = savedRows[savedRowIndex];
+    
+    // Load it into currentInputRow
+    setCurrentInputRow({
+      partName: rowToEdit.partName,
+      partNumber: rowToEdit.partNumber,
+      customerName: rowToEdit.customerName,
+      material: rowToEdit.material,
+      forecast: { ...rowToEdit.forecast } // Deep copy
+    });
+    
+    // Remove from savedRows
+    setSavedRows(prev => prev.filter((_, index) => index !== savedRowIndex));
+    
+    console.log('✅ MVP: Row loaded for editing:', rowToEdit);
+    console.log('📊 Remaining saved rows:', savedRows.length - 1);
   };
 
   return (
@@ -201,13 +229,6 @@ const Forecast: React.FC<ForecastProps> = () => {
         </div>
 
         <div className="flex gap-2">
-          <button 
-            className="px-3 py-1 border rounded hover:bg-slate-100 transition-colors"
-            onClick={handleInput}
-            type="button"
-          >
-            입력
-          </button>
           <button
             className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
             onClick={handleSave}
@@ -220,10 +241,11 @@ const Forecast: React.FC<ForecastProps> = () => {
 
       {/* Table Header */}
       {/* FIX 2 & 3: Use minmax for year columns to prevent overflow, ensure full width */}
+      {/* Added "수정" column at the end */}
       <div 
         className="grid gap-2 font-semibold text-sm bg-slate-100 p-2"
         style={{
-          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr))',
+          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
           minWidth: 'fit-content',
           width: '100%'
         }}
@@ -239,65 +261,123 @@ const Forecast: React.FC<ForecastProps> = () => {
         <div>2030</div>
         <div>2031</div>
         <div>2032</div>
+        <div>수정</div>
       </div>
 
-      {/* Table Rows - Render all rows */}
-      {rows.map((row, rowIndex) => (
+      {/* TOP: Current Input Row (Editable) */}
+      <div 
+        className="grid gap-2 p-2 border-b-2 border-indigo-300 bg-indigo-50"
+        style={{
+          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
+          minWidth: 'fit-content',
+          width: '100%'
+        }}
+      >
+        {/* 품목 */}
+        {/* CRITICAL: Disable selection until customers and materials are loaded */}
+        <select
+          className="border px-2 py-1"
+          value={currentInputRow.partName}
+          onChange={(e) => handlePartSelect(e.target.value)}
+          disabled={customers.length === 0 || materials.length === 0}
+        >
+          <option value="">선택</option>
+          {parts.map(p => (
+            <option key={p.id} value={p.partName}>
+              {p.partName}
+            </option>
+          ))}
+        </select>
+
+        {/* 품번 / 고객사 / 재질 */}
+        {/* MANDATORY: Controlled inputs with explicit null handling - single source of truth */}
+        <input 
+          className="border px-2 py-1" 
+          value={currentInputRow.partNumber ?? ''} 
+          readOnly 
+        />
+        <input 
+          className="border px-2 py-1" 
+          value={currentInputRow.customerName ?? ''} 
+          readOnly 
+        />
+        <input 
+          className="border px-2 py-1" 
+          value={currentInputRow.material ?? ''} 
+          readOnly 
+        />
+
+        {/* 연도별 Forecast */}
+        {years.map(year => (
+          <input
+            key={year}
+            type="number"
+            className="border px-2 py-1 text-right"
+            value={currentInputRow.forecast[year] ?? ''}
+            onChange={(e) =>
+              updateForecast(year, Number(e.target.value))
+            }
+          />
+        ))}
+
+        {/* Empty cell for "수정" column in input row */}
+        <div></div>
+      </div>
+
+      {/* BELOW: Saved Rows (Fixed, Read-only) */}
+      {savedRows.map((row, savedRowIndex) => (
         <div 
-          key={rowIndex}
-          className="grid gap-2 p-2 border-b"
+          key={savedRowIndex}
+          className="grid gap-2 p-2 border-b bg-white"
           style={{
-            gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr))',
+            gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr)) 80px',
             minWidth: 'fit-content',
             width: '100%'
           }}
         >
-          {/* 품목 */}
-          {/* CRITICAL: Disable selection until customers and materials are loaded */}
-          <select
-            className="border px-2 py-1"
-            value={row.partName}
-            onChange={(e) => handlePartSelect(rowIndex, e.target.value)}
-            disabled={customers.length === 0 || materials.length === 0}
-          >
-            <option value="">선택</option>
-            {parts.map(p => (
-              <option key={p.id} value={p.partName}>
-                {p.partName}
-              </option>
-            ))}
-          </select>
-
-          {/* 품번 / 고객사 / 재질 */}
-          {/* MANDATORY: Controlled inputs with explicit null handling - single source of truth */}
+          {/* 품목 - Read-only */}
           <input 
-            className="border px-2 py-1" 
+            className="border px-2 py-1 bg-slate-50" 
+            value={row.partName ?? ''} 
+            readOnly 
+          />
+
+          {/* 품번 / 고객사 / 재질 - Read-only */}
+          <input 
+            className="border px-2 py-1 bg-slate-50" 
             value={row.partNumber ?? ''} 
             readOnly 
           />
           <input 
-            className="border px-2 py-1" 
+            className="border px-2 py-1 bg-slate-50" 
             value={row.customerName ?? ''} 
             readOnly 
           />
           <input 
-            className="border px-2 py-1" 
+            className="border px-2 py-1 bg-slate-50" 
             value={row.material ?? ''} 
             readOnly 
           />
 
-          {/* 연도별 Forecast */}
+          {/* 연도별 Forecast - Read-only */}
           {years.map(year => (
             <input
               key={year}
               type="number"
-              className="border px-2 py-1 text-right"
+              className="border px-2 py-1 text-right bg-slate-50"
               value={row.forecast[year] ?? ''}
-              onChange={(e) =>
-                updateForecast(rowIndex, year, Number(e.target.value))
-              }
+              readOnly
             />
           ))}
+
+          {/* 수정 버튼 */}
+          <button
+            className="px-2 py-1 text-xs border rounded hover:bg-slate-100 transition-colors"
+            onClick={() => handleEdit(savedRowIndex)}
+            type="button"
+          >
+            수정
+          </button>
         </div>
       ))}
 
