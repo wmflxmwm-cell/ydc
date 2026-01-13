@@ -143,7 +143,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const handleToggleView = () => {
     console.log('[handleToggleView] Switching view mode');
     setViewMode(prev => prev === 'active' ? 'completed' : 'active');
-    setSearchTerm(''); // Clear search when switching
+    setPartNameFilter(''); // Clear filters when switching
+    setScheduleNameFilter('');
   };
 
   // FEATURE 1: Excel Download Handler
@@ -1016,14 +1017,38 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
 
         {/* 검색 필드 (조회 모드에서만 표시) */}
         {viewMode === 'completed' && !showForm && (
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="품목명, 일정명으로 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+          <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-2 gap-4">
+              {/* 품목명 드롭다운 */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">품목명</label>
+                <select
+                  value={partNameFilter}
+                  onChange={(e) => setPartNameFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                >
+                  <option value="">전체</option>
+                  {Array.from(new Set(completedSchedules.map(item => item.partName)))
+                    .sort()
+                    .map(partName => (
+                      <option key={partName} value={partName}>
+                        {partName}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              {/* 일정명 검색 (텍스트 입력) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">일정명 검색</label>
+                <input
+                  type="text"
+                  placeholder="일정명으로 검색..."
+                  value={scheduleNameFilter}
+                  onChange={(e) => setScheduleNameFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
           </div>
         )}
 
