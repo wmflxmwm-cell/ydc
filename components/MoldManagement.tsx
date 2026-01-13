@@ -655,7 +655,8 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
                       <td className="px-4 py-3 text-sm text-slate-600">{row.이슈내용 || '-'}</td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
