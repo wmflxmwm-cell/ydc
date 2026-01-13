@@ -214,10 +214,12 @@ const Forecast: React.FC<ForecastProps> = () => {
         }}
       >
         {/* 품목 */}
+        {/* CRITICAL: Disable selection until customers and materials are loaded */}
         <select
           className="border px-2 py-1"
           value={row.partName}
           onChange={(e) => handlePartSelect(e.target.value)}
+          disabled={customers.length === 0 || materials.length === 0}
         >
           <option value="">선택</option>
           {parts.map(p => (
