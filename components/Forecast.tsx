@@ -52,22 +52,55 @@ const Forecast: React.FC<ForecastProps> = () => {
   const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
   const [isLoadingForecasts, setIsLoadingForecasts] = useState(true);
 
-  // Load forecasts from server
+  // Load forecasts from server and migrate localStorage data
   useEffect(() => {
     const loadForecasts = async () => {
       try {
         setIsLoadingForecasts(true);
+        
+        // First, try to load from server
         const forecasts = await forecastService.getAll();
         console.log('✅ Loaded forecasts from server:', forecasts.length);
+        
         // Transform to ForecastRow format
-        const transformed: ForecastRow[] = forecasts.map(f => ({
+        let serverRows: ForecastRow[] = forecasts.map(f => ({
           partName: f.partName,
           partNumber: f.partNumber,
           customerName: f.customerName,
           material: f.material,
           forecast: f.forecast
         }));
-        setSavedRows(transformed);
+        
+        // Check if there's localStorage data to migrate
+        try {
+          const saved = localStorage.getItem('forecast_savedRows');
+          if (saved) {
+            const localRows: ForecastRow[] = JSON.parse(saved);
+            console.log('📦 Found localStorage data:', localRows.length);
+            
+            // Migrate localStorage data to server (only if not already exists)
+            for (const localRow of localRows) {
+              const exists = serverRows.some(sr => sr.partName === localRow.partName);
+              if (!exists) {
+                try {
+                  await forecastService.save(localRow);
+                  console.log('✅ Migrated to server:', localRow.partName);
+                  serverRows.push(localRow);
+                } catch (migrateError) {
+                  console.error('Failed to migrate row:', localRow.partName, migrateError);
+                }
+              }
+            }
+            
+            // Clear localStorage after successful migration
+            localStorage.removeItem('forecast_savedRows');
+            console.log('🗑️ Cleared localStorage after migration');
+          }
+        } catch (localError) {
+          console.error('Failed to process localStorage:', localError);
+        }
+        
+        setSavedRows(serverRows);
       } catch (error) {
         console.error('Failed to load forecasts from server:', error);
         // Fallback to localStorage if server fails
