@@ -199,7 +199,7 @@ const Forecast: React.FC<ForecastProps> = () => {
   };
 
   // DEFENSIVE HANDLER PATTERN: Log execution and guard against undefined state
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log('[handleSave] called');
     
     // Guard: Validate currentInputRow exists
