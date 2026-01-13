@@ -28,7 +28,7 @@ const Forecast: React.FC<ForecastProps> = () => {
   // MVP State - ONLY what's needed
   const [parts, setParts] = useState<Part[]>([]);
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
-  
+
   // Row data structure
   const [row, setRow] = useState<ForecastRow>({
     partName: '',
@@ -45,7 +45,7 @@ const Forecast: React.FC<ForecastProps> = () => {
         const partsData = await partService.getAll();
         console.log('✅ MVP: Loaded parts:', partsData.length);
         setParts(partsData);
-      } catch (error) {
+          } catch (error) {
         console.error('❌ MVP: Failed to load parts:', error);
       }
     };
@@ -55,8 +55,10 @@ const Forecast: React.FC<ForecastProps> = () => {
   // MVP: Handle part selection
   const handlePartSelect = (partName: string) => {
     console.log('🔥 MVP handlePartSelect FIRED:', partName);
+    console.log('🔍 MVP: Available parts count:', parts.length);
+    console.log('🔍 MVP: First 3 part names:', parts.slice(0, 3).map(p => p.partName));
     
-    // Find matching part
+    // Find matching part - use functional update to avoid stale closure
     const foundPart = parts.find(p => p.partName === partName);
     if (foundPart) {
       console.log('✅ MVP: Found part:', {
@@ -66,22 +68,23 @@ const Forecast: React.FC<ForecastProps> = () => {
         material: foundPart.material
       });
       
-      setRow({
+      // FIX 1: Use functional update to ensure all fields update atomically
+      setRow(prev => ({
         partName: foundPart.partName,
         partNumber: foundPart.partNumber || '',
         customerName: foundPart.customerName || '',
         material: foundPart.material || '',
-        forecast: row.forecast // Keep existing forecast values
-      });
+        forecast: prev.forecast // Keep existing forecast values using prev
+      }));
     } else {
       console.log('❌ MVP: Part not found for:', partName);
-      setRow({
+      setRow(prev => ({
         partName: partName,
         partNumber: '',
         customerName: '',
         material: '',
-        forecast: row.forecast
-      });
+        forecast: prev.forecast // Keep existing forecast values using prev
+      }));
     }
   };
 
@@ -110,7 +113,9 @@ const Forecast: React.FC<ForecastProps> = () => {
       background: 'white', 
       borderRadius: '8px',
       border: '2px solid #e2e8f0',
-      width: '100%'
+      width: '100%',
+      boxSizing: 'border-box',
+      overflowX: 'auto' // FIX 3: Allow horizontal scroll if needed
     }}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-lg font-bold">
@@ -119,17 +124,25 @@ const Forecast: React.FC<ForecastProps> = () => {
 
         <div className="flex gap-2">
           <button className="px-3 py-1 border rounded">입력</button>
-          <button 
+              <button
             className="px-3 py-1 bg-indigo-600 text-white rounded"
             onClick={handleSave}
           >
             저장
-          </button>
-        </div>
-      </div>
+              </button>
+            </div>
+          </div>
 
       {/* Table Header */}
-      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,1fr)] gap-2 font-semibold text-sm bg-slate-100 p-2">
+      {/* FIX 2 & 3: Use minmax for year columns to prevent overflow, ensure full width */}
+      <div 
+        className="grid gap-2 font-semibold text-sm bg-slate-100 p-2"
+        style={{
+          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr))',
+          minWidth: 'fit-content',
+          width: '100%'
+        }}
+      >
         <div>품목</div>
         <div>품번</div>
         <div>고객사</div>
@@ -144,7 +157,14 @@ const Forecast: React.FC<ForecastProps> = () => {
       </div>
 
       {/* Table Row */}
-      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,1fr)] gap-2 p-2 border-b">
+      <div 
+        className="grid gap-2 p-2 border-b"
+        style={{
+          gridTemplateColumns: '200px 150px 150px 150px repeat(7, minmax(80px, 1fr))',
+          minWidth: 'fit-content',
+          width: '100%'
+        }}
+      >
         {/* 품목 */}
         <select
           className="border px-2 py-1"
@@ -166,7 +186,7 @@ const Forecast: React.FC<ForecastProps> = () => {
 
         {/* 연도별 Forecast */}
         {years.map(year => (
-          <input
+            <input
             key={year}
             type="number"
             className="border px-2 py-1 text-right"
