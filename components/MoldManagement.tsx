@@ -170,13 +170,13 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         customerName: '미지정', // Default value
         partName: editingRow.project,
         partNumber: '', // Empty - user can fill later if needed
-        carModel: toNullIfEmpty(''),
+        carModel: '', // Empty string instead of null (NOT NULL constraint)
         moldCavity: 2,
-        sopDate: toNullIfEmpty('') || new Date().toISOString().split('T')[0], // Default to today if empty
+        sopDate: new Date().toISOString().split('T')[0], // Default to today (NOT NULL constraint)
         material: 'ALDC12', // Default value
         status: editingRow.status || ProjectStatus.IN_PROGRESS,
         type: ProjectType.INCREMENTAL_MOLD,
-        developmentPhase: toNullIfEmpty(editingRow.구분 || ''),
+        developmentPhase: editingRow.구분 || '',
         // Remove createdAt - server will set it automatically
         feasibilityReviewPlan: toNullIfEmpty(editingRow.타당성_계획),
         feasibilityReviewActual: toNullIfEmpty(editingRow.타당성_실적),
