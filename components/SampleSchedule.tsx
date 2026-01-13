@@ -125,20 +125,26 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   const displayedSchedules = React.useMemo(() => {
     const schedules = viewMode === 'active' ? activeSchedules : completedSchedules;
     
-    if (!searchTerm.trim()) {
-      return schedules;
+    let filtered = schedules;
+    
+    // Filter by part name (exact match from dropdown)
+    if (partNameFilter.trim()) {
+      filtered = filtered.filter(item => item.partName === partNameFilter);
     }
     
-    const term = searchTerm.toLowerCase();
-    return schedules.filter(item => 
-      item.partName.toLowerCase().includes(term) ||
-      item.partNumber.toLowerCase().includes(term) ||
-      item.schedules.some(s => {
-        const name = getPostProcessingName(s.postProcessingId);
-        return name.toLowerCase().includes(term);
-      })
-    );
-  }, [viewMode, activeSchedules, completedSchedules, searchTerm, getPostProcessingName]);
+    // Filter by schedule name (text search)
+    if (scheduleNameFilter.trim()) {
+      const term = scheduleNameFilter.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.schedules.some(s => {
+          const name = getPostProcessingName(s.postProcessingId);
+          return name.toLowerCase().includes(term);
+        })
+      );
+    }
+    
+    return filtered;
+  }, [viewMode, activeSchedules, completedSchedules, partNameFilter, scheduleNameFilter, getPostProcessingName]);
 
   // Handler: Toggle view mode
   const handleToggleView = () => {
