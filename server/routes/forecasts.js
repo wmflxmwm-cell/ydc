@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
         // Check if forecast exists for this partName (regardless of user)
         // All users share the same forecast data for each partName
         const existing = await client.query(
-            'SELECT id FROM forecasts WHERE part_name = $1 LIMIT 1',
+            'SELECT id, user_id FROM forecasts WHERE part_name = $1 LIMIT 1',
             [partName.trim()]
         );
 
