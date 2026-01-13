@@ -817,18 +817,60 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-900">Sample 일정</h2>
-              <p className="text-sm text-slate-500 mt-1">샘플 제작 및 검사 일정 관리</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {viewMode === 'active' ? '진행 중인 샘플 일정 관리' : '완료된 샘플 일정 조회'}
+              </p>
             </div>
           </div>
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
-            >
-              <Plus size={18} />
-              등록
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {/* 조회 버튼 및 엑셀 다운로드 */}
+            {!showForm && (
+              <>
+                {/* 엑셀 다운로드 버튼 (조회 모드에서만 표시) */}
+                {viewMode === 'completed' && (
+                  <button
+                    onClick={handleExcelDownload}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg"
+                    type="button"
+                  >
+                    <Download size={18} />
+                    엑셀 다운로드
+                  </button>
+                )}
+                <button
+                  onClick={handleToggleView}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-lg ${
+                    viewMode === 'completed'
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-slate-600 text-white hover:bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  {viewMode === 'active' ? (
+                    <>
+                      <CheckCircle2 size={18} />
+                      조회
+                    </>
+                  ) : (
+                    <>
+                      <Calendar size={18} />
+                      진행중 보기
+                    </>
+                  )}
+                </button>
+                {viewMode === 'active' && (
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all bg-green-600 text-white hover:bg-green-700 shadow-lg"
+                    type="button"
+                  >
+                    <Plus size={18} />
+                    등록
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
                  {/* 등록 폼 */}
