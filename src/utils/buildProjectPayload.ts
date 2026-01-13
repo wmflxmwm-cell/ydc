@@ -1,66 +1,60 @@
-/**
- * Builds a sanitized project payload for API submission
- * Ensures all required fields are present and properly formatted
- */
-export function buildProjectPayload(form: any): Partial<any> {
-  const payload: any = {};
+// src/utils/buildProjectPayload.ts
 
-  // Required string fields - ensure non-empty values
-  payload.customerName = (form.customerName?.trim() || '미지정');
-  payload.partName = (form.partName?.trim() || '');
-  payload.carModel = (form.carModel?.trim() || '');
-  payload.partNumber = (form.partNumber?.trim() || '');
+type BuildProjectPayloadInput = Record<string, any>;
 
-  // Required numeric fields with defaults
-  payload.moldCavity = Number(form.moldCavity) || 2;
-  
-  // developmentPhase should be string, not number (증작 금형 구분)
-  payload.developmentPhase = form.developmentPhase?.toString().trim() || '';
+export function buildProjectPayload(form: BuildProjectPayloadInput) {
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Required enum fields
-  payload.status = form.status || '진행중';
-  payload.type = form.type || '증작 금형';
-  
-  // material: accept both ID and string, server will handle
-  payload.material = form.materialId || form.material || 'ALDC12';
-  
-  // sopDate: required, default to today if missing
-  if (form.sopDate?.trim()) {
-    payload.sopDate = form.sopDate.trim();
-  } else {
-    payload.sopDate = new Date().toISOString().split('T')[0];
+  const payload: Record<string, any> = {
+    // ✅ 필수 필드: 빈 문자열 절대 금지
+    customerName: form.customerName?.trim() || '미지정',
+    partName: form.partName?.trim() || '미지정',
+    carModel: form.carModel?.trim() || '미지정',
+    partNumber: form.partNumber?.trim() || '미지정',
+
+    // ✅ 기본값
+    moldCavity: Number(form.moldCavity) || 2,
+    sopDate: form.sopDate || today,
+
+    status: form.status,
+    type: form.type,
+
+    // ✅ 서버가 String 요구 시
+    developmentPhase: String(
+      form.developmentPhase ?? '1'
+    ),
+  };
+
+  // ✅ material 처리 (ID 우선)
+  if (form.materialId) {
+    payload.material = form.materialId;
+  } else if (form.material) {
+    payload.material = form.material;
   }
+  // ❌ 기본값으로 'ALDC12' 강제하지 않음
 
-  // Optional date fields - only include if present
-  const optionalDateFields = [
-    'fotDate', 'faiDate', 'p1Date', 'p2Date', 
-    'runAtRateDate', 'ppapDate', 'customerSopDate',
-    'feasibilityReviewPlan', 'feasibilityReviewActual',
-    'moldOrderPlan', 'moldOrderActual',
-    'moldDeliveryPlan', 'moldDeliveryActual',
-    'istrSubmissionPlan', 'istrSubmissionActual',
-    'ydcVnPpapPlan', 'ydcVnPpapActual',
-    'ppapKrSubmissionPlan', 'ppapKrSubmissionActual',
-    'ppapCustomerApprovalPlan', 'ppapCustomerApprovalActual',
-    'ydcVnSopPlan', 'ydcVnSopActual',
-    'customerSopPlan', 'customerSopActual',
-    'deliverySchedulePlan', 'deliveryScheduleActual'
+  // ✅ 선택 날짜 필드
+  const dateFields = [
+    'feasibilityReviewPlan',
+    'feasibilityReviewActual',
+    'moldOrderPlan',
+    'moldOrderActual',
+    'moldDeliveryPlan',
+    'moldDeliveryActual',
+    'istrSubmissionPlan',
+    'istrSubmissionActual',
+    'ydcVnPpapPlan',
+    'ydcVnPpapActual',
   ];
 
-  optionalDateFields.forEach(field => {
-    if (form[field]?.trim()) {
-      payload[field] = form[field].trim();
-    }
+  dateFields.forEach((key) => {
+    if (form[key]) payload[key] = form[key];
   });
 
-  // Optional volume fields - only include if numeric
-  const volumeFields = ['volume2026', 'volume2027', 'volume2028', 'volume2029', 'volume2030', 'volume2031', 'volume2032'];
-  volumeFields.forEach(field => {
-    const value = Number(form[field]);
-    if (!isNaN(value) && value > 0) {
-      payload[field] = value;
-    }
-  });
+  // ✅ volume 조건
+  if (Number(form.volume2026) > 0) {
+    payload.volume2026 = Number(form.volume2026);
+  }
 
   return payload;
 }

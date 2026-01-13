@@ -157,15 +157,15 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     }
 
     try {
-      // Build payload using standardized function
+      // Use buildProjectPayload utility for consistent payload building
       const formData = {
         customerName: '미지정',
         partName: editingRow.project,
         partNumber: '',
         carModel: '',
         moldCavity: 2,
-        developmentPhase: editingRow.구분 || '',
-        material: 'ALDC12',
+        developmentPhase: editingRow.구분 || '1',
+        material: 'ALDC12', // Will be overridden by buildProjectPayload if materialId exists
         status: editingRow.status || ProjectStatus.IN_PROGRESS,
         type: ProjectType.INCREMENTAL_MOLD,
         sopDate: editingRow.요청일 || new Date().toISOString().split('T')[0],
@@ -182,6 +182,10 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         volume2026: editingRow.forecast || 0,
       };
 
+      // Import and use buildProjectPayload
+      const { buildProjectPayload } = require('../src/utils/buildProjectPayload');
+      const payload = buildProjectPayload(formData);
+
       // Helper function to convert empty string to null for optional fields
       const toNullIfEmpty = (value: string | null | undefined): string | null => {
         if (value === null || value === undefined || value === '') {
@@ -190,30 +194,21 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         return value;
       };
 
-      // Create new project - sanitize optional fields to null
+      // Create new project - sanitize optional date fields to null
       const newProject: Partial<Project> = {
-        customerName: formData.customerName,
-        partName: formData.partName,
-        partNumber: formData.partNumber,
-        carModel: formData.carModel,
-        moldCavity: formData.moldCavity,
-        sopDate: formData.sopDate,
-        material: formData.material,
-        status: formData.status,
-        type: formData.type,
-        developmentPhase: formData.developmentPhase,
+        ...payload,
         // Optional date fields - convert empty to null
-        feasibilityReviewPlan: toNullIfEmpty(formData.feasibilityReviewPlan),
-        feasibilityReviewActual: toNullIfEmpty(formData.feasibilityReviewActual),
-        moldOrderPlan: toNullIfEmpty(formData.moldOrderPlan),
-        moldOrderActual: toNullIfEmpty(formData.moldOrderActual),
-        moldDeliveryPlan: toNullIfEmpty(formData.moldDeliveryPlan),
-        moldDeliveryActual: toNullIfEmpty(formData.moldDeliveryActual),
-        istrSubmissionPlan: toNullIfEmpty(formData.istrSubmissionPlan),
-        istrSubmissionActual: toNullIfEmpty(formData.istrSubmissionActual),
-        ydcVnPpapPlan: toNullIfEmpty(formData.ydcVnPpapPlan),
-        ydcVnPpapActual: toNullIfEmpty(formData.ydcVnPpapActual),
-        volume2026: formData.volume2026 > 0 ? formData.volume2026 : null,
+        feasibilityReviewPlan: toNullIfEmpty(payload.feasibilityReviewPlan),
+        feasibilityReviewActual: toNullIfEmpty(payload.feasibilityReviewActual),
+        moldOrderPlan: toNullIfEmpty(payload.moldOrderPlan),
+        moldOrderActual: toNullIfEmpty(payload.moldOrderActual),
+        moldDeliveryPlan: toNullIfEmpty(payload.moldDeliveryPlan),
+        moldDeliveryActual: toNullIfEmpty(payload.moldDeliveryActual),
+        istrSubmissionPlan: toNullIfEmpty(payload.istrSubmissionPlan),
+        istrSubmissionActual: toNullIfEmpty(payload.istrSubmissionActual),
+        ydcVnPpapPlan: toNullIfEmpty(payload.ydcVnPpapPlan),
+        ydcVnPpapActual: toNullIfEmpty(payload.ydcVnPpapActual),
+        volume2026: payload.volume2026 > 0 ? payload.volume2026 : null,
       };
 
       console.log('📤 Creating project with data:', JSON.stringify(newProject, null, 2));
