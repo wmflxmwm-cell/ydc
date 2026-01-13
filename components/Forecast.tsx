@@ -59,8 +59,8 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
       try {
         setIsLoadingForecasts(true);
         
-        // First, try to load from server (filtered by user)
-        const forecasts = await forecastService.getAll(user?.id);
+        // First, try to load from server (all forecasts, visible to all users)
+        const forecasts = await forecastService.getAll();
         console.log('✅ Loaded forecasts from server:', forecasts.length);
         
         // Transform to ForecastRow format

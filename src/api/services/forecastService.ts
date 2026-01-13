@@ -11,9 +11,8 @@ export interface ForecastRow {
 }
 
 export const forecastService = {
-  getAll: async (userId?: string): Promise<ForecastRow[]> => {
-    const config = userId ? { params: { userId } } : {};
-    const response = await client.get<ForecastRow[]>('/api/forecasts', config);
+  getAll: async (): Promise<ForecastRow[]> => {
+    const response = await client.get<ForecastRow[]>('/api/forecasts');
     // Transform API response to match ForecastRow format
     return response.data.map(item => ({
       id: item.id,

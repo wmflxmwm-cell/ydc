@@ -2,21 +2,10 @@ const express = require('express');
 const { pool } = require('../db');
 const router = express.Router();
 
-// Get all forecasts (filtered by user_id if provided)
+// Get all forecasts (all users can see all forecasts)
 router.get('/', async (req, res) => {
     try {
-        const userId = req.query.userId || req.headers['x-user-id'];
-        let query = 'SELECT * FROM forecasts';
-        const params = [];
-        
-        if (userId) {
-            query += ' WHERE user_id = $1';
-            params.push(userId);
-        }
-        
-        query += ' ORDER BY created_at DESC';
-        
-        const result = await pool.query(query, params);
+        const result = await pool.query('SELECT * FROM forecasts ORDER BY created_at DESC');
         const forecasts = result.rows.map(row => ({
             id: row.id,
             partName: row.part_name,
@@ -52,17 +41,21 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'partName is required' });
         }
 
-        // Get user_id from request (query param or header)
+        // Get user_id from request (optional, for tracking who created it)
         const userId = req.body.userId || req.query.userId || req.headers['x-user-id'] || null;
 
-        // Check if forecast exists for this partName and user_id
+        // Check if forecast exists for this partName (any user)
+        // Note: We allow multiple users to have forecasts for the same partName
+        // But we check if the current user already has one to update it
         let existingQuery = 'SELECT id FROM forecasts WHERE part_name = $1';
         const existingParams = [partName.trim()];
         
         if (userId) {
+            // If userId provided, check if this user already has a forecast for this part
             existingQuery += ' AND user_id = $2';
             existingParams.push(userId);
         } else {
+            // If no userId, check for any forecast with this partName (no user_id)
             existingQuery += ' AND user_id IS NULL';
         }
         
