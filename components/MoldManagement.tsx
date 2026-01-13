@@ -183,8 +183,7 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
         volume2026: editingRow.forecast || 0,
       };
 
-      // Import and use buildProjectPayload
-      const { buildProjectPayload } = require('../src/utils/buildProjectPayload');
+      // Use buildProjectPayload
       const payload = buildProjectPayload(formData);
 
       // Helper function to convert empty string to null for optional fields
