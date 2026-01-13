@@ -128,7 +128,18 @@ router.post('/', async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Forecast save error:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Error details:', {
+            message: err.message,
+            code: err.code,
+            detail: err.detail,
+            constraint: err.constraint,
+            stack: err.stack
+        });
+        res.status(500).json({ 
+            error: err.message,
+            detail: err.detail,
+            code: err.code
+        });
     } finally {
         client.release();
     }
