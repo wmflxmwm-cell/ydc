@@ -156,32 +156,44 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
     }
 
     try {
+      // Find selected part to get customerName and partNumber
+      const selectedPart = parts.find(p => p.partName === editingRow.project);
+      
+      // Get customer name from part or use default
+      let customerName = '';
+      if (selectedPart?.customerName) {
+        // If customerName is an ID, we need to resolve it
+        // For now, use the ID directly or try to find customer name
+        customerName = selectedPart.customerName;
+      }
+
       // Create new project
       const newProject: Partial<Project> = {
-        customerName: '', // Will be set later or from part selection
+        customerName: customerName || '미지정', // Default to '미지정' if empty
         partName: editingRow.project,
-        partNumber: '', // Will be set from part selection if needed
+        partNumber: selectedPart?.partNumber || '',
         carModel: '',
         moldCavity: 2,
         sopDate: '',
-        material: 'ALDC12',
+        material: selectedPart?.material || 'ALDC12',
         status: editingRow.status || ProjectStatus.IN_PROGRESS,
         type: ProjectType.INCREMENTAL_MOLD,
         developmentPhase: editingRow.구분 || '',
-        createdAt: editingRow.요청일 || new Date().toISOString().split('T')[0],
-        feasibilityReviewPlan: editingRow.타당성_계획 || '',
-        feasibilityReviewActual: editingRow.타당성_실적 || '',
-        moldOrderPlan: editingRow.금형발주_계획 || '',
-        moldOrderActual: editingRow.금형발주_실적 || '',
-        moldDeliveryPlan: editingRow.금형입고_계획 || '',
-        moldDeliveryActual: editingRow.금형입고_실적 || '',
-        istrSubmissionPlan: editingRow.istrSubmissionPlan || '',
-        istrSubmissionActual: editingRow.istrSubmissionActual || '',
-        ydcVnPpapPlan: editingRow.ydcVnPpapPlan || '',
-        ydcVnPpapActual: editingRow.ydcVnPpapActual || '',
-        volume2026: editingRow.forecast > 0 ? editingRow.forecast : undefined,
+        // Remove createdAt - server will set it automatically
+        feasibilityReviewPlan: editingRow.타당성_계획 || null,
+        feasibilityReviewActual: editingRow.타당성_실적 || null,
+        moldOrderPlan: editingRow.금형발주_계획 || null,
+        moldOrderActual: editingRow.금형발주_실적 || null,
+        moldDeliveryPlan: editingRow.금형입고_계획 || null,
+        moldDeliveryActual: editingRow.금형입고_실적 || null,
+        istrSubmissionPlan: editingRow.istrSubmissionPlan || null,
+        istrSubmissionActual: editingRow.istrSubmissionActual || null,
+        ydcVnPpapPlan: editingRow.ydcVnPpapPlan || null,
+        ydcVnPpapActual: editingRow.ydcVnPpapActual || null,
+        volume2026: editingRow.forecast > 0 ? editingRow.forecast : null,
       };
 
+      console.log('📤 Creating project:', newProject);
       await projectService.create(newProject as any);
       
       // Refresh projects
