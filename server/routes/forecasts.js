@@ -127,19 +127,29 @@ router.post('/', async (req, res) => {
         }
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('Forecast save error:', err);
+        console.error('❌ Forecast save error:', err);
         console.error('Error details:', {
             message: err.message,
             code: err.code,
             detail: err.detail,
             constraint: err.constraint,
+            table: err.table,
+            column: err.column,
             stack: err.stack
         });
-        res.status(500).json({ 
+        
+        // Return detailed error for debugging
+        const errorResponse = {
             error: err.message,
             detail: err.detail,
-            code: err.code
-        });
+            code: err.code,
+            constraint: err.constraint,
+            table: err.table,
+            column: err.column
+        };
+        
+        console.error('📤 Sending error response:', errorResponse);
+        res.status(500).json(errorResponse);
     } finally {
         client.release();
     }

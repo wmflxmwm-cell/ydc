@@ -160,8 +160,40 @@ const initDb = async () => {
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_plan DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_actual DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_plan DATE',
-            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_actual DATE'
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_actual DATE',
+            'ALTER TABLE forecasts ADD COLUMN IF NOT EXISTS user_id VARCHAR(100)'
         ];
+        
+        // Fix forecasts table constraints - remove old unique constraint if exists
+        try {
+            // Try to drop old constraint if it exists
+            await client.query(`
+                DO $$ 
+                BEGIN 
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint 
+                        WHERE conname = 'forecasts_part_name_user_id_unique'
+                    ) THEN
+                        ALTER TABLE forecasts DROP CONSTRAINT forecasts_part_name_user_id_unique;
+                    END IF;
+                END $$;
+            `);
+            
+            // Ensure part_name has unique constraint (if not exists)
+            await client.query(`
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint 
+                        WHERE conname = 'forecasts_part_name_key'
+                    ) THEN
+                        ALTER TABLE forecasts ADD CONSTRAINT forecasts_part_name_key UNIQUE(part_name);
+                    END IF;
+                END $$;
+            `);
+        } catch (constraintError) {
+            console.warn('Constraint migration warning:', constraintError.message);
+        }
 
         for (const query of alterQueries) {
             try {

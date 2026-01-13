@@ -34,15 +34,25 @@ export const forecastService = {
   },
 
   save: async (row: ForecastRow, userId?: string): Promise<ForecastRow> => {
-    const response = await client.post<ForecastRow>('/api/forecasts', {
-      partName: row.partName,
-      partNumber: row.partNumber,
-      customerName: row.customerName,
-      material: row.material,
-      forecast: row.forecast,
-      userId: userId
-    });
-    return response.data;
+    try {
+      const response = await client.post<ForecastRow>('/api/forecasts', {
+        partName: row.partName,
+        partNumber: row.partNumber,
+        customerName: row.customerName,
+        material: row.material,
+        forecast: row.forecast,
+        userId: userId
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Forecast save error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      throw error;
+    }
   },
 
   delete: async (id: string): Promise<void> => {

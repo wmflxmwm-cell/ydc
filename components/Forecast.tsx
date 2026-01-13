@@ -261,8 +261,8 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
     
     // Save to server (with user ID)
     try {
-      await forecastService.save(rowToSave, user?.id);
-      console.log('✅ [handleSave] Row saved to server:', rowToSave);
+      const result = await forecastService.save(rowToSave, user?.id);
+      console.log('✅ [handleSave] Row saved to server:', result);
       
       // Update local state
       setSavedRows(prev => {
