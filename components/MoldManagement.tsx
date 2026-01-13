@@ -267,15 +267,19 @@ const MoldManagement: React.FC<Props> = ({ user, projects: propsProjects, onProj
   // Transform projects to MoldProjectData format
   const moldData = useMemo((): MoldProjectData[] => {
     return moldProjects.map(project => {
-      // Calculate total forecast (sum of all years)
+      // Calculate remaining forecast: current year and future years
+      // Get current year
+      const currentYear = new Date().getFullYear();
+      
+      // Calculate forecast from current year onwards (including current year)
       const forecast = [
-        project.volume2026 ?? 0,
-        project.volume2027 ?? 0,
-        project.volume2028 ?? 0,
-        project.volume2029 ?? 0,
-        project.volume2030 ?? 0,
-        project.volume2031 ?? 0,
-        project.volume2032 ?? 0
+        currentYear <= 2026 ? (project.volume2026 ?? 0) : 0,
+        currentYear <= 2027 ? (project.volume2027 ?? 0) : 0,
+        currentYear <= 2028 ? (project.volume2028 ?? 0) : 0,
+        currentYear <= 2029 ? (project.volume2029 ?? 0) : 0,
+        currentYear <= 2030 ? (project.volume2030 ?? 0) : 0,
+        currentYear <= 2031 ? (project.volume2031 ?? 0) : 0,
+        currentYear <= 2032 ? (project.volume2032 ?? 0) : 0
       ].reduce((sum, vol) => sum + vol, 0);
 
       // 재고는 임시로 0으로 설정 (실제 데이터가 있으면 연결)
