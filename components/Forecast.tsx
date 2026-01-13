@@ -445,9 +445,12 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
             type="number"
             className="border px-2 py-1 text-right"
             value={currentInputRow.forecast[year] ?? ''}
-            onChange={(e) =>
-              updateForecast(year, Number(e.target.value))
-            }
+            onChange={(e) => {
+              const inputValue = e.target.value;
+              // Convert to number, but pass the raw value to handle empty strings
+              const numValue = inputValue === '' ? 0 : Number(inputValue);
+              updateForecast(year, isNaN(numValue) ? 0 : numValue);
+            }}
           />
         ))}
 
