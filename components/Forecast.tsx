@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { partService, Part } from '../src/api/services/partService';
+import { settingsService, Customer, Material } from '../src/api/services/settingsService';
 
 // ============================================
 // PHASE 2: CLEAN MVP REBUILD
@@ -27,6 +28,8 @@ interface ForecastProps {
 const Forecast: React.FC<ForecastProps> = () => {
   // MVP State - ONLY what's needed
   const [parts, setParts] = useState<Part[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
 
   // Row data structure
@@ -38,18 +41,29 @@ const Forecast: React.FC<ForecastProps> = () => {
     forecast: {}
   });
 
-  // MVP: Load parts on mount
+  // MVP: Load parts, customers, and materials on mount
   useEffect(() => {
-    const loadParts = async () => {
+    const loadData = async () => {
       try {
+        // Load parts
         const partsData = await partService.getAll();
         console.log('✅ MVP: Loaded parts:', partsData.length);
         setParts(partsData);
-          } catch (error) {
-        console.error('❌ MVP: Failed to load parts:', error);
+
+        // Load customers and materials for ID-to-name mapping
+        const [customersData, materialsData] = await Promise.all([
+          settingsService.getCustomers(),
+          settingsService.getMaterials()
+        ]);
+        console.log('✅ MVP: Loaded customers:', customersData.length);
+        console.log('✅ MVP: Loaded materials:', materialsData.length);
+        setCustomers(customersData);
+        setMaterials(materialsData);
+      } catch (error) {
+        console.error('❌ MVP: Failed to load data:', error);
       }
     };
-    loadParts();
+    loadData();
   }, []);
 
   // MVP: Handle part selection
@@ -61,16 +75,26 @@ const Forecast: React.FC<ForecastProps> = () => {
     const foundPart = parts.find(p => p.partName === partName);
     
     if (foundPart) {
+      // CRITICAL: Convert customer ID to customer name
+      const customerId = foundPart.customerName; // This is an ID like "customer-1767068"
+      const customer = customers.find(c => c.id === customerId);
+      const customerName = customer?.name ?? customerId ?? ''; // Use name if found, otherwise fallback to ID
+      
+      // CRITICAL: Convert material ID to material name
+      const materialId = foundPart.material; // This is an ID like "material-17670673"
+      const material = materials.find(m => m.id === materialId);
+      const materialName = material?.name ?? materialId ?? ''; // Use name if found, otherwise fallback to ID
+      
       // MANDATORY: Log selectedPart BEFORE setState
       console.log('✅ MVP: Found part BEFORE setState:', {
         partName: foundPart.partName,
         partNumber: foundPart.partNumber,
-        customerName: foundPart.customerName,
-        material: foundPart.material,
-        customerNameType: typeof foundPart.customerName,
-        materialType: typeof foundPart.material,
-        customerNameValue: JSON.stringify(foundPart.customerName),
-        materialValue: JSON.stringify(foundPart.material)
+        customerId: customerId,
+        customerName: customerName,
+        materialId: materialId,
+        materialName: materialName,
+        customerFound: !!customer,
+        materialFound: !!material
       });
       
       // ATOMIC STATE UPDATE: All fields updated in ONE setState call
@@ -79,8 +103,8 @@ const Forecast: React.FC<ForecastProps> = () => {
         const updated = {
           partName: foundPart.partName,
           partNumber: foundPart.partNumber ?? '',
-          customerName: foundPart.customerName ?? '',
-          material: foundPart.material ?? '',
+          customerName: customerName, // Use converted name, not ID
+          material: materialName, // Use converted name, not ID
           forecast: prev.forecast // Keep existing forecast values
         };
         
