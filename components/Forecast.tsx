@@ -24,9 +24,10 @@ type ForecastRow = {
 interface ForecastProps {
   projects?: any[]; // Not used in MVP
   onProjectsUpdate?: () => void; // Not used in MVP
+  user?: { id: string; name: string; role: string }; // User information
 }
 
-const Forecast: React.FC<ForecastProps> = () => {
+const Forecast: React.FC<ForecastProps> = ({ user }) => {
   // MVP State - ONLY what's needed
   const [parts, setParts] = useState<Part[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -58,8 +59,8 @@ const Forecast: React.FC<ForecastProps> = () => {
       try {
         setIsLoadingForecasts(true);
         
-        // First, try to load from server
-        const forecasts = await forecastService.getAll();
+        // First, try to load from server (filtered by user)
+        const forecasts = await forecastService.getAll(user?.id);
         console.log('✅ Loaded forecasts from server:', forecasts.length);
         
         // Transform to ForecastRow format
@@ -83,7 +84,7 @@ const Forecast: React.FC<ForecastProps> = () => {
               const exists = serverRows.some(sr => sr.partName === localRow.partName);
               if (!exists) {
                 try {
-                  await forecastService.save(localRow);
+                  await forecastService.save(localRow, user?.id);
                   console.log('✅ Migrated to server:', localRow.partName);
                   serverRows.push(localRow);
                 } catch (migrateError) {
@@ -257,9 +258,9 @@ const Forecast: React.FC<ForecastProps> = () => {
       forecast: currentInputRow.forecast ? { ...currentInputRow.forecast } : {} // Deep copy forecast object
     };
     
-    // Save to server
+    // Save to server (with user ID)
     try {
-      await forecastService.save(rowToSave);
+      await forecastService.save(rowToSave, user?.id);
       console.log('✅ [handleSave] Row saved to server:', rowToSave);
       
       // Update local state

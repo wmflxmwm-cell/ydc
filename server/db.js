@@ -103,7 +103,7 @@ const initDb = async () => {
         await client.query(`
       CREATE TABLE IF NOT EXISTS forecasts (
         id VARCHAR(50) PRIMARY KEY,
-        part_name VARCHAR(100) NOT NULL UNIQUE,
+        part_name VARCHAR(100) NOT NULL,
         part_number VARCHAR(100),
         customer_name VARCHAR(100),
         material VARCHAR(100),
@@ -114,7 +114,9 @@ const initDb = async () => {
         volume_2030 INTEGER,
         volume_2031 INTEGER,
         volume_2032 INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        user_id VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(part_name, user_id)
       );
     `);
 

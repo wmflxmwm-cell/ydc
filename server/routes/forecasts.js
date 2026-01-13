@@ -2,10 +2,21 @@ const express = require('express');
 const { pool } = require('../db');
 const router = express.Router();
 
-// Get all forecasts
+// Get all forecasts (filtered by user_id if provided)
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM forecasts ORDER BY created_at DESC');
+        const userId = req.query.userId || req.headers['x-user-id'];
+        let query = 'SELECT * FROM forecasts';
+        const params = [];
+        
+        if (userId) {
+            query += ' WHERE user_id = $1';
+            params.push(userId);
+        }
+        
+        query += ' ORDER BY created_at DESC';
+        
+        const result = await pool.query(query, params);
         const forecasts = result.rows.map(row => ({
             id: row.id,
             partName: row.part_name,
@@ -19,6 +30,7 @@ router.get('/', async (req, res) => {
             volume2030: row.volume_2030,
             volume2031: row.volume_2031,
             volume2032: row.volume_2032,
+            userId: row.user_id,
             createdAt: row.created_at
         }));
         res.json(forecasts);
@@ -40,11 +52,21 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'partName is required' });
         }
 
-        // Check if forecast exists for this partName
-        const existing = await client.query(
-            'SELECT id FROM forecasts WHERE part_name = $1',
-            [partName.trim()]
-        );
+        // Get user_id from request (query param or header)
+        const userId = req.body.userId || req.query.userId || req.headers['x-user-id'] || null;
+
+        // Check if forecast exists for this partName and user_id
+        let existingQuery = 'SELECT id FROM forecasts WHERE part_name = $1';
+        const existingParams = [partName.trim()];
+        
+        if (userId) {
+            existingQuery += ' AND user_id = $2';
+            existingParams.push(userId);
+        } else {
+            existingQuery += ' AND user_id IS NULL';
+        }
+        
+        const existing = await client.query(existingQuery, existingParams);
 
         // Safely extract volume values from forecast object
         const volumes = {
@@ -97,8 +119,8 @@ router.post('/', async (req, res) => {
                 `INSERT INTO forecasts (
                     id, part_name, part_number, customer_name, material,
                     volume_2026, volume_2027, volume_2028, volume_2029,
-                    volume_2030, volume_2031, volume_2032, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)`,
+                    volume_2030, volume_2031, volume_2032, user_id, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)`,
                 [
                     id,
                     partName.trim(),
@@ -111,7 +133,8 @@ router.post('/', async (req, res) => {
                     volumes.volume2029,
                     volumes.volume2030,
                     volumes.volume2031,
-                    volumes.volume2032
+                    volumes.volume2032,
+                    userId
                 ]
             );
             await client.query('COMMIT');

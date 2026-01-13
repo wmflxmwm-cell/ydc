@@ -11,8 +11,9 @@ export interface ForecastRow {
 }
 
 export const forecastService = {
-  getAll: async (): Promise<ForecastRow[]> => {
-    const response = await client.get<ForecastRow[]>('/api/forecasts');
+  getAll: async (userId?: string): Promise<ForecastRow[]> => {
+    const config = userId ? { params: { userId } } : {};
+    const response = await client.get<ForecastRow[]>('/api/forecasts', config);
     // Transform API response to match ForecastRow format
     return response.data.map(item => ({
       id: item.id,
@@ -33,13 +34,14 @@ export const forecastService = {
     }));
   },
 
-  save: async (row: ForecastRow): Promise<ForecastRow> => {
+  save: async (row: ForecastRow, userId?: string): Promise<ForecastRow> => {
     const response = await client.post<ForecastRow>('/api/forecasts', {
       partName: row.partName,
       partNumber: row.partNumber,
       customerName: row.customerName,
       material: row.material,
-      forecast: row.forecast
+      forecast: row.forecast,
+      userId: userId
     });
     return response.data;
   },
