@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { partService, Part } from '../src/api/services/partService';
 import { settingsService, Customer, Material } from '../src/api/services/settingsService';
 
@@ -32,6 +32,11 @@ const Forecast: React.FC<ForecastProps> = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032];
 
+  // CRITICAL: Use refs to access latest customers/materials without blocking UI updates
+  // This ensures UI updates immediately, even if customers/materials are still loading
+  const customersRef = useRef<Customer[]>([]);
+  const materialsRef = useRef<Material[]>([]);
+
   // CRITICAL: Separate state for input and saved rows
   // This prevents stale data issues and ensures clear data flow
   const [currentInputRow, setCurrentInputRow] = useState<ForecastRow>({
@@ -45,87 +50,52 @@ const Forecast: React.FC<ForecastProps> = () => {
   const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
 
   // MVP: Load parts, customers, and materials on mount
+  // CRITICAL: Load parts FIRST, then customers/materials in background
+  // This allows UI to update immediately when part is selected
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load parts
+        // Load parts FIRST - this is required for UI to work
         const partsData = await partService.getAll();
         console.log('✅ MVP: Loaded parts:', partsData.length);
         setParts(partsData);
 
-        // Load customers and materials for ID-to-name mapping
-        const [customersData, materialsData] = await Promise.all([
-          settingsService.getCustomers(),
-          settingsService.getMaterials()
-        ]);
-        console.log('✅ MVP: Loaded customers:', customersData.length);
-        console.log('✅ MVP: Loaded materials:', materialsData.length);
-        setCustomers(customersData);
-        setMaterials(materialsData);
+        // Load customers and materials in background - optional for name conversion
+        // UI will work even if this fails
+        try {
+          const [customersData, materialsData] = await Promise.all([
+            settingsService.getCustomers(),
+            settingsService.getMaterials()
+          ]);
+          console.log('✅ MVP: Loaded customers:', customersData.length);
+          console.log('✅ MVP: Loaded materials:', materialsData.length);
+          setCustomers(customersData);
+          setMaterials(materialsData);
+          // Update refs for immediate access in handlers
+          customersRef.current = customersData;
+          materialsRef.current = materialsData;
+        } catch (settingsError) {
+          console.warn('⚠️ MVP: Failed to load customers/materials (UI will still work):', settingsError);
+          // UI continues to work with IDs instead of names
+        }
       } catch (error) {
-        console.error('❌ MVP: Failed to load data:', error);
+        console.error('❌ MVP: Failed to load parts:', error);
       }
     };
     loadData();
   }, []);
 
-  // MVP: Handle part selection - ONLY affects currentInputRow
-  // CRITICAL FIX: Use functional setState to access latest customers/materials
-  // This prevents stale closure issues when customers/materials load asynchronously
+  // FRONTEND-FIRST: Handle part selection - UI updates IMMEDIATELY
+  // NO waiting for API, NO conditional blocking
+  // Backend data (customers/materials) is OPTIONAL for name conversion
   const handlePartSelect = (partName: string) => {
-    console.log('🔥 MVP handlePartSelect FIRED:', partName);
+    console.log('[handlePartSelect] FIRED - UI update starting immediately:', partName);
     
-    // Find matching part - exact match required
+    // Find matching part in LOCAL state - NO API call
     const foundPart = parts.find(p => p.partName === partName);
     
-    if (foundPart) {
-      // CRITICAL FIX: Access latest customers/materials via functional setState
-      // This ensures we always use the most recent data, even if it loads after component mount
-      setCurrentInputRow(prev => {
-        // Access latest customers and materials from state (via closure)
-        // If they're not loaded yet, we'll use the ID as fallback
-        const customerId = foundPart.customerName; // This is an ID like "customer-1767068"
-        const customer = customers.find(c => c.id === customerId);
-        const customerName = customer?.name ?? customerId ?? ''; // Use name if found, otherwise fallback to ID
-        
-        const materialId = foundPart.material; // This is an ID like "material-17670673"
-        const material = materials.find(m => m.id === materialId);
-        const materialName = material?.name ?? materialId ?? ''; // Use name if found, otherwise fallback to ID
-        
-        // MANDATORY: Log selectedPart BEFORE setState
-        console.log('✅ MVP: Found part BEFORE setState:', {
-          partName: foundPart.partName,
-          partNumber: foundPart.partNumber,
-          customerId: customerId,
-          customerName: customerName,
-          materialId: materialId,
-          materialName: materialName,
-          customerFound: !!customer,
-          materialFound: !!material,
-          customersLoaded: customers.length,
-          materialsLoaded: materials.length
-        });
-        
-        const updated = {
-          partName: foundPart.partName,
-          partNumber: foundPart.partNumber ?? '',
-          customerName: customerName, // Use converted name, not ID
-          material: materialName, // Use converted name, not ID
-          forecast: prev.forecast // Keep existing forecast values
-        };
-        
-        // MANDATORY: Log final row AFTER setState (in callback)
-        console.log('✅ MVP: Updated currentInputRow AFTER setState:', {
-          partName: updated.partName,
-          partNumber: updated.partNumber,
-          customerName: updated.customerName,
-          material: updated.material
-        });
-        
-        return updated;
-      });
-    } else {
-      console.log('❌ MVP: Part not found for:', partName);
+    if (!foundPart) {
+      console.warn('[handlePartSelect] Part not found in local state:', partName);
       // Clear all fields when no match found
       setCurrentInputRow(prev => ({
         partName: partName,
@@ -134,7 +104,47 @@ const Forecast: React.FC<ForecastProps> = () => {
         material: '',
         forecast: prev.forecast
       }));
+      return;
     }
+
+    // CRITICAL: Update UI IMMEDIATELY with data from local parts array
+    // NO async/await, NO waiting for customers/materials
+    // Use refs to get latest customers/materials without blocking
+    const customerId = foundPart.customerName; // ID from parts array
+    const materialId = foundPart.material; // ID from parts array
+    
+    // Try to convert IDs to names using refs (latest data, no closure issues)
+    // If conversion fails, use ID as fallback - UI STILL WORKS
+    const customer = customersRef.current.find(c => c.id === customerId);
+    const customerName = customer?.name ?? customerId ?? '';
+    
+    const material = materialsRef.current.find(m => m.id === materialId);
+    const materialName = material?.name ?? materialId ?? '';
+    
+    console.log('[handlePartSelect] Updating UI immediately:', {
+      partName: foundPart.partName,
+      partNumber: foundPart.partNumber,
+      customerName,
+      materialName
+    });
+    
+    // CRITICAL: Create NEW object - NO mutation, NO shared references
+    // This ensures React detects the change and re-renders
+    setCurrentInputRow(prev => {
+      const updated = {
+        partName: foundPart.partName,
+        partNumber: foundPart.partNumber ?? '',
+        customerName: customerName,
+        material: materialName,
+        forecast: { ...prev.forecast } // Deep copy to ensure new object
+      };
+      
+      console.log('[handlePartSelect] State updated - React will re-render:', updated);
+      return updated;
+    });
+    
+    // UI is now updated - backend sync can happen later if needed
+    console.log('[handlePartSelect] UI update complete - no backend dependency');
   };
 
   // MVP: Update forecast value - ONLY affects currentInputRow
@@ -312,12 +322,16 @@ const Forecast: React.FC<ForecastProps> = () => {
         }}
       >
         {/* 품목 */}
-        {/* CRITICAL: Disable selection until customers and materials are loaded */}
+        {/* FRONTEND-FIRST: Enable selection as soon as parts are loaded */}
+        {/* customers/materials are optional for name conversion only */}
         <select
           className="border px-2 py-1"
           value={currentInputRow.partName}
-          onChange={(e) => handlePartSelect(e.target.value)}
-          disabled={customers.length === 0 || materials.length === 0}
+          onChange={(e) => {
+            console.log('[SELECT onChange] Event fired:', e.target.value);
+            handlePartSelect(e.target.value);
+          }}
+          disabled={parts.length === 0}
         >
           <option value="">선택</option>
           {parts.map(p => (
