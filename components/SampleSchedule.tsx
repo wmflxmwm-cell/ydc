@@ -22,7 +22,8 @@ const SampleSchedule: React.FC<Props> = ({ user }) => {
   // This prevents mixing completed and active schedules in one list
   const [allItems, setAllItems] = useState<SampleSchedule[]>([]);
   const [viewMode, setViewMode] = useState<'active' | 'completed'>('active');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [partNameFilter, setPartNameFilter] = useState('');
+  const [scheduleNameFilter, setScheduleNameFilter] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
   
