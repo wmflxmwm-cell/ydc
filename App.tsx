@@ -482,7 +482,7 @@ const App: React.FC = () => {
           </div>
 
           <div style={{ display: activeTab === 'forecast' ? 'block' : 'none' }}>
-            <Forecast projects={projects} onProjectsUpdate={fetchData} />
+            <Forecast projects={projects} onProjectsUpdate={fetchData} user={user} />
           </div>
 
           <div style={{ display: activeTab === 'sample' ? 'block' : 'none' }}>
