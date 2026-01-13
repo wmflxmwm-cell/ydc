@@ -65,6 +65,8 @@ router.post('/', async (req, res) => {
         if (existing.rows.length > 0) {
             // Update existing forecast
             const id = existing.rows[0].id;
+            // Update without changing user_id to avoid constraint issues
+            // user_id is only for tracking, not for data separation
             await client.query(
                 `UPDATE forecasts SET
                     part_number = $1,
@@ -77,9 +79,8 @@ router.post('/', async (req, res) => {
                     volume_2030 = $8,
                     volume_2031 = $9,
                     volume_2032 = $10,
-                    user_id = $11,
                     created_at = CURRENT_TIMESTAMP
-                WHERE id = $12`,
+                WHERE id = $11`,
                 [
                     (partNumber && typeof partNumber === 'string') ? partNumber.trim() : '',
                     (customerName && typeof customerName === 'string') ? customerName.trim() : '',
@@ -91,7 +92,6 @@ router.post('/', async (req, res) => {
                     volumes.volume2030,
                     volumes.volume2031,
                     volumes.volume2032,
-                    userId,
                     id
                 ]
             );
