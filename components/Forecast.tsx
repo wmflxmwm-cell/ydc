@@ -110,7 +110,7 @@ const Forecast: React.FC<ForecastProps> = () => {
       background: 'white', 
       borderRadius: '8px',
       border: '2px solid #e2e8f0',
-      maxWidth: '1200px'
+      width: '100%'
     }}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-lg font-bold">
@@ -129,7 +129,7 @@ const Forecast: React.FC<ForecastProps> = () => {
       </div>
 
       {/* Table Header */}
-      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,100px)] gap-2 font-semibold text-sm bg-slate-100 p-2">
+      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,1fr)] gap-2 font-semibold text-sm bg-slate-100 p-2">
         <div>품목</div>
         <div>품번</div>
         <div>고객사</div>
@@ -144,7 +144,7 @@ const Forecast: React.FC<ForecastProps> = () => {
       </div>
 
       {/* Table Row */}
-      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,100px)] gap-2 p-2 border-b">
+      <div className="grid grid-cols-[200px_150px_150px_150px_repeat(7,1fr)] gap-2 p-2 border-b">
         {/* 품목 */}
         <select
           className="border px-2 py-1"
