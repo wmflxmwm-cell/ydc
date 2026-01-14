@@ -13,6 +13,7 @@ import {
   Package,
   Languages,
   Wrench,
+  Truck,
 } from 'lucide-react';
 
 import { Project, Gate, Issue } from './types';
@@ -30,6 +31,7 @@ import Forecast from './components/Forecast';
 import SampleSchedule from './components/SampleSchedule';
 import PartRegistration from './components/PartRegistration';
 import MoldManagement from './components/MoldManagement';
+import ShipmentStatus from './components/ShipmentStatus';
 import Login from './components/Login';
 import { getLanguage, getTranslations } from './src/utils/translations';
 
@@ -42,7 +44,7 @@ interface UserSession {
 const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part' | 'mold'
+    'dashboard' | 'registration' | 'management' | 'issues' | 'users' | 'settings' | 'forecast' | 'sample' | 'part' | 'mold' | 'shipment'
   >('dashboard');
   // Note: 'forecast' tab temporarily disabled during rebuild
 
@@ -259,7 +261,7 @@ const App: React.FC = () => {
           </span>
         </div>
 
-        <nav className="flex-1 mt-6 px-4 space-y-1">
+        <nav className="flex-1 mt-6 px-4 space-y-1 overflow-y-auto">
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -338,6 +340,16 @@ const App: React.FC = () => {
           >
             <Wrench className="w-5 h-5" />
             <span className="font-medium text-sm">증작금형 관리</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('shipment')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === 'shipment' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Truck className="w-5 h-5" />
+            <span className="font-medium text-sm">출하현황</span>
           </button>
 
           {user.role === 'MANAGER' && (
@@ -424,6 +436,7 @@ const App: React.FC = () => {
               {activeTab === 'sample' && t.app.sample}
               {activeTab === 'part' && t.app.part}
               {activeTab === 'mold' && '증작금형 관리'}
+              {activeTab === 'shipment' && '출하현황'}
               {activeTab === 'users' && t.app.users}
               {activeTab === 'settings' && t.app.settings}
             </h1>
@@ -499,6 +512,10 @@ const App: React.FC = () => {
               projects={projects} 
               onNavigateToRegistration={() => setActiveTab('registration')}
             />
+          </div>
+
+          <div style={{ display: activeTab === 'shipment' ? 'block' : 'none' }}>
+            <ShipmentStatus user={user} />
           </div>
 
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>

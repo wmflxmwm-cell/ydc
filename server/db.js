@@ -119,6 +119,21 @@ const initDb = async () => {
       );
     `);
 
+        // Shipments Table
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS shipments (
+        id VARCHAR(50) PRIMARY KEY,
+        shipment_date DATE NOT NULL,
+        customer_name VARCHAR(100) NOT NULL,
+        part_number VARCHAR(100) NOT NULL,
+        part_name VARCHAR(100) NOT NULL,
+        quantity VARCHAR(50),
+        shipping_method VARCHAR(50),
+        remarks TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
         // Add new columns if they don't exist (for existing databases)
         const alterQueries = [
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS mold_sequence VARCHAR(50)',
