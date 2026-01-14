@@ -49,6 +49,9 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
     forecast: {}
   });
 
+  // 각 연도별 입력 필드의 편집 상태 추적 (포맷팅 제어용)
+  const [editingYear, setEditingYear] = useState<number | null>(null);
+
   // Load savedRows from server on mount
   const [savedRows, setSavedRows] = useState<ForecastRow[]>([]);
   const [isLoadingForecasts, setIsLoadingForecasts] = useState(true);
@@ -221,20 +224,36 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
     console.log('[handlePartSelect] UI update complete - no backend dependency');
   };
 
+  // 숫자 포맷팅 함수 (천 단위 구분 쉼표 추가)
+  const formatNumber = (value: number | string | undefined | null): string => {
+    if (value === '' || value === null || value === undefined) return '';
+    const numValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
+    const num = Number(numValue);
+    if (isNaN(num)) return '';
+    if (num === 0) return '0';
+    return num.toLocaleString('ko-KR');
+  };
+
+  // 숫자 파싱 함수 (쉼표 제거 후 숫자로 변환)
+  const parseNumber = (value: string): number => {
+    if (!value || value.trim() === '') return 0;
+    const cleaned = value.replace(/,/g, '').trim();
+    const num = Number(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+
   // MVP: Update forecast value - ONLY affects currentInputRow
-  const updateForecast = (year: number, value: number | string) => {
-    // Ensure value is properly converted to number
-    // Handle both number and string inputs (from input field)
-    const numValue = (value === '' || value === null || value === undefined) ? 0 : Number(value);
-    const finalValue = isNaN(numValue) ? 0 : numValue;
+  const updateForecast = (year: number, value: string | number) => {
+    // 입력값을 숫자로 변환
+    const numValue = typeof value === 'string' ? parseNumber(value) : value;
     
-    console.log('🔥 MVP updateForecast FIRED:', { year, inputValue: value, convertedValue: finalValue });
+    console.log('🔥 MVP updateForecast FIRED:', { year, inputValue: value, convertedValue: numValue });
     
     setCurrentInputRow(prev => ({
       ...prev,
       forecast: {
         ...prev.forecast,
-        [year]: finalValue
+        [year]: numValue
       }
     }));
   };
@@ -461,20 +480,45 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
         />
 
         {/* 연도별 Forecast */}
-        {years.map(year => (
+        {years.map(year => {
+          const forecastValue = currentInputRow.forecast[year];
+          // 항상 포맷팅된 값 표시 (값이 있으면 포맷팅, 없으면 빈 문자열)
+          const displayValue = forecastValue !== undefined && forecastValue !== null 
+            ? formatNumber(forecastValue) 
+            : '';
+          
+          return (
             <input
-            key={year}
-            type="number"
-            className="border px-2 py-1 text-right"
-            value={currentInputRow.forecast[year] ?? ''}
-            onChange={(e) => {
-              const inputValue = e.target.value;
-              // Convert to number, but pass the raw value to handle empty strings
-              const numValue = inputValue === '' ? 0 : Number(inputValue);
-              updateForecast(year, isNaN(numValue) ? 0 : numValue);
-            }}
-          />
-        ))}
+              key={year}
+              type="text"
+              className="border px-2 py-1 text-right"
+              value={displayValue}
+              onChange={(e) => {
+                const inputValue = e.target.value;
+                // 숫자만 허용 (쉼표 제거)
+                const cleaned = inputValue.replace(/[^0-9]/g, '');
+                if (cleaned === '') {
+                  // 빈 값이면 undefined로 설정 (표시 안 함)
+                  updateForecast(year, undefined as any);
+                } else {
+                  // 숫자로 변환하여 저장
+                  const numValue = parseInt(cleaned, 10);
+                  updateForecast(year, isNaN(numValue) ? 0 : numValue);
+                }
+              }}
+              onBlur={(e) => {
+                // 포커스 해제 시 최종 값 정리
+                const numValue = parseNumber(e.target.value);
+                if (numValue === 0) {
+                  updateForecast(year, undefined as any);
+                } else {
+                  updateForecast(year, numValue);
+                }
+              }}
+              placeholder="0"
+            />
+          );
+        })}
 
         {/* Empty cell for "수정" column in input row */}
         <div></div>
@@ -519,9 +563,9 @@ const Forecast: React.FC<ForecastProps> = ({ user }) => {
           {years.map(year => (
                             <input
               key={year}
-                              type="number"
+                              type="text"
               className="border px-2 py-1 text-right bg-slate-50"
-              value={row.forecast[year] ?? ''}
+              value={formatNumber(row.forecast[year])}
               readOnly
             />
           ))}

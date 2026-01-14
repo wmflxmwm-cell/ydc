@@ -16,17 +16,29 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [yearFilter, setYearFilter] = useState<number | ''>('');
+  const [importResult, setImportResult] = useState<{
+    insertedCount: number;
+    updatedCount: number;
+    skippedCount: number;
+    errorRows: Array<{ row: number; error: string; data?: any }>;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [yearFilter, searchTerm]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await shipmentService.getAll();
+      const params: any = {};
+      if (yearFilter) params.year = yearFilter;
+      if (searchTerm) params.partNo = searchTerm;
+      params.sortBy = 'updated_at';
+      params.sortOrder = 'DESC';
+      
+      const data = await shipmentService.getAll(params);
       setShipments(data);
     } catch (error) {
       console.error('Failed to fetch shipments:', error);
@@ -34,122 +46,6 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const parseExcelFile = async (file: File): Promise<Shipment[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
-
-          // 첫 번째 행이 헤더인지 확인
-          const headerRow = jsonData[0] || [];
-          const dataRows = jsonData.slice(1);
-
-          // 헤더 매핑 (유연하게 처리)
-          const headerMap: { [key: string]: number } = {};
-          headerRow.forEach((cell: any, index: number) => {
-            const cellStr = String(cell || '').toLowerCase().trim();
-            if (cellStr.includes('출하일') || cellStr.includes('일자') || cellStr.includes('date')) {
-              headerMap['shipmentDate'] = index;
-            }
-            if (cellStr.includes('고객') || cellStr.includes('customer')) {
-              headerMap['customerName'] = index;
-            }
-            if (cellStr.includes('품번') || cellStr.includes('part number') || cellStr.includes('품목번호')) {
-              headerMap['partNumber'] = index;
-            }
-            if (cellStr.includes('품명') || cellStr.includes('part name') || cellStr.includes('품목명')) {
-              headerMap['partName'] = index;
-            }
-            if (cellStr.includes('수량') || cellStr.includes('quantity') || cellStr.includes('qty')) {
-              headerMap['quantity'] = index;
-            }
-            if (cellStr.includes('출하방법') || cellStr.includes('shipping') || cellStr.includes('방법')) {
-              headerMap['shippingMethod'] = index;
-            }
-            if (cellStr.includes('비고') || cellStr.includes('remark') || cellStr.includes('note')) {
-              headerMap['remarks'] = index;
-            }
-          });
-
-          const parsedShipments: Shipment[] = [];
-
-          dataRows.forEach((row, rowIndex) => {
-            // 빈 행 건너뛰기
-            if (!row || row.every((cell: any) => !cell || String(cell).trim() === '')) {
-              return;
-            }
-
-            const shipmentDate = row[headerMap['shipmentDate']] || '';
-            const customerName = row[headerMap['customerName']] || '';
-            const partNumber = row[headerMap['partNumber']] || '';
-            const partName = row[headerMap['partName']] || '';
-            const quantity = row[headerMap['quantity']] || '';
-            const shippingMethod = row[headerMap['shippingMethod']] || '해운';
-            const remarks = row[headerMap['remarks']] || '';
-
-            // 필수 필드 확인
-            if (!shipmentDate || !customerName || !partNumber || !partName) {
-              console.warn(`Row ${rowIndex + 2} skipped: missing required fields`);
-              return;
-            }
-
-            // 날짜 변환 (Excel 날짜 형식 처리)
-            let formattedDate = '';
-            if (typeof shipmentDate === 'number') {
-              // Excel 날짜는 1900년 1월 1일부터의 일수
-              const excelEpoch = new Date(1899, 11, 30);
-              const date = new Date(excelEpoch.getTime() + shipmentDate * 86400000);
-              formattedDate = date.toISOString().split('T')[0];
-            } else {
-              // 문자열 날짜 처리
-              const dateStr = String(shipmentDate).trim();
-              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                formattedDate = dateStr;
-              } else if (dateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-                formattedDate = dateStr.replace(/\//g, '-');
-              } else {
-                // 다른 형식 시도
-                const parsed = new Date(dateStr);
-                if (!isNaN(parsed.getTime())) {
-                  formattedDate = parsed.toISOString().split('T')[0];
-                } else {
-                  formattedDate = dateStr;
-                }
-              }
-            }
-
-            parsedShipments.push({
-              id: `temp-${rowIndex}`,
-              shipmentDate: formattedDate,
-              customerName: String(customerName).trim(),
-              partNumber: String(partNumber).trim(),
-              partName: String(partName).trim(),
-              quantity: String(quantity).trim(),
-              shippingMethod: String(shippingMethod).trim() || '해운',
-              remarks: String(remarks).trim(),
-              createdAt: new Date().toISOString()
-            });
-          });
-
-          resolve(parsedShipments);
-        } catch (error) {
-          reject(new Error('엑셀 파일 파싱 중 오류가 발생했습니다: ' + (error as Error).message));
-        }
-      };
-
-      reader.onerror = () => {
-        reject(new Error('파일 읽기 실패'));
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
   };
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,32 +58,39 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     }
 
     setUploading(true);
+    setImportResult(null);
+    
     try {
-      const parsedShipments = await parseExcelFile(file);
+      // 연도 추출 (파일명에서 또는 사용자 입력)
+      const yearMatch = file.name.match(/(\d{4})/);
+      const year = yearMatch ? parseInt(yearMatch[1]) : undefined;
       
-      if (parsedShipments.length === 0) {
-        alert('엑셀 파일에서 데이터를 찾을 수 없습니다.');
-        setUploading(false);
-        return;
+      const result = await shipmentService.importExcel(file, year, false);
+      
+      setImportResult(result);
+      
+      // 헤더 매칭 정보 표시 (5개 필수 필드: 출하일자, 고객사, 품번, 품명, 수량)
+      if (result.headerRow) {
+        console.log(`헤더 행: ${result.headerRow}행, 매칭 점수: ${result.headerMatchScore || 0}/5`);
       }
-
-      // 일괄 등록
-      const createdShipments = await Promise.all(
-        parsedShipments.map(shipment => {
-          const { id, createdAt, ...data } = shipment;
-          return shipmentService.create(data);
-        })
-      );
-
-      alert(`${createdShipments.length}개의 출하현황이 등록되었습니다.`);
-      setShowUploadModal(false);
+      
+      if (result.errorRows.length > 0) {
+        alert(`업로드 완료: ${result.insertedCount}개 추가, ${result.updatedCount}개 업데이트, ${result.skippedCount}개 건너뜀, ${result.errorRows.length}개 오류`);
+      } else {
+        alert(`업로드 완료: ${result.insertedCount}개 추가, ${result.updatedCount}개 업데이트, ${result.skippedCount}개 건너뜀`);
+      }
+      
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Excel upload error:', error);
-      alert('엑셀 업로드 중 오류가 발생했습니다: ' + (error as Error).message);
+      // 서버에서 반환한 구체적인 오류 메시지 표시 (누락된 컬럼 목록 포함)
+      const errorMessage = error?.response?.data?.error || error?.message || '엑셀 업로드 중 오류가 발생했습니다';
+      
+      // 에러 메시지에 개행이 포함되어 있으면 그대로 표시 (누락된 컬럼 목록 포함)
+      alert(`엑셀 업로드 오류:\n\n${errorMessage}`);
     } finally {
       setUploading(false);
     }
@@ -209,13 +112,16 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
 
   const handleExportExcel = () => {
     const excelData = filteredShipments.map(item => ({
-      '출하일자': item.shipmentDate,
-      '고객사': item.customerName,
-      '품번': item.partNumber,
-      '품명': item.partName,
-      '수량': item.quantity,
-      '출하방법': item.shippingMethod,
-      '비고': item.remarks
+      '연도': item.year || '',
+      '출하일자': item.shipmentDate || '',
+      '고객사': item.customerName || '',
+      '품번': item.partNo || item.partNumber || '',
+      '품명': item.itemName || item.partName || '',
+      'LOT/No': item.changeSeq || '',
+      '출하수량': item.shipmentQty !== null && item.shipmentQty !== undefined ? item.shipmentQty : (item.quantity || ''),
+      'Invoice No': item.invoiceNo || '',
+      'Invoice Date': item.invoiceDate || '',
+      '업데이트일': item.updatedAt || item.createdAt || ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(excelData);
@@ -227,20 +133,8 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     XLSX.writeFile(wb, filename);
   };
 
-  // 필터링된 데이터
-  const filteredShipments = shipments.filter(shipment => {
-    const matchesSearch = 
-      !searchTerm ||
-      shipment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.partNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.partName.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesDate = 
-      (!dateFilter.start || shipment.shipmentDate >= dateFilter.start) &&
-      (!dateFilter.end || shipment.shipmentDate <= dateFilter.end);
-
-    return matchesSearch && matchesDate;
-  });
+  // 필터링은 서버에서 처리하므로 shipments를 그대로 사용
+  const filteredShipments = shipments;
 
   return (
     <div className="space-y-6">
@@ -280,37 +174,87 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="고객사, 품번, 품명으로 검색..."
+              placeholder="품번으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             />
           </div>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateFilter.start}
-              onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-              placeholder="시작일"
-              className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-            <input
-              type="date"
-              value={dateFilter.end}
-              onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-              placeholder="종료일"
-              className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-            {(dateFilter.start || dateFilter.end) && (
-              <button
-                onClick={() => setDateFilter({ start: '', end: '' })}
-                className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm hover:bg-slate-50"
-              >
-                초기화
-              </button>
+          <select
+            value={yearFilter}
+            onChange={(e) => setYearFilter(e.target.value ? parseInt(e.target.value) : '')}
+            className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option value="">전체 연도</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+          </select>
+        </div>
+
+        {/* 업로드 결과 */}
+        {importResult && (
+          <div className="mb-6 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">업로드 결과</h3>
+            
+            {/* 헤더 매칭 정보 */}
+            {importResult.headerRow && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                <p className="text-xs font-bold text-blue-800">
+                  헤더 행: {importResult.headerRow}행 | 매칭 점수: {importResult.headerMatchScore || 0}/5
+                </p>
+                {importResult.headerMatchedFields && importResult.headerMatchedFields.length > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    인식된 필드: {importResult.headerMatchedFields.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
+            
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-xs text-slate-600 mb-1">추가됨</p>
+                <p className="text-2xl font-black text-green-600">{importResult.insertedCount}</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-xs text-slate-600 mb-1">업데이트됨</p>
+                <p className="text-2xl font-black text-blue-600">{importResult.updatedCount}</p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-xl">
+                <p className="text-xs text-slate-600 mb-1">건너뜀</p>
+                <p className="text-2xl font-black text-yellow-600">{importResult.skippedCount}</p>
+              </div>
+              <div className="bg-red-50 p-4 rounded-xl">
+                <p className="text-xs text-slate-600 mb-1">오류</p>
+                <p className="text-2xl font-black text-red-600">{importResult.errorRows.length}</p>
+              </div>
+            </div>
+            
+            {importResult.errorRows.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-bold text-slate-700 mb-2">오류 상세 (최대 50개)</h4>
+                <div className="max-h-64 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-200">
+                        <th className="px-3 py-2 text-left">행</th>
+                        <th className="px-3 py-2 text-left">오류</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importResult.errorRows.map((error, idx) => (
+                        <tr key={idx} className="border-b border-slate-100">
+                          <td className="px-3 py-2 font-mono">{error.row}</td>
+                          <td className="px-3 py-2 text-red-600">{error.error}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </div>
-        </div>
+        )}
 
         {/* 목록 */}
         {isLoading ? (
@@ -323,33 +267,41 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-900 text-white">
+                  <th className="px-6 py-4 text-left text-sm font-bold">연도</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">출하일자</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">고객사</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">품번</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">품명</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold">수량</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">출하방법</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">비고</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">LOT/No</th>
+                  <th className="px-6 py-4 text-center text-sm font-bold">출하수량</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Invoice No</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Invoice Date</th>
                   <th className="px-6 py-4 text-center text-sm font-bold">관리</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredShipments.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
                       <p className="font-bold">출하현황 데이터가 없습니다.</p>
                     </td>
                   </tr>
                 ) : (
                   filteredShipments.map((item) => (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-6 py-4 text-sm font-bold text-slate-900">{item.shipmentDate}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.customerName}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700 font-mono">{item.partNumber}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.partName}</td>
-                      <td className="px-6 py-4 text-sm text-center text-slate-700">{item.quantity}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700">{item.shippingMethod}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{item.remarks || '-'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">{item.year || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.shipmentDate || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.customerName || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700 font-mono">{item.partNo || item.partNumber || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.itemName || item.partName || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.changeSeq || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-center text-slate-700">
+                        {item.shipmentQty !== null && item.shipmentQty !== undefined 
+                          ? item.shipmentQty.toLocaleString() 
+                          : item.quantity || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.invoiceNo || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{item.invoiceDate || '-'}</td>
                       <td className="px-6 py-4 text-center">
                         {user?.role === 'MANAGER' || user?.role?.includes('총괄') ? (
                           <button
@@ -405,18 +357,24 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
               <div className="mb-6">
                 <h4 className="text-sm font-bold text-slate-700 mb-3">엑셀 파일 형식</h4>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <p className="text-xs text-slate-600 mb-2">
-                    엑셀 파일의 첫 번째 행은 헤더로 인식됩니다. 다음 컬럼명을 포함하세요:
+                  <p className="text-xs text-slate-600 mb-2 font-bold">
+                    ⚠️ 엑셀 파일은 2줄 헤더 구조입니다 (1행: 병합셀/대분류, 2행: 실제 컬럼명)
                   </p>
-                  <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside">
-                    <li>출하일자 (또는 일자, Date)</li>
-                    <li>고객사 (또는 Customer)</li>
-                    <li>품번 (또는 Part Number, 품목번호)</li>
-                    <li>품명 (또는 Part Name, 품목명)</li>
-                    <li>수량 (또는 Quantity, Qty)</li>
-                    <li>출하방법 (또는 Shipping, 방법) - 선택사항</li>
-                    <li>비고 (또는 Remark, Note) - 선택사항</li>
+                  <p className="text-xs text-slate-700 mb-3 font-bold">필수 컬럼 (4개):</p>
+                  <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside mb-3">
+                    <li><strong>품명 (item_name)</strong>: Tên hàng, 품명, Item Name</li>
+                    <li><strong>품번 (part_no)</strong>: Mã hàng, Mã hàng, 품번, Part No</li>
+                    <li><strong>LOT/No (change_seq)</strong>: Số #, LOT / No, Lot No</li>
+                    <li><strong>출하수량 (shipment_qty)</strong>: Số lượng bán, Số lượng, 출하수량, Shipment Qty</li>
                   </ul>
+                  <p className="text-xs text-slate-700 mb-2 font-bold">선택 컬럼:</p>
+                  <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside">
+                    <li><strong>Invoice No</strong>: Invoice No, Hóa đơn, Số hóa đơn (선택사항)</li>
+                    <li><strong>Invoice Date</strong>: Invoice Date, Ngày, Date (선택사항)</li>
+                  </ul>
+                  <p className="text-xs text-slate-500 mt-3 p-2 bg-blue-50 rounded">
+                    💡 베트남어/한국어/영어 헤더 모두 자동 인식됩니다. 연도는 파일명에서 자동 추출됩니다.
+                  </p>
                 </div>
               </div>
 

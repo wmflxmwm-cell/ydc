@@ -119,18 +119,39 @@ const initDb = async () => {
       );
     `);
 
-        // Shipments Table
+        // Shipments Table (업데이트된 스키마)
         await client.query(`
       CREATE TABLE IF NOT EXISTS shipments (
         id VARCHAR(50) PRIMARY KEY,
+        year INTEGER NOT NULL,
         shipment_date DATE NOT NULL,
-        customer_name VARCHAR(100) NOT NULL,
-        part_number VARCHAR(100) NOT NULL,
-        part_name VARCHAR(100) NOT NULL,
-        quantity VARCHAR(50),
-        shipping_method VARCHAR(50),
-        remarks TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        customer_name VARCHAR(200) NOT NULL,
+        item_name VARCHAR(200) NOT NULL,
+        part_no VARCHAR(100) NOT NULL,
+        change_seq VARCHAR(50),
+        shipment_qty NUMERIC(15, 2),
+        invoice_no VARCHAR(100),
+        invoice_seq VARCHAR(50),
+        invoice_date DATE,
+        source_file_id VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+        // Shipment Imports Table (업로드 로그)
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS shipment_imports (
+        id VARCHAR(50) PRIMARY KEY,
+        year INTEGER NOT NULL,
+        file_name VARCHAR(255) NOT NULL,
+        file_hash VARCHAR(64) NOT NULL,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        row_count INTEGER DEFAULT 0,
+        inserted_count INTEGER DEFAULT 0,
+        updated_count INTEGER DEFAULT 0,
+        skipped_count INTEGER DEFAULT 0,
+        errors_json TEXT
       );
     `);
 
@@ -176,7 +197,20 @@ const initDb = async () => {
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS customer_sop_actual DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_plan DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS delivery_schedule_actual DATE',
-            'ALTER TABLE forecasts ADD COLUMN IF NOT EXISTS user_id VARCHAR(100)'
+            'ALTER TABLE forecasts ADD COLUMN IF NOT EXISTS user_id VARCHAR(100)',
+            // Shipments 테이블 마이그레이션
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS year INTEGER',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS shipment_date DATE',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS customer_name VARCHAR(200)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS item_name VARCHAR(200)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS part_no VARCHAR(100)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS change_seq VARCHAR(50)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS shipment_qty NUMERIC(15, 2)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS invoice_no VARCHAR(100)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS invoice_seq VARCHAR(50)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS invoice_date DATE',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS source_file_id VARCHAR(50)',
+            'ALTER TABLE shipments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
         ];
         
         // Fix forecasts table constraints - remove old unique constraint if exists
@@ -219,6 +253,17 @@ const initDb = async () => {
                     console.warn('Alter table warning:', err.message);
                 }
             }
+        }
+
+        // Create index for shipments (upsert 기준: year + part_no + change_seq + invoice_no)
+        // invoice_no가 optional이므로 unique index는 생성하지 않음 (애플리케이션 레벨에서 upsert 처리)
+        try {
+            await client.query(`
+                CREATE INDEX IF NOT EXISTS idx_shipments_upsert_key 
+                ON shipments (year, part_no, change_seq, invoice_no)
+            `);
+        } catch (err) {
+            console.warn('Index creation warning:', err.message);
         }
 
         // Seed initial admin user if not exists

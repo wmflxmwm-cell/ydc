@@ -51,6 +51,7 @@ app.use(cors({
     optionsSuccessStatus: 204
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/auth', authRoutes);
