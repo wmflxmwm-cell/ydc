@@ -69,6 +69,21 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
       
       setImportResult(result);
       
+      // 디버깅 정보가 있으면 상세 로그 출력
+      if (result.debugInfo) {
+        console.log('========================================');
+        console.log('[Frontend Excel Parsing Debug Info]');
+        console.log('========================================');
+        console.log(`Import Type: ${result.debugInfo.importType}`);
+        console.log(`Selected Sheet: ${result.debugInfo.sheetName}`);
+        console.log(`Header Row Index: ${result.debugInfo.headerRowIndex}`);
+        console.log(`Headers (Original, first 30):`, result.debugInfo.headersOriginal);
+        console.log(`Headers (Normalized, first 30):`, result.debugInfo.headersNormalized);
+        console.log(`Column Mapping Result:`, result.debugInfo.mappingResult);
+        console.log(`Missing Required Columns:`, result.debugInfo.missingFields);
+        console.log('========================================');
+      }
+      
       // 헤더 매칭 정보 표시 (5개 필수 필드: 출하일자, 고객사, 품번, 품명, 수량)
       if (result.headerRow) {
         console.log(`헤더 행: ${result.headerRow}행, 매칭 점수: ${result.headerMatchScore || 0}/5`);
@@ -86,11 +101,32 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
       fetchData();
     } catch (error: any) {
       console.error('Excel upload error:', error);
-      // 서버에서 반환한 구체적인 오류 메시지 표시 (누락된 컬럼 목록 포함)
+      
+      // 서버에서 반환한 디버깅 정보가 있으면 상세 로그 출력
+      const debugInfo = error?.response?.data?.debugInfo;
+      if (debugInfo) {
+        console.log('========================================');
+        console.log('[Frontend Excel Parsing Debug Info]');
+        console.log('========================================');
+        console.log(`Import Type: ${debugInfo.importType}`);
+        console.log(`Selected Sheet: ${debugInfo.sheetName}`);
+        console.log(`Header Row Index: ${debugInfo.headerRowIndex}`);
+        console.log(`Headers (Original, first 30):`, debugInfo.headersOriginal);
+        console.log(`Headers (Normalized, first 30):`, debugInfo.headersNormalized);
+        console.log(`Column Mapping Result:`, debugInfo.mappingResult);
+        console.log(`Missing Required Columns:`, debugInfo.missingFields);
+        console.log('========================================');
+      }
+      
+      // 서버에서 반환한 구체적인 오류 메시지 표시
       const errorMessage = error?.response?.data?.error || error?.message || '엑셀 업로드 중 오류가 발생했습니다';
       
-      // 에러 메시지에 개행이 포함되어 있으면 그대로 표시 (누락된 컬럼 목록 포함)
-      alert(`엑셀 업로드 오류:\n\n${errorMessage}`);
+      // alert 문구를 "누락된 컬럼: ..." 형태로 변경
+      if (errorMessage.includes('누락된 컬럼')) {
+        alert(errorMessage);
+      } else {
+        alert(`엑셀 업로드 오류:\n\n${errorMessage}`);
+      }
     } finally {
       setUploading(false);
     }

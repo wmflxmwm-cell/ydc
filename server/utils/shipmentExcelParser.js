@@ -152,12 +152,26 @@ function parseShipmentExcel(buffer, year) {
     const headers = jsonData[headerRowIndex].map(h => h ? String(h).trim() : '');
     const dataRows = jsonData.slice(headerRowIndex + 1); // 헤더 다음 행부터 데이터
     
+    // 상세 로그 출력을 위한 정보 수집
+    const importType = 'Shipment';
+    const headersOriginal = headers.slice(0, 30); // 앞 30개
+    const headersNormalized = headersOriginal.map(h => normalizeString(h));
+    
     // 컬럼 인덱스 찾기 (출하현황 필수 필드: 출하일자, 고객사, 품번, 품명, 수량)
     const shipmentDateIdx = findColumnIndex(headers, requiredFields[0].aliases);
     const customerNameIdx = findColumnIndex(headers, requiredFields[1].aliases);
     const partNoIdx = findColumnIndex(headers, requiredFields[2].aliases);
     const itemNameIdx = findColumnIndex(headers, requiredFields[3].aliases);
     const shipmentQtyIdx = findColumnIndex(headers, requiredFields[4].aliases);
+    
+    // 매핑 결과 객체
+    const mappingResult = {
+        dateCol: shipmentDateIdx !== -1 ? shipmentDateIdx : null,
+        customerCol: customerNameIdx !== -1 ? customerNameIdx : null,
+        partNoCol: partNoIdx !== -1 ? partNoIdx : null,
+        itemNameCol: itemNameIdx !== -1 ? itemNameIdx : null,
+        qtyCol: shipmentQtyIdx !== -1 ? shipmentQtyIdx : null
+    };
     
     // 선택 필드
     const changeSeqIdx = findColumnIndex(headers, [
@@ -208,8 +222,22 @@ function parseShipmentExcel(buffer, year) {
         foundFields.push(`수량: "${headers[shipmentQtyIdx]}"`);
     }
     
+    // 상세 로그 출력
+    console.log('========================================');
+    console.log('[Excel Parsing Debug Info]');
+    console.log('========================================');
+    console.log(`Import Type: ${importType}`);
+    console.log(`Selected Sheet: ${sheetName}`);
+    console.log(`Header Row Index: ${headerRowIndex + 1} (0-based: ${headerRowIndex})`);
+    console.log(`Headers (Original, first 30):`, headersOriginal);
+    console.log(`Headers (Normalized, first 30):`, headersNormalized);
+    console.log(`Column Mapping Result:`, JSON.stringify(mappingResult, null, 2));
+    console.log(`Missing Required Columns:`, missingFields);
+    console.log(`Found Columns:`, foundFields);
+    console.log('========================================');
+    
     if (missingFields.length > 0) {
-        const errorMsg = `필수 컬럼을 찾을 수 없습니다:\n\n누락된 컬럼:\n${missingFields.map(f => `  - ${f}`).join('\n')}\n\n인식된 컬럼:\n${foundFields.map(f => `  - ${f}`).join('\n')}\n\n헤더 행: ${headerRowIndex + 1}행`;
+        const errorMsg = `누락된 컬럼: ${missingFields.join(', ')}`;
         throw new Error(errorMsg);
     }
     
@@ -337,7 +365,17 @@ function parseShipmentExcel(buffer, year) {
         sheetName,
         headerRow: headerRowIndex + 1, // 실제 엑셀 행 번호 (1부터 시작)
         headerMatchScore: headerResult.score,
-        headerMatchedFields: headerResult.matchedFields
+        headerMatchedFields: headerResult.matchedFields,
+        // 디버깅 정보 추가
+        debugInfo: {
+            importType: 'Shipment',
+            sheetName: sheetName,
+            headerRowIndex: headerRowIndex + 1,
+            headersOriginal: headersOriginal,
+            headersNormalized: headersNormalized,
+            mappingResult: mappingResult,
+            missingFields: missingFields.length > 0 ? missingFields : []
+        }
     };
 }
 

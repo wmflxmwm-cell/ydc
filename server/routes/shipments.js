@@ -122,10 +122,10 @@ router.post('/import', upload.single('file'), async (req, res) => {
         
         // 엑셀 파싱 (출하현황 전용 파서 사용)
         const parseResult = parseShipmentExcel(req.file.buffer, year);
-        const { rows, errors, headerRow, headerMatchScore, headerMatchedFields } = parseResult;
+        const { rows, errors, headerRow, headerMatchScore, headerMatchedFields, debugInfo } = parseResult;
         
-        // 헤더 매칭 정보 로깅 (5개 필수 필드: 출하일자, 고객사, 품번, 품명, 수량)
-        console.log(`[Shipment Import] Header row: ${headerRow}, Match score: ${headerMatchScore}/5, Matched: ${headerMatchedFields.join(', ')}`);
+        // 디버깅 정보를 응답에 포함
+        // (서버 로그는 parseShipmentExcel 내부에서 이미 출력됨)
         
         // Import 로그 ID 생성
         const importId = `import-${Date.now()}-${uuidv4().substr(0, 8)}`;
@@ -217,13 +217,19 @@ router.post('/import', upload.single('file'), async (req, res) => {
             year,
             headerRow,
             headerMatchScore,
-            headerMatchedFields
+            headerMatchedFields,
+            debugInfo: debugInfo || null // 디버깅 정보 포함
         });
         
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Error importing shipments:', err);
-        res.status(500).json({ error: err.message });
+        // 에러 발생 시에도 디버깅 정보가 있으면 포함
+        const debugInfo = err.debugInfo || null;
+        res.status(500).json({ 
+            error: err.message,
+            debugInfo: debugInfo
+        });
     } finally {
         client.release();
     }

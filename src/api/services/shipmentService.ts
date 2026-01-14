@@ -48,6 +48,21 @@ export interface ImportResult {
   headerRow?: number;
   headerMatchScore?: number;
   headerMatchedFields?: string[];
+  debugInfo?: {
+    importType: string;
+    sheetName: string;
+    headerRowIndex: number;
+    headersOriginal: string[];
+    headersNormalized: string[];
+    mappingResult: {
+      dateCol: number | null;
+      customerCol: number | null;
+      partNoCol: number | null;
+      itemNameCol: number | null;
+      qtyCol: number | null;
+    };
+    missingFields: string[];
+  };
 }
 
 export const shipmentService = {
