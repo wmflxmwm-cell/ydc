@@ -17,7 +17,8 @@ const initDb = async () => {
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL
+        role VARCHAR(50) NOT NULL,
+        tab_permissions TEXT
       );
     `);
 
@@ -161,6 +162,7 @@ const initDb = async () => {
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS lot VARCHAR(50)',
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS remarks TEXT',
             'ALTER TABLE sample_schedules ADD COLUMN IF NOT EXISTS is_plan_approved BOOLEAN DEFAULT FALSE',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS tab_permissions TEXT',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS sop_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fot_date DATE',
             'ALTER TABLE projects ADD COLUMN IF NOT EXISTS fai_date DATE',

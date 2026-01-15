@@ -11,6 +11,7 @@ export interface LoginResponse {
         id: string;
         name: string;
         role: string;
+        tabPermissions?: string[] | null;
     };
 }
 

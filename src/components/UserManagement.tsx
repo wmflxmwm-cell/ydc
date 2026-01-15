@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff, Edit2, Key } from 'lucide-react';
+import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff, Key } from 'lucide-react';
 import { userService, UserWithPassword } from '../api/services/userService';
 import { getTranslations } from '../utils/translations';
+import { getDefaultTabPermissions, TabKey, TAB_KEYS, getTabLabel } from '../utils/tabPermissions';
 
 const UserManagement: React.FC = () => {
     const t = getTranslations();
@@ -15,6 +16,10 @@ const UserManagement: React.FC = () => {
     const [passwordChangeUserId, setPasswordChangeUserId] = useState<string | null>(null);
     const [newPassword, setNewPassword] = useState<string>('');
     const [editFormData, setEditFormData] = useState({ name: '', role: '' });
+    const [permissionsEditUser, setPermissionsEditUser] = useState<UserWithPassword | null>(null);
+    const [permissionsMode, setPermissionsMode] = useState<'default' | 'all' | 'custom'>('default');
+    const [permissionsDraft, setPermissionsDraft] = useState<TabKey[]>([]);
+    const [isPermissionsSaving, setIsPermissionsSaving] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -29,16 +34,21 @@ const UserManagement: React.FC = () => {
         const savedUser = localStorage.getItem('apqp_session');
         if (savedUser) {
             const user = JSON.parse(savedUser);
-            setIsAdmin(user.role === 'MANAGER' || user.role?.includes('총괄'));
+            const defaultPermissions = getDefaultTabPermissions(user);
+            const effectivePermissions = user.tabPermissions ?? defaultPermissions;
+            const canManageUsers = effectivePermissions.includes('users');
+            setIsAdmin(canManageUsers);
             setCurrentUserId(user.id);
+            fetchUsers(canManageUsers);
+            return;
         }
-        fetchUsers();
+        fetchUsers(false);
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (includePassword: boolean = isAdmin) => {
         setIsLoading(true);
         try {
-            const data = await userService.getAll(isAdmin);
+            const data = await userService.getAll(includePassword);
             setUsers(data);
         } catch (error) {
             console.error('Failed to fetch users:', error);
@@ -133,6 +143,102 @@ const UserManagement: React.FC = () => {
             console.error('Failed to change password:', error);
             const errorMessage = error.response?.data?.error || error.message || '비밀번호 변경에 실패했습니다.';
             alert(`비밀번호 변경 실패: ${errorMessage}`);
+        }
+    };
+
+    const formatTabPermissions = (user: UserWithPassword) => {
+        const defaultPermissions = getDefaultTabPermissions(user);
+        const effectivePermissions = user.tabPermissions ?? defaultPermissions;
+
+        if (user.tabPermissions === null || user.tabPermissions === undefined) {
+            return `${t.userManagement.permissionsDefault}: ${effectivePermissions.map((key) => getTabLabel(t, key)).join(', ')}`;
+        }
+        if (effectivePermissions.length === 0) {
+            return t.userManagement.permissionsNone;
+        }
+        if (effectivePermissions.length === TAB_KEYS.length) {
+            return t.userManagement.permissionsAll;
+        }
+        return effectivePermissions.map((key) => getTabLabel(t, key)).join(', ');
+    };
+
+    const normalizeTabPermissions = (tabPermissions?: TabKey[] | null) => {
+        if (!tabPermissions || tabPermissions.length === 0) return [];
+        return tabPermissions.filter((key) => TAB_KEYS.includes(key));
+    };
+
+    const handleEditPermissions = (user: UserWithPassword) => {
+        setPermissionsEditUser(user);
+        const defaultPermissions = getDefaultTabPermissions(user);
+        const normalized = normalizeTabPermissions(user.tabPermissions ?? null);
+
+        if (user.tabPermissions === null || user.tabPermissions === undefined) {
+            setPermissionsMode('default');
+            setPermissionsDraft(defaultPermissions);
+            return;
+        }
+
+        if (normalized.length === TAB_KEYS.length) {
+            setPermissionsMode('all');
+            setPermissionsDraft(TAB_KEYS);
+            return;
+        }
+
+        setPermissionsMode('custom');
+        setPermissionsDraft(normalized);
+    };
+
+    const updatePermissionsMode = (mode: 'default' | 'all' | 'custom') => {
+        if (!permissionsEditUser) return;
+        setPermissionsMode(mode);
+        if (mode === 'default') {
+            setPermissionsDraft(getDefaultTabPermissions(permissionsEditUser));
+        } else if (mode === 'all') {
+            setPermissionsDraft(TAB_KEYS);
+        }
+    };
+
+    const togglePermission = (key: TabKey) => {
+        if (permissionsMode !== 'custom') return;
+        setPermissionsDraft((prev) => {
+            if (prev.includes(key)) {
+                return prev.filter((item) => item !== key);
+            }
+            return [...prev, key];
+        });
+    };
+
+    const handleSavePermissions = async () => {
+        if (!permissionsEditUser) return;
+        setIsPermissionsSaving(true);
+        try {
+            let payload: TabKey[] | null;
+            if (permissionsMode === 'default') {
+                payload = null;
+            } else if (permissionsMode === 'all') {
+                payload = TAB_KEYS;
+            } else {
+                payload = permissionsDraft;
+            }
+            await userService.updatePermissions(permissionsEditUser.id, payload);
+
+            if (permissionsEditUser.id === currentUserId) {
+                const savedUser = localStorage.getItem('apqp_session');
+                if (savedUser) {
+                    const user = JSON.parse(savedUser);
+                    const updatedUser = { ...user, tabPermissions: payload };
+                    localStorage.setItem('apqp_session', JSON.stringify(updatedUser));
+                }
+            }
+            await fetchUsers();
+            setPermissionsEditUser(null);
+            alert(t.userManagement.permissionUpdated);
+        } catch (error: any) {
+            console.error('Failed to update tab permissions:', error);
+            const errorMessage = error.response?.data?.error || error.message || t.userManagement.permissionUpdateFailed;
+            alert(`${t.userManagement.permissionUpdateFailed}: ${errorMessage}`);
+        } finally {
+            setIsPermissionsSaving(false);
         }
     };
 
@@ -252,6 +358,7 @@ const UserManagement: React.FC = () => {
                                         <th className="px-6 py-3">{t.userManagement.name}</th>
                                         <th className="px-6 py-3">{t.userManagement.userId}</th>
                                         <th className="px-6 py-3">{t.userManagement.role}</th>
+                                        <th className="px-6 py-3">{t.userManagement.tabPermissions}</th>
                                         {isAdmin && <th className="px-6 py-3">비밀번호</th>}
                                         <th className="px-6 py-3">{t.userManagement.status}</th>
                                         <th className="px-6 py-3">작업</th>
@@ -260,11 +367,11 @@ const UserManagement: React.FC = () => {
                                 <tbody className="divide-y divide-slate-100">
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-slate-500">{t.userManagement.loading}</td>
+                                            <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-slate-500">{t.userManagement.loading}</td>
                                         </tr>
                                     ) : users.length === 0 ? (
                                         <tr>
-                                            <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-slate-500">{t.userManagement.noUsers}</td>
+                                            <td colSpan={isAdmin ? 7 : 6} className="px-6 py-8 text-center text-slate-500">{t.userManagement.noUsers}</td>
                                         </tr>
                                     ) : (
                                         users.map((user) => (
@@ -275,6 +382,9 @@ const UserManagement: React.FC = () => {
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                                         {user.role}
                                                     </span>
+                                                </td>
+                                                <td className="px-6 py-3 text-xs text-slate-600">
+                                                    {formatTabPermissions(user)}
                                                 </td>
                                                 {isAdmin && (
                                                     <td className="px-6 py-3">
@@ -301,14 +411,25 @@ const UserManagement: React.FC = () => {
                                                     <span className="text-xs font-bold">{t.userManagement.active}</span>
                                                 </td>
                                                 <td className="px-6 py-3">
-                                                    <button
-                                                        onClick={() => handleDeleteUser(user.id)}
-                                                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
-                                                        title="사용자 삭제"
-                                                        disabled={user.role === 'MANAGER' && user.id === 'admin'}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        {isAdmin && (
+                                                            <button
+                                                                onClick={() => handleEditPermissions(user)}
+                                                                className="p-2 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all"
+                                                                title={t.userManagement.editPermissions}
+                                                            >
+                                                                <Key size={16} />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleDeleteUser(user.id)}
+                                                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                                                            title="사용자 삭제"
+                                                            disabled={user.role === 'MANAGER' && user.id === 'admin'}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -377,6 +498,84 @@ const UserManagement: React.FC = () => {
                                 className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-300 transition-colors"
                             >
                                 취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 탭 권한 편집 모달 */}
+            {isAdmin && permissionsEditUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Shield className="w-5 h-5 text-indigo-600" />
+                            <h3 className="text-xl font-bold text-slate-900">{t.userManagement.permissionsTitle}</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 mb-4">
+                            {permissionsEditUser.name} ({permissionsEditUser.id})
+                        </p>
+
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            <button
+                                onClick={() => updatePermissionsMode('default')}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                                    permissionsMode === 'default'
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                {t.userManagement.permissionsDefault}
+                            </button>
+                            <button
+                                onClick={() => updatePermissionsMode('all')}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                                    permissionsMode === 'all'
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                {t.userManagement.permissionsAll}
+                            </button>
+                            <button
+                                onClick={() => updatePermissionsMode('custom')}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                                    permissionsMode === 'custom'
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                {t.userManagement.permissionsCustom}
+                            </button>
+                        </div>
+
+                        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${permissionsMode !== 'custom' ? 'opacity-70' : ''}`}>
+                            {TAB_KEYS.map((key) => (
+                                <label key={key} className="flex items-center gap-2 text-sm text-slate-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={permissionsDraft.includes(key)}
+                                        onChange={() => togglePermission(key)}
+                                        disabled={permissionsMode !== 'custom'}
+                                    />
+                                    <span>{getTabLabel(t, key)}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={handleSavePermissions}
+                                disabled={isPermissionsSaving}
+                                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                            >
+                                {t.userManagement.save}
+                            </button>
+                            <button
+                                onClick={() => setPermissionsEditUser(null)}
+                                className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-300 transition-colors"
+                            >
+                                {t.userManagement.cancel}
                             </button>
                         </div>
                     </div>

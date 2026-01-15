@@ -2,6 +2,17 @@ const express = require('express');
 const { pool } = require('../db');
 const router = express.Router();
 
+const parseTabPermissions = (value) => {
+    if (!value) return null;
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : null;
+    } catch (err) {
+        console.warn('Invalid tab_permissions JSON:', err.message);
+        return null;
+    }
+};
+
 router.post('/login', async (req, res) => {
     const { id, password } = req.body;
     
@@ -74,7 +85,8 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user.id,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                tabPermissions: parseTabPermissions(user.tab_permissions)
             }
         });
     } catch (err) {
@@ -181,15 +193,19 @@ router.get('/users', async (req, res) => {
         // Check if requester is admin (from header)
         const isAdmin = req.headers['x-admin'] === 'true';
         
-        if (isAdmin) {
-            // Admin can see passwords
-            const result = await pool.query('SELECT id, name, role, password FROM users ORDER BY name');
-            res.json(result.rows);
-        } else {
-            // Regular users cannot see passwords
-            const result = await pool.query('SELECT id, name, role FROM users ORDER BY name');
-            res.json(result.rows);
-        }
+        const result = isAdmin
+            ? await pool.query('SELECT id, name, role, password, tab_permissions FROM users ORDER BY name')
+            : await pool.query('SELECT id, name, role, tab_permissions FROM users ORDER BY name');
+
+        const users = result.rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            role: row.role,
+            password: row.password,
+            tabPermissions: parseTabPermissions(row.tab_permissions)
+        }));
+
+        res.json(users);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -224,6 +240,36 @@ router.put('/users/:id', async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         console.error('Error updating user:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update tab permissions (admin only)
+router.put('/users/:id/permissions', async (req, res) => {
+    const { id } = req.params;
+    const { tabPermissions } = req.body;
+
+    const isAdmin = req.headers['x-admin'] === 'true';
+    if (!isAdmin) {
+        return res.status(403).json({ error: '관리자만 탭 권한을 수정할 수 있습니다.' });
+    }
+
+    const serializedPermissions = tabPermissions === null ? null : JSON.stringify(tabPermissions || []);
+
+    try {
+        const checkResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await pool.query(
+            'UPDATE users SET tab_permissions = $1 WHERE id = $2',
+            [serializedPermissions, id]
+        );
+
+        res.json({ message: 'Tab permissions updated', tabPermissions: parseTabPermissions(serializedPermissions) });
+    } catch (err) {
+        console.error('Error updating tab permissions:', err);
         res.status(500).json({ error: err.message });
     }
 });

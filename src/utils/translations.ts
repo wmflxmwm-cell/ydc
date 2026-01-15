@@ -33,6 +33,8 @@ export const translations = {
         forecast: '아이템별 Forecast',
         sample: 'Sample 일정',
         part: '품목 등록',
+        mold: '증작금형 관리',
+        shipment: '출하현황',
         userManagement: '사용자 관리',
         settings: '기본 내용'
       }
@@ -183,6 +185,13 @@ export const translations = {
       password: '비밀번호',
       name: '이름',
       role: '역할/부서',
+      tabPermissions: '탭 권한',
+      editPermissions: '탭 권한 설정',
+      permissionsTitle: '탭 접근 권한 설정',
+      permissionsDefault: '기본 권한(역할 기준)',
+      permissionsAll: '전체 탭 허용',
+      permissionsCustom: '사용자 지정',
+      permissionsNone: '권한 없음',
       selectRole: '부서 선택',
       register: '사용자 등록',
       registering: '등록 중...',
@@ -193,7 +202,11 @@ export const translations = {
       loading: '로딩 중...',
       noUsers: '등록된 사용자가 없습니다.',
       registered: '사용자가 등록되었습니다.',
-      registerFailed: '사용자 등록에 실패했습니다.'
+      registerFailed: '사용자 등록에 실패했습니다.',
+      save: '저장',
+      cancel: '취소',
+      permissionUpdated: '탭 권한이 저장되었습니다.',
+      permissionUpdateFailed: '탭 권한 저장에 실패했습니다.'
     },
     // SettingsManagement.tsx
     settingsManagement: {
@@ -281,6 +294,8 @@ export const translations = {
         forecast: 'Dự báo theo mặt hàng',
         sample: 'Lịch mẫu',
         part: 'Đăng ký sản phẩm',
+        mold: 'Quản lý khuôn tăng thêm',
+        shipment: 'Tình trạng giao hàng',
         userManagement: 'Quản lý người dùng',
         settings: 'Nội dung cơ bản'
       }
@@ -431,6 +446,13 @@ export const translations = {
       password: 'Mật khẩu',
       name: 'Tên',
       role: 'Vai trò/Bộ phận',
+      tabPermissions: 'Quyền truy cập tab',
+      editPermissions: 'Thiết lập quyền tab',
+      permissionsTitle: 'Thiết lập quyền truy cập tab',
+      permissionsDefault: 'Quyền mặc định (theo vai trò)',
+      permissionsAll: 'Cho phép tất cả tab',
+      permissionsCustom: 'Tùy chỉnh',
+      permissionsNone: 'Không có quyền',
       selectRole: 'Chọn bộ phận',
       register: 'Đăng ký người dùng',
       registering: 'Đang đăng ký...',
@@ -441,7 +463,11 @@ export const translations = {
       loading: 'Đang tải...',
       noUsers: 'Không có người dùng nào được đăng ký.',
       registered: 'Người dùng đã được đăng ký.',
-      registerFailed: 'Đăng ký người dùng thất bại.'
+      registerFailed: 'Đăng ký người dùng thất bại.',
+      save: 'Lưu',
+      cancel: 'Hủy',
+      permissionUpdated: 'Đã lưu quyền tab.',
+      permissionUpdateFailed: 'Lưu quyền tab thất bại.'
     },
     // SettingsManagement.tsx
     settingsManagement: {

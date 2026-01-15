@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -34,11 +34,13 @@ import MoldManagement from './components/MoldManagement';
 import ShipmentStatus from './components/ShipmentStatus';
 import Login from './components/Login';
 import { getLanguage, getTranslations } from './src/utils/translations';
+import { getDefaultTabPermissions, TabKey } from './src/utils/tabPermissions';
 
 interface UserSession {
   id: string;
   name: string;
   role: string;
+  tabPermissions?: TabKey[] | null;
 }
 
 const App: React.FC = () => {
@@ -247,6 +249,24 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+  const allowedTabs = useMemo(() => {
+    if (!user) return [];
+    if (user.tabPermissions === null || user.tabPermissions === undefined) {
+      return getDefaultTabPermissions(user);
+    }
+    return user.tabPermissions;
+  }, [user, user?.tabPermissions]);
+
+  const canAccessTab = (tab: TabKey) => allowedTabs.includes(tab);
+
+  useEffect(() => {
+    if (!user) return;
+    if (allowedTabs.length === 0) return;
+    if (!allowedTabs.includes(activeTab)) {
+      setActiveTab(allowedTabs[0]);
+    }
+  }, [activeTab, allowedTabs, user]);
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans antialiased animate-in fade-in duration-700">
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 shadow-2xl z-50">
@@ -262,6 +282,7 @@ const App: React.FC = () => {
         </div>
 
         <nav className="flex-1 mt-6 px-4 space-y-1 overflow-y-auto">
+          {canAccessTab('dashboard') && (
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -271,7 +292,9 @@ const App: React.FC = () => {
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.dashboard}</span>
           </button>
+          )}
 
+          {canAccessTab('registration') && (
           <button
             onClick={() => setActiveTab('registration')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -281,7 +304,9 @@ const App: React.FC = () => {
             <PlusCircle className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.newProject}</span>
           </button>
+          )}
 
+          {canAccessTab('management') && (
           <button
             onClick={() => setActiveTab('management')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -291,7 +316,9 @@ const App: React.FC = () => {
             <Activity className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.gateManagement}</span>
           </button>
+          )}
 
+          {canAccessTab('issues') && (
           <button
             onClick={() => setActiveTab('issues')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -301,7 +328,9 @@ const App: React.FC = () => {
             <AlertTriangle className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.issueTracker}</span>
           </button>
+          )}
 
+          {canAccessTab('forecast') && (
           <button
             onClick={() => setActiveTab('forecast')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -311,7 +340,9 @@ const App: React.FC = () => {
             <TrendingUp className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.forecast}</span>
           </button>
+          )}
 
+          {canAccessTab('sample') && (
           <button
             onClick={() => setActiveTab('sample')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -321,7 +352,9 @@ const App: React.FC = () => {
             <Calendar className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.sample}</span>
           </button>
+          )}
 
+          {canAccessTab('part') && (
           <button
             onClick={() => setActiveTab('part')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -331,7 +364,9 @@ const App: React.FC = () => {
             <Package className="w-5 h-5" />
             <span className="font-medium text-sm">{t.app.sidebar.part}</span>
           </button>
+          )}
 
+          {canAccessTab('mold') && (
           <button
             onClick={() => setActiveTab('mold')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -339,9 +374,11 @@ const App: React.FC = () => {
             }`}
           >
             <Wrench className="w-5 h-5" />
-            <span className="font-medium text-sm">증작금형 관리</span>
+            <span className="font-medium text-sm">{t.app.sidebar.mold}</span>
           </button>
+          )}
 
+          {canAccessTab('shipment') && (
           <button
             onClick={() => setActiveTab('shipment')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -349,31 +386,32 @@ const App: React.FC = () => {
             }`}
           >
             <Truck className="w-5 h-5" />
-            <span className="font-medium text-sm">출하현황</span>
+            <span className="font-medium text-sm">{t.app.sidebar.shipment}</span>
           </button>
+          )}
 
-          {user.role === 'MANAGER' && (
-            <>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                  activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <UserIcon className="w-5 h-5" />
-                <span className="font-medium text-sm">{t.app.sidebar.userManagement}</span>
-              </button>
+          {canAccessTab('users') && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <UserIcon className="w-5 h-5" />
+              <span className="font-medium text-sm">{t.app.sidebar.userManagement}</span>
+            </button>
+          )}
 
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                  activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <BookOpen className="w-5 h-5" />
-                <span className="font-medium text-sm">{t.app.sidebar.settings}</span>
-              </button>
-            </>
+          {canAccessTab('settings') && (
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+              <span className="font-medium text-sm">{t.app.sidebar.settings}</span>
+            </button>
           )}
         </nav>
 
@@ -435,8 +473,8 @@ const App: React.FC = () => {
               {activeTab === 'forecast' && t.app.forecast}
               {activeTab === 'sample' && t.app.sample}
               {activeTab === 'part' && t.app.part}
-              {activeTab === 'mold' && '증작금형 관리'}
-              {activeTab === 'shipment' && '출하현황'}
+              {activeTab === 'mold' && t.app.sidebar.mold}
+              {activeTab === 'shipment' && t.app.sidebar.shipment}
               {activeTab === 'users' && t.app.users}
               {activeTab === 'settings' && t.app.settings}
             </h1>
@@ -451,6 +489,13 @@ const App: React.FC = () => {
         </header>
 
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {allowedTabs.length === 0 && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <AlertTriangle className="text-red-600" size={20} />
+              <p className="text-sm font-bold text-red-700">접근 권한이 없습니다. 관리자에게 문의하세요.</p>
+            </div>
+          )}
+
           {isLoading && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -471,14 +516,19 @@ const App: React.FC = () => {
           )}
 
           {/* 조건부 렌더링 대신 CSS로 숨김 처리하여 컴포넌트 언마운트 방지 - React 19 removeChild 오류 해결 */}
+          {canAccessTab('dashboard') && (
           <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
             <Dashboard projects={projects} gates={gates} issues={issues} user={user} onDeleteProject={deleteProject} />
           </div>
+          )}
 
+          {canAccessTab('registration') && (
           <div style={{ display: activeTab === 'registration' ? 'block' : 'none' }}>
             <ProjectRegistration activeTab={activeTab} onAddProject={addProject} onNavigateToManagement={() => setActiveTab('management')} />
           </div>
+          )}
 
+          {canAccessTab('management') && (
           <div style={{ display: activeTab === 'management' ? 'block' : 'none' }}>
             <PhaseManagement
               projects={projects}
@@ -489,23 +539,33 @@ const App: React.FC = () => {
               setSelectedProjectId={setSelectedProjectId}
             />
           </div>
+          )}
 
+          {canAccessTab('issues') && (
           <div style={{ display: activeTab === 'issues' ? 'block' : 'none' }}>
             <IssueTracker issues={issues} projects={projects} onToggleResolve={toggleIssueResolution} onAddIssue={addIssue} />
           </div>
+          )}
 
+          {canAccessTab('forecast') && (
           <div style={{ display: activeTab === 'forecast' ? 'block' : 'none' }}>
             <Forecast projects={projects} onProjectsUpdate={fetchData} user={user} />
           </div>
+          )}
 
+          {canAccessTab('sample') && (
           <div style={{ display: activeTab === 'sample' ? 'block' : 'none' }}>
             <SampleSchedule user={user} />
           </div>
+          )}
 
+          {canAccessTab('part') && (
           <div style={{ display: activeTab === 'part' ? 'block' : 'none' }}>
             <PartRegistration user={user} />
           </div>
+          )}
 
+          {canAccessTab('mold') && (
           <div style={{ display: activeTab === 'mold' ? 'block' : 'none' }}>
             <MoldManagement 
               user={user} 
@@ -513,16 +573,23 @@ const App: React.FC = () => {
               onNavigateToRegistration={() => setActiveTab('registration')}
             />
           </div>
+          )}
 
+          {canAccessTab('shipment') && (
           <div style={{ display: activeTab === 'shipment' ? 'block' : 'none' }}>
             <ShipmentStatus user={user} />
           </div>
+          )}
 
+          {canAccessTab('users') && (
           <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
             <UserManagement />
           </div>
+          )}
 
+          {canAccessTab('settings') && (
           <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>{user && <SettingsManagement user={user} />}</div>
+          )}
         </div>
       </main>
     </div>

@@ -1,9 +1,11 @@
 import client from '../client';
+import { TabKey } from '../../utils/tabPermissions';
 
 export interface User {
     id: string;
     name: string;
     role: string;
+    tabPermissions?: TabKey[] | null;
 }
 
 export interface RegisterRequest {
@@ -38,6 +40,11 @@ export const userService = {
         const headers: any = { 'x-admin': 'true' };
         const response = await client.put<User>(`/auth/users/${id}`, data, { headers });
         return response.data;
+    },
+
+    updatePermissions: async (id: string, tabPermissions: TabKey[] | null): Promise<void> => {
+        const headers: any = { 'x-admin': 'true' };
+        await client.put(`/auth/users/${id}/permissions`, { tabPermissions }, { headers });
     },
 
     changePassword: async (id: string, password: string): Promise<void> => {

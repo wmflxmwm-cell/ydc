@@ -46,7 +46,7 @@ const translations: Record<Language, Translations> = {
 };
 
 interface Props {
-  onLogin: (userData: { id: string; name: string; role: string }) => void;
+  onLogin: (userData: { id: string; name: string; role: string; tabPermissions?: string[] | null }) => void;
 }
 
 const Login: React.FC<Props> = ({ onLogin }) => {
@@ -100,7 +100,8 @@ const Login: React.FC<Props> = ({ onLogin }) => {
         onLogin({ 
           id: response.user.id, 
           name: response.user.name, 
-          role: response.user.role 
+          role: response.user.role,
+          tabPermissions: response.user.tabPermissions ?? null
         });
       } else {
         setError(t.errorMessage);
