@@ -490,4 +490,3 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
 };
 
 export default ShipmentStatus;
-ㅣ
