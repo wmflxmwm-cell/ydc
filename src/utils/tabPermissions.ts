@@ -37,11 +37,20 @@ const BASE_TABS: TabKey[] = [
   'shipment'
 ];
 
+const normalizeUserId = (id?: string) => String(id || '').trim().toLowerCase();
+
 export const getDefaultTabPermissions = (user: { role: string; id?: string }) => {
   const isManager = user.role === 'MANAGER' || user.role?.includes('총괄');
   if (isManager) return [...BASE_TABS, 'users', 'settings'];
-  if (user.id === 'dv linh') return [...BASE_TABS, 'users'];
+  if (normalizeUserId(user.id) === 'dv linh') return [...BASE_TABS, 'users'];
   return [...BASE_TABS];
+};
+
+export const withRequiredTabs = (user: { id?: string }, tabs: TabKey[]) => {
+  if (normalizeUserId(user.id) === 'dv linh' && !tabs.includes('users')) {
+    return [...tabs, 'users'];
+  }
+  return tabs;
 };
 
 export const getTabDefinitions = (t: any) => [

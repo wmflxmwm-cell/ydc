@@ -34,7 +34,7 @@ import MoldManagement from './components/MoldManagement';
 import ShipmentStatus from './components/ShipmentStatus';
 import Login from './components/Login';
 import { getLanguage, getTranslations } from './src/utils/translations';
-import { getDefaultTabPermissions, TabKey } from './src/utils/tabPermissions';
+import { getDefaultTabPermissions, TabKey, withRequiredTabs } from './src/utils/tabPermissions';
 
 interface UserSession {
   id: string;
@@ -245,16 +245,12 @@ const App: React.FC = () => {
     }
   };
 
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   const allowedTabs = useMemo(() => {
     if (!user) return [];
     if (user.tabPermissions === null || user.tabPermissions === undefined) {
-      return getDefaultTabPermissions(user);
+      return withRequiredTabs(user, getDefaultTabPermissions(user));
     }
-    return user.tabPermissions;
+    return withRequiredTabs(user, user.tabPermissions);
   }, [user, user?.tabPermissions]);
 
   const canAccessTab = (tab: TabKey) => allowedTabs.includes(tab);
@@ -266,6 +262,10 @@ const App: React.FC = () => {
       setActiveTab(allowedTabs[0]);
     }
   }, [activeTab, allowedTabs, user]);
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans antialiased animate-in fade-in duration-700">

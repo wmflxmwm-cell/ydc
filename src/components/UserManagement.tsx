@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Shield, Trash2, CheckCircle2, Eye, EyeOff, Key } from 'lucide-react';
 import { userService, UserWithPassword } from '../api/services/userService';
 import { getTranslations } from '../utils/translations';
-import { getDefaultTabPermissions, TabKey, TAB_KEYS, getTabLabel } from '../utils/tabPermissions';
+import { getDefaultTabPermissions, TabKey, TAB_KEYS, getTabLabel, withRequiredTabs } from '../utils/tabPermissions';
 
 const UserManagement: React.FC = () => {
     const t = getTranslations();
@@ -35,7 +35,7 @@ const UserManagement: React.FC = () => {
         if (savedUser) {
             const user = JSON.parse(savedUser);
             const defaultPermissions = getDefaultTabPermissions(user);
-            const effectivePermissions = user.tabPermissions ?? defaultPermissions;
+            const effectivePermissions = withRequiredTabs(user, user.tabPermissions ?? defaultPermissions);
             const canManageUsers = effectivePermissions.includes('users');
             setIsAdmin(canManageUsers);
             setCurrentUserId(user.id);
