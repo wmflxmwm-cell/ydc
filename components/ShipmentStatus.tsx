@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Truck, Upload, FileSpreadsheet, X, Trash2, Download, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { shipmentService, Shipment } from '../src/api/services/shipmentService';
-import { getTranslations } from '../src/utils/translations';
 
 interface Props {
   user: { id: string; name: string; role: string };
@@ -11,8 +10,6 @@ interface Props {
 const REQUIRED_FIELDS_COUNT = 4;
 
 const ShipmentStatus: React.FC<Props> = ({ user }) => {
-  const t = getTranslations();
-
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -31,6 +28,12 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ ID 충돌 방지: 컴포넌트마다 고유 id 생성
+  const uploadInputId = useMemo(
+    () => `shipment-excel-upload-${Math.random().toString(36).slice(2, 10)}`,
+    []
+  );
 
   useEffect(() => {
     fetchData();
@@ -57,6 +60,8 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
   };
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🔥 ShipmentStatus handleExcelUpload CALLED'); // ✅ 실제 이 함수가 실행되는지 확인용
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -69,19 +74,11 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     setImportResult(null);
 
     try {
-      /**
-       * ✅ 연도 처리 정책(중요)
-       * - 파일명에서 연도 추출은 위험함 (예: 2025_..._260114.xlsx 같은 경우 2025로 잘못 들어갈 수 있음)
-       * - 사용자가 연도 필터를 선택해둔 경우만 그 연도를 사용
-       * - 아니면 undefined로 보내고 서버가 시트/데이터 기반으로 처리하도록 둠
-       */
       const year = typeof yearFilter === 'number' ? yearFilter : undefined;
 
       const result = await shipmentService.importExcel(file, year, false);
-
       setImportResult(result);
 
-      // 디버깅 정보 출력
       if (result.debugInfo) {
         console.log('========================================');
         console.log('[Frontend Excel Parsing Debug Info]');
@@ -96,7 +93,6 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
         console.log('========================================');
       }
 
-      // ✅ 필수 컬럼 4개 기준으로 표시
       if (result.headerRow) {
         console.log(
           `헤더 행: ${result.headerRow}행, 매칭 점수: ${result.headerMatchScore || 0}/${REQUIRED_FIELDS_COUNT}`
@@ -108,9 +104,7 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
           `업로드 완료: ${result.insertedCount}개 추가, ${result.updatedCount}개 업데이트, ${result.skippedCount}개 건너뜀, ${result.errorRows.length}개 오류`
         );
       } else {
-        alert(
-          `업로드 완료: ${result.insertedCount}개 추가, ${result.updatedCount}개 업데이트, ${result.skippedCount}개 건너뜀`
-        );
+        alert(`업로드 완료: ${result.insertedCount}개 추가, ${result.updatedCount}개 업데이트, ${result.skippedCount}개 건너뜀`);
       }
 
       if (fileInputRef.current) {
@@ -121,7 +115,6 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     } catch (error: any) {
       console.error('Excel upload error:', error);
 
-      // 서버 디버깅 정보 출력
       const debugInfo = error?.response?.data?.debugInfo;
       if (debugInfo) {
         console.log('========================================');
@@ -137,9 +130,7 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
         console.log('========================================');
       }
 
-      // 서버에서 반환한 구체 오류 메시지
-      const errorMessage =
-        error?.response?.data?.error || error?.message || '엑셀 업로드 중 오류가 발생했습니다';
+      const errorMessage = error?.response?.data?.error || error?.message || '엑셀 업로드 중 오류가 발생했습니다';
 
       if (String(errorMessage).includes('누락된 컬럼')) {
         alert(errorMessage);
@@ -171,8 +162,7 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
       품번: item.partNo || item.partNumber || '',
       품명: item.itemName || item.partName || '',
       'LOT/No': item.changeSeq || '',
-      출하수량:
-        item.shipmentQty !== null && item.shipmentQty !== undefined ? item.shipmentQty : item.quantity || '',
+      출하수량: item.shipmentQty !== null && item.shipmentQty !== undefined ? item.shipmentQty : item.quantity || '',
       'Invoice No': item.invoiceNo || '',
       'Invoice Date': item.invoiceDate || '',
       업데이트일: item.updatedAt || item.createdAt || '',
@@ -187,7 +177,6 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
     XLSX.writeFile(wb, filename);
   };
 
-  // 서버 필터링 사용
   const filteredShipments = shipments;
 
   return (
@@ -252,17 +241,13 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
           <div className="mb-6 p-6 bg-slate-50 rounded-2xl border border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 mb-4">업로드 결과</h3>
 
-            {/* 헤더 매칭 정보 */}
             {importResult.headerRow && (
               <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
                 <p className="text-xs font-bold text-blue-800">
-                  헤더 행: {importResult.headerRow}행 | 매칭 점수: {importResult.headerMatchScore || 0}/
-                  {REQUIRED_FIELDS_COUNT}
+                  헤더 행: {importResult.headerRow}행 | 매칭 점수: {importResult.headerMatchScore || 0}/{REQUIRED_FIELDS_COUNT}
                 </p>
                 {importResult.headerMatchedFields && importResult.headerMatchedFields.length > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    인식된 필드: {importResult.headerMatchedFields.join(', ')}
-                  </p>
+                  <p className="text-xs text-blue-600 mt-1">인식된 필드: {importResult.headerMatchedFields.join(', ')}</p>
                 )}
               </div>
             )}
@@ -348,15 +333,11 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
                       <td className="px-6 py-4 text-sm font-bold text-slate-900">{item.year || '-'}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.shipmentDate || '-'}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.customerName || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-700 font-mono">
-                        {item.partNo || item.partNumber || '-'}
-                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700 font-mono">{item.partNo || item.partNumber || '-'}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.itemName || item.partName || '-'}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.changeSeq || '-'}</td>
                       <td className="px-6 py-4 text-sm text-center text-slate-700">
-                        {item.shipmentQty !== null && item.shipmentQty !== undefined
-                          ? item.shipmentQty.toLocaleString()
-                          : item.quantity || '-'}
+                        {item.shipmentQty !== null && item.shipmentQty !== undefined ? item.shipmentQty.toLocaleString() : item.quantity || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.invoiceNo || '-'}</td>
                       <td className="px-6 py-4 text-sm text-slate-700">{item.invoiceDate || '-'}</td>
@@ -401,10 +382,7 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
                   <p className="text-xs text-slate-400 font-bold mt-1">출하현황 데이터 일괄 등록</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="p-2 hover:bg-slate-800 rounded-full transition-colors"
-              >
+              <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -456,12 +434,16 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
                   accept=".xlsx,.xls"
                   onChange={handleExcelUpload}
                   className="hidden"
-                  id="excel-upload"
+                  id={uploadInputId}
                   disabled={uploading}
                 />
-                <label
-                  htmlFor="excel-upload"
-                  className={`cursor-pointer flex flex-col items-center gap-4 ${
+
+                {/* ✅ label-for 방식 대신, ref.click()으로 확실하게 내 input만 열기 */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={`w-full cursor-pointer flex flex-col items-center gap-4 ${
                     uploading ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
@@ -472,7 +454,7 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
                     <p className="text-sm font-bold text-slate-700">{uploading ? '업로드 중...' : '엑셀 파일을 선택하세요'}</p>
                     <p className="text-slate-500 text-[10px] mt-0.5">.xlsx, .xls</p>
                   </div>
-                </label>
+                </button>
               </div>
 
               {uploading && (
