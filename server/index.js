@@ -46,7 +46,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-admin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-admin', 'X-Client-Debug'],
     preflightContinue: false,
     optionsSuccessStatus: 204
 }));
