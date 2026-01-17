@@ -59,7 +59,6 @@ export const shipmentService = {
   },
 
   importExcel: async (file: File, year?: number, skipDuplicate?: boolean): Promise<ImportResult> => {
-    // ✅ 배포 후 업로드 시 콘솔에서 이 로그가 떠야 “내 코드가 적용된 것”
     console.log('[IMPORT DEBUG] shipmentService.importExcel called', {
       fileName: file.name,
       fileSize: file.size,
@@ -72,12 +71,9 @@ export const shipmentService = {
     if (typeof year === 'number') formData.append('year', String(year));
     if (skipDuplicate) formData.append('skipDuplicate', 'true');
 
-    const response = await client.post<ImportResult>('/api/shipments/import', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'X-Client-Debug': 'shipment-import-v1',
-      },
-    });
+    // ✅ CORS 문제 원인인 커스텀 헤더 제거
+    // ✅ multipart/form-data Content-Type은 axios가 boundary 포함해 자동 설정하므로 headers를 주지 않는 것이 안전
+    const response = await client.post<ImportResult>('/api/shipments/import', formData);
 
     console.log('[IMPORT DEBUG] response', response.data);
     return response.data;
