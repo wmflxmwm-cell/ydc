@@ -27,9 +27,6 @@ const API_URL = getApiUrl();
 
 const client = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // 요청 인터셉터: 토큰이 있으면 헤더에 추가
@@ -43,6 +40,20 @@ client.interceptors.request.use(
         // ✅ Axios v1 타입 안전: headers 객체를 절대 {}로 덮어쓰지 말고 그대로 사용
         config.headers = config.headers ?? {};
         (config.headers as any).Authorization = `Bearer ${user.token}`;
+      }
+    }
+
+    // FormData 업로드면 Content-Type을 제거해 boundary를 axios가 자동 설정하도록 함
+    const data: any = config.data;
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    if (isFormData) {
+      const h: any = config.headers;
+      if (h?.delete) {
+        h.delete('Content-Type');
+        h.delete('content-type');
+      } else if (h) {
+        delete h['Content-Type'];
+        delete h['content-type'];
       }
     }
     return config;
