@@ -8,18 +8,15 @@ const getApiUrl = () => {
     return env.VITE_API_URL as string;
   }
 
-  // 프로덕션 환경에서 자동 감지
-  if (env.PROD) {
+  // 프로덕션/외부 접속 환경에서 자동 감지
+  if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname.includes('onrender.com')) {
-      if (hostname.includes('ydc-408r')) {
-        return 'https://ydc-server.onrender.com';
-      }
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    // onrender 또는 외부 도메인에서 접속 중이면 서버 기본값 사용
+    if (hostname.includes('onrender.com') || !isLocalhost) {
       return 'https://ydc-server.onrender.com';
     }
-
-    // onrender 도메인이 아니더라도 운영 환경이면 서버 기본값 사용
-    return 'https://ydc-server.onrender.com';
   }
 
   // 개발 환경 기본값
