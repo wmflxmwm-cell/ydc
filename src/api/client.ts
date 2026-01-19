@@ -17,6 +17,9 @@ const getApiUrl = () => {
       }
       return 'https://ydc-server.onrender.com';
     }
+
+    // onrender 도메인이 아니더라도 운영 환경이면 서버 기본값 사용
+    return 'https://ydc-server.onrender.com';
   }
 
   // 개발 환경 기본값
