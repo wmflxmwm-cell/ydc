@@ -114,8 +114,12 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
       fetchData();
     } catch (error: any) {
       console.error('Excel upload error:', error);
+      const responseData = error?.response?.data;
+      if (responseData) {
+        console.error('Excel upload error response:', responseData);
+      }
 
-      const debugInfo = error?.response?.data?.debugInfo;
+      const debugInfo = responseData?.debugInfo;
       if (debugInfo) {
         console.log('========================================');
         console.log('[Frontend Excel Parsing Debug Info]');
@@ -130,7 +134,11 @@ const ShipmentStatus: React.FC<Props> = ({ user }) => {
         console.log('========================================');
       }
 
-      const errorMessage = error?.response?.data?.error || error?.message || '엑셀 업로드 중 오류가 발생했습니다';
+      const errorMessage =
+        responseData?.message ||
+        responseData?.error ||
+        error?.message ||
+        '엑셀 업로드 중 오류가 발생했습니다';
 
       if (String(errorMessage).includes('누락된 컬럼')) {
         alert(errorMessage);
